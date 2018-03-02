@@ -17,6 +17,7 @@ import elephant.signal_processing as esp
 import scipy.signal as ssp
 import warnings
 import os
+import sys
 
 
 def process_events(seg, tolerence):
@@ -288,24 +289,34 @@ if __name__ == '__main__':
         '1': 'correct', '2': 'incorrect', '3': 'iti_start', '4': 'omission',
         '5': 'premature', '6': 'stimulus', '7': 'tray'
     }
-    dpath = 'C:\Users\Morishita Lab\Documents\TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
+    try:
+        dpath = sys.argv[1]
+    except:
+        dpath = '/Users/DB/Development/Morishita_lab_2photon/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
     # %% load data from tdt files
-    reader = io.TdtIO(dirname=dpath)
-    block = reader.read_block()
-    seglist = block.segments
-    # %% load data from pkl files
-    reader = io.PickleIO(dpath + os.sep + "processed.pkl")
-    block = reader.read_block()
-    seglist = block.segments
-    # %% process normalization/ascore/peaks
-    for segid, segment in enumerate(seglist):
-        process_events(segment, 5 * pq.s)
-        norm_data(segment, ['LMag 1'])
-        z_score(segment, ['LMag 1_norm'])
-        find_peak(segment, ['LMag 1_norm_zscore'])
-    # %% writing the data to pkl files
-    writer = io.PickleIO(dpath + os.sep + 'processed.pkl')
-    writer.write_block(block)
+    try:
+        reader = io.PickleIO(dpath + os.sep + "processed.pkl")
+        block = reader.read_block()
+        seglist = block.segments
+    except:
+        reader = io.TdtIO(dirname=dpath)
+        block = reader.read_block()
+        seglist = block.segments
+        # %% load data from pkl files
+        # %% process normalization/ascore/peaks
+        for segid, segment in enumerate(seglist):
+            process_events(segment, 5 * pq.s)
+            print('processed events')
+            norm_data(segment, ['LMag 1'])
+            print('normalized data')
+            z_score(segment, ['LMag 1_norm'])
+            print('z scored data')
+            find_peak(segment, ['LMag 1_norm_zscore'])
+            print('found all peaks')
+        # %% writing the data to pkl files
+        print('writing pickled object')
+        writer = io.PickleIO(dpath + os.sep + 'processed.pkl')
+        writer.write_block(block)
     # %% subsetting part of the data
     seg_toplot = seglist[0]
     slice_segment(seg_toplot, [539*pq.s,554*pq.s])
