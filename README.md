@@ -1,4 +1,4 @@
-# Morishita_lab_2photon
+# Monkey_frog
 
 Code for analyzing 2-photon imaging data with TTL event data
 
