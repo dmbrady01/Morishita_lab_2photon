@@ -19,6 +19,8 @@ import warnings
 import os
 import sys
 
+from photon_analysis import event_processing
+
 
 def process_events(seg, tolerence):
     if 'Events' not in [cur_evts.name for cur_evts in seg.events]:
@@ -285,15 +287,18 @@ def slice_segment(seg, tslice):
 
 # %% defining path
 if __name__ == '__main__':
-    event_dict = {
-        '1': 'correct', '2': 'incorrect', '3': 'iti_start', '4': 'omission',
-        '5': 'premature', '6': 'stimulus', '7': 'tray'
-    }
+    # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
+    event_dict = event_processing.EvtDict()
+
+    # Checks if a directory path to the data is provided, if not, will
+    # use what is specified in except
     try:
         dpath = sys.argv[1]
     except:
         dpath = '/Users/DB/Development/Morishita_lab_2photon/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
     # %% load data from tdt files
+
+    
     try:
         reader = io.PickleIO(dpath + os.sep + "processed.pkl")
         block = reader.read_block()
