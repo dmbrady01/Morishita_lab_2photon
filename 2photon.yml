@@ -254,8 +254,10 @@ dependencies:
     - neo==0.5.2
     - pbr==1.10.0
     - quantities==0.12.1
+    - rednose==1.3.0
     - stevedore==1.18.0
     - tables==3.4.2
+    - termstyle==0.1.11
     - virtualenv==15.0.3
     - virtualenv-clone==0.2.6
     - virtualenvwrapper==4.7.2
