@@ -19,7 +19,7 @@ def EvtDict(evtlist=['correct', 'incorrect', 'iti_start', 'omission', 'premature
     """
     # Calculates how many keys we need for our dictionary
     dict_len = len(evtlist)
-    # Makes a list of numerals (but they are strings) as our key values
+    # Makes a list of numbers as our key values (but they are strings not ints!)
     keys = [str(ind + 1) for ind in range(dict_len)]
     # zips keys with our evtlist and makes it a dictionary
     return dict(zip(keys, evtlist))
