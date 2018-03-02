@@ -12,6 +12,9 @@ __lastmodified__ = "01 Mar 2018"
 # Import unittest modules and event_processing
 import unittest
 from photon_analysis.event_processing import EvtDict
+from photon_analysis.event_processing import ProcessEvents
+
+
 
 class TestEvtDict(unittest.TestCase):
     "Code tests for EvtDict function"
@@ -55,8 +58,22 @@ class TestEvtDict(unittest.TestCase):
 
 
 
+class TestProcessEvents(unittest.TestCase):
+    "Code tests for ProcessEvents function"
 
+    def setUp(self):
+        self.wrong_type = 'hello'
 
+    def tearDown(self):
+        del self.wrong_type
+
+    def test_tolerance_must_be_number(self):
+        "Makes sure tolerance is a number"
+        self.assertRaises(TypeError, ProcessEvents, tolerance=self.wrong_type)
+
+    def test_seg_must_be_a_seg_object(self):
+        "Makes sure seg is a seg object"
+        self.assertRaises(TypeError, ProcessEvents, seg=self.wrong_type)
 
 
 
