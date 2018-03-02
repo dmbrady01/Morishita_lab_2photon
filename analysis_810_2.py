@@ -19,7 +19,8 @@ import warnings
 import os
 import sys
 
-from photon_analysis import event_processing
+from photon_analysis.event_processing import EvtDict
+from photon_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 
 
 def process_events(seg, tolerence):
@@ -246,7 +247,7 @@ def z_score(seg, varname):
     zlist = list()
     for sig in varlist:
         z_sig = cp.copy(sig)
-        z_sig[:] = np.absolute(esp.zscore(z_sig))
+#        z_sig[:] = np.absolute(esp.zscore(z_sig))
         z_sig.name = z_sig.name + '_zscore'
         zlist.append(z_sig)
     seg.analogsignals = seg.analogsignals + zlist
@@ -267,7 +268,7 @@ def norm_data(seg, varname):
 def find_peak(seg, varname):
     for i, sig in enumerate(seg.analogsignals):
         if sig.name in varname:
-            print("finding peaks for "+sig.name)
+            print("finding peaks for " + sig.name)
             p = ssp.find_peaks_cwt(sig.flatten(), np.arange(100, 550),
                                    min_length=10)
             peaks = p / sig.sampling_rate + sig.t_start
@@ -288,40 +289,47 @@ def slice_segment(seg, tslice):
 # %% defining path
 if __name__ == '__main__':
     # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
-    event_dict = event_processing.EvtDict()
+    event_dict = EvtDict()
 
     # Checks if a directory path to the data is provided, if not, will
     # use what is specified in except
     try:
         dpath = sys.argv[1]
-    except:
+    except IndexError:
         dpath = '/Users/DB/Development/Morishita_lab_2photon/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
-    # %% load data from tdt files
-
     
+    # %% load data from tdt files or pickled object
     try:
-        reader = io.PickleIO(dpath + os.sep + "processed.pkl")
-        block = reader.read_block()
+        PrintNoNewLine('Trying to load processed pkl object...')
+        seglist = ReadNeoPickledObj(path=dpath, name="processed.pkl", return_block=False)
+        print('Done!')
+    except IOError:
+        PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')
+        block = ReadNeoTdt(path=dpath, return_block=True)
         seglist = block.segments
-    except:
-        reader = io.TdtIO(dirname=dpath)
-        block = reader.read_block()
-        seglist = block.segments
+        print('Done!')
         # %% load data from pkl files
         # %% process normalization/ascore/peaks
         for segid, segment in enumerate(seglist):
+            PrintNoNewLine('Processing events...')
             process_events(segment, 5 * pq.s)
-            print('processed events')
+            print('Done!')
+            
+            PrintNoNewLine('Normalizing data...')
             norm_data(segment, ['LMag 1'])
-            print('normalized data')
+            print('Done!')
+            
+            PrintNoNewLine('Z scoring data...')
             z_score(segment, ['LMag 1_norm'])
-            print('z scored data')
+            print('Done!')
+            
+            PrintNoNewLine('Finding peaks...')
             find_peak(segment, ['LMag 1_norm_zscore'])
-            print('found all peaks')
+            print('Done!')
         # %% writing the data to pkl files
-        print('writing pickled object')
-        writer = io.PickleIO(dpath + os.sep + 'processed.pkl')
-        writer.write_block(block)
+        PrintNoNewLine('\nWriting processed pickled object...')
+        WriteNeoPickledObj(block, path=dpath, name='processed.pkl')
+        print('Done!')
     # %% subsetting part of the data
     seg_toplot = seglist[0]
     slice_segment(seg_toplot, [539*pq.s,554*pq.s])
