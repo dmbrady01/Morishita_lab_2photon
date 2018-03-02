@@ -14,7 +14,8 @@ import unittest
 from photon_analysis.event_processing import EvtDict
 
 class TestEvtDict(unittest.TestCase):
-
+    "Code tests for EvtDict function"
+    
     def setUp(self):
         self.list1 = ['event1', 'event2']
         self.dict1 = {'1': 'event1', '2': 'event2'}
