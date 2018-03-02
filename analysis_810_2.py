@@ -19,8 +19,8 @@ import warnings
 import os
 import sys
 
-from photon_analysis.event_processing import EvtDict
-from photon_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
+from imaging_analysis.event_processing import EvtDict
+from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 
 
 def process_events(seg, tolerence):
@@ -247,7 +247,8 @@ def z_score(seg, varname):
     zlist = list()
     for sig in varlist:
         z_sig = cp.copy(sig)
-#        z_sig[:] = np.absolute(esp.zscore(z_sig))
+        #z_sig[:] = np.absolute(esp.zscore(z_sig))
+        z_sig[:] = esp.zscore(z_sig).magnitude
         z_sig.name = z_sig.name + '_zscore'
         zlist.append(z_sig)
     seg.analogsignals = seg.analogsignals + zlist
@@ -298,18 +299,23 @@ if __name__ == '__main__':
     except IndexError:
         dpath = '/Users/DB/Development/Morishita_lab_2photon/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
     
-    # %% load data from tdt files or pickled object
+    # Tries to load a processed pickle object, othewise reads the Tdt folder,
+    # processes the data and writes a pickle object
     try:
-        PrintNoNewLine('Trying to load processed pkl object...')
+        # Attempting to load pickled object
+        PrintNoNewLine('Trying to load processed pickled object...')
         seglist = ReadNeoPickledObj(path=dpath, name="processed.pkl", return_block=False)
         print('Done!')
+    
     except IOError:
+        # Reads data from Tdt folder
         PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')
         block = ReadNeoTdt(path=dpath, return_block=True)
         seglist = block.segments
         print('Done!')
-        # %% load data from pkl files
-        # %% process normalization/ascore/peaks
+        
+        # Goes through each segment and processes the events, normalizes the
+        # signal, etc. 
         for segid, segment in enumerate(seglist):
             PrintNoNewLine('Processing events...')
             process_events(segment, 5 * pq.s)
@@ -323,9 +329,9 @@ if __name__ == '__main__':
             z_score(segment, ['LMag 1_norm'])
             print('Done!')
             
-            PrintNoNewLine('Finding peaks...')
-            find_peak(segment, ['LMag 1_norm_zscore'])
-            print('Done!')
+            # PrintNoNewLine('Finding peaks...')
+            # find_peak(segment, ['LMag 1_norm_zscore'])
+            # print('Done!')
         # %% writing the data to pkl files
         PrintNoNewLine('\nWriting processed pickled object...')
         WriteNeoPickledObj(block, path=dpath, name='processed.pkl')
