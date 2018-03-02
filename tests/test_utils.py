@@ -11,9 +11,9 @@ __lastmodified__ = "01 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
-from photon_analysis.utils import ReadNeoPickledObj
-from photon_analysis.utils import ReadNeoTdt
-from photon_analysis.utils import WriteNeoPickledObj
+from imaging_analysis.utils import ReadNeoPickledObj
+from imaging_analysis.utils import ReadNeoTdt
+from imaging_analysis.utils import WriteNeoPickledObj
 
 
 

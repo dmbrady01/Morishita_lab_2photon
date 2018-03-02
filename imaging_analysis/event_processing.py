@@ -46,7 +46,6 @@ def ProcessEvents(seg=None, tolerance=None):
     # Checks if events have already been processed
     if 'Events' in [event.name for event in seg.events]:
         print("Events array has already been processed")
-        break
     else:
         eventlist = list()
         event_times = list()

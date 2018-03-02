@@ -11,10 +11,14 @@ __lastmodified__ = "01 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
-from photon_analysis.signal_processing import NormalizeSignal
+from imaging_analysis.signal_processing import NormalizeSignal
 
-class TestNormalizeSignal(unittest.TestCase):
-    "Code tests for NormalizeSignal function"
+class TestSubtractNoise(unittest.TestCase):
+    pass
+
+
+class TestNormalizeSignalData(unittest.TestCase):
+    "Code tests for NormalizeSignalData function"
     
     def setUp(self):
         pass

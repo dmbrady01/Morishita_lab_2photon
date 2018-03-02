@@ -11,8 +11,8 @@ __lastmodified__ = "01 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
-from photon_analysis.event_processing import EvtDict
-from photon_analysis.event_processing import ProcessEvents
+from imaging_analysis.event_processing import EvtDict
+from imaging_analysis.event_processing import ProcessEvents
 
 
 
