@@ -18,10 +18,12 @@ class TestEvtDict(unittest.TestCase):
     def setUp(self):
         self.list1 = ['event1', 'event2']
         self.dict1 = {'1': 'event1', '2': 'event2'}
+        self.string = 'hello'
 
     def tearDown(self):
         del self.list1
         del self.dict1
+        del self.string
 
     def test_returns_a_dict(self):
         "Makes sure EvtDict returns a dictionary"
@@ -42,6 +44,9 @@ class TestEvtDict(unittest.TestCase):
         keys = EvtDict().keys()
         str_check = [isinstance(key, str) for key in keys]
         self.assertTrue(all(str_check))
+
+    def test_argument_must_be_iterable(self):
+        self.assertRaises(TypeError, EvtDict, self.string)
 
     def test_returns_properly_ordered_dict(self):
         "Makes sure that the list is mapped to the dictionary in the right order"
