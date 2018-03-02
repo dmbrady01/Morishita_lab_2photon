@@ -39,7 +39,7 @@ def ReadNeoPickledObj(path='', name="processed.pkl", return_block=False):
         return block.segments
 
 
-def ReadNeoTdT(path, return_block=True):
+def ReadNeoTdt(path, return_block=True):
     """Reads a TdT folder for processing. If return_block is True, a block is
     returned. Otherwise, segments are returned"""
     if not isinstance(path, six.string_types):
@@ -48,9 +48,9 @@ def ReadNeoTdT(path, return_block=True):
     if not os.path.exists(path):
         raise IOError('%s cannot be found. Please check that it exists' % path)
     # Reads folder of files
-    reader = io.TdTIO(dirname=path)
+    reader = io.TdtIO(dirname=path)
     # Reads block
-    block = read.read_block()
+    block = reader.read_block()
     # Returns segments or blocks
     if return_block:
         return block

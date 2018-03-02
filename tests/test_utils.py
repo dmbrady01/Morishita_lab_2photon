@@ -12,7 +12,7 @@ __lastmodified__ = "01 Mar 2018"
 # Import unittest modules and event_processing
 import unittest
 from photon_analysis.utils import ReadNeoPickledObj
-from photon_analysis.utils import ReadNeoTdT
+from photon_analysis.utils import ReadNeoTdt
 from photon_analysis.utils import WriteNeoPickledObj
 
 
@@ -43,7 +43,7 @@ class TestReadNeoPickledObj(unittest.TestCase):
 
 
 
-class TestReadNeoTdT(unittest.TestCase):
+class TestReadNewTdt(unittest.TestCase):
 
     def setUp(self):
         self.bad_path = 56
@@ -55,11 +55,11 @@ class TestReadNeoTdT(unittest.TestCase):
 
     def test_makes_sure_path_is_a_string(self):
         "Makes sure path argument is a string"
-        self.assertRaises(TypeError, ReadNeoTdT, self.bad_path)
+        self.assertRaises(TypeError, ReadNeoTdt, self.bad_path)
 
     def test_makes_sure_path_exists(self):
         "Makes sure path to directory exists"
-        self.assertRaises(IOError, ReadNeoTdT, self.not_found_path)
+        self.assertRaises(IOError, ReadNeoTdt, self.not_found_path)
 
 
 
