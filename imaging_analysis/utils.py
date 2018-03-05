@@ -8,7 +8,7 @@ utils.py: Python script that contains utlilty functions (saving, loading, etc.).
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "01 Mar 2018"
+__lastmodified__ = "05 Mar 2018"
 
 
 from neo import io
@@ -24,7 +24,10 @@ def ReadNeoPickledObj(path='', name="processed.pkl", return_block=False):
     if not all(isinstance(arg, six.string_types) for arg in [path, name]):
         raise TypeError('%s or %s is not a strings' % (path, name))
     # Constructs path to pickled object
-    dpath = path + os.sep + name
+    if '.pkl' in path:
+        dpath = path
+    else:
+        dpath = path + os.sep + name
     # Checks to see if path exists
     if not os.path.exists(dpath):
         raise IOError('%s cannot be found. Please check that it exists' % dpath)
