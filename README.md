@@ -11,7 +11,7 @@ $ conda env create -f 2photon.yml
 Before running any code, make sure to enter your virtual environment
 
 ```
-$ source activate morishita_2photon
+$ source activate monkey_frog
 ```
 
 When finished for the day
