@@ -33,7 +33,7 @@ def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
     return dict(zip(keys, evts))
 
 
-def TruncateEvent(event, start=None, end=None):
+def TruncateEvent(event, start=0, end=0):
     """Given an Event object, will remove events before 'start' and after 
     'end'. Start and end must be in seconds."""
     # Makes sure event is an Event object
@@ -55,7 +55,7 @@ def TruncateEvent(event, start=None, end=None):
     return truncated_event
 
 
-def TruncateEvents(event_list, start=None, end=None):
+def TruncateEvents(event_list, start=0, end=0):
     """Given a list of Event objects, will iterate through each one and remove
     events before 'start' and after 'end'. Start and end must be in seconds."""
     # Makes sure a list is passed
