@@ -20,6 +20,7 @@ import os
 import sys
 
 from imaging_analysis.event_processing import EvtDict
+from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 
 
@@ -313,7 +314,11 @@ if __name__ == '__main__':
         block = ReadNeoTdt(path=dpath, return_block=True)
         seglist = block.segments
         print('Done!')
-        
+
+        # Removing first seconds of recording
+        PrintNoNewLine('Truncating signals and events...')
+        seglist = TruncateSegments(seglist, start=10, end=0, clip_same=True)
+        print('Done!')
         # Goes through each segment and processes the events, normalizes the
         # signal, etc. 
         for segid, segment in enumerate(seglist):
