@@ -33,19 +33,22 @@ def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
     return dict(zip(keys, evts))
 
 
-def TruncateEvent(event, start=0, end=0):
+def TruncateEvent(event, start=None, end=None):
     """Given an Event object, will remove events before 'start' and after 
-    'end'. Start and end must be in seconds."""
+    'end'. Start and end must be in seconds. Please note that this is different logic
+    than TruncateSignal! TruncateSignals trims start/end seconds from the ends no matter
+    the length. TruncateEvent start/end truncates at those specific timestamps. It
+    is not relative."""
     # Makes sure event is an Event object
     if not isinstance(event, neo.core.Event):
         raise TypeError('%s must be an Event object.' % event)
     # converts start and end to times
-    if not start:
+    if start is None:
         start = event.min()
     else:
         start = start * pq.s
 
-    if not end:
+    if end is None:
         end = event.max()
     else:
         end = end * pq.s
@@ -55,7 +58,7 @@ def TruncateEvent(event, start=0, end=0):
     return truncated_event
 
 
-def TruncateEvents(event_list, start=0, end=0):
+def TruncateEvents(event_list, start=None, end=None):
     """Given a list of Event objects, will iterate through each one and remove
     events before 'start' and after 'end'. Start and end must be in seconds."""
     # Makes sure a list is passed

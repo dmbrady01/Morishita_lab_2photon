@@ -19,7 +19,10 @@ import quantities as pq
 
 def TruncateSignal(signal, start=0, end=0):
     """Given an AnalogSignal object, will remove the first 'start' seconds and the 
-    last 'end' seconds."""
+    last 'end' seconds. Please note that this is different logic
+    than TruncateEvent! TruncateSignals trims start/end seconds from the ends no matter
+    the length. TruncateEvent start/end truncates at those specific timestamps. It
+    is not relative."""
     # Makes sure signal is an AnalogSignal object
     if not isinstance(signal, neo.core.AnalogSignal):
         raise TypeError('%s must be an AnalogSignal object.' % signal)
