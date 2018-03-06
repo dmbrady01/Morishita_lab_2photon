@@ -7,7 +7,7 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "01 Mar 2018"
+__lastmodified__ = "06 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -17,7 +17,9 @@ from imaging_analysis.utils import WriteNeoPickledObj
 
 
 
+
 class TestReadNeoPickledObj(unittest.TestCase):
+    "Tests for the ReadNeoPickledObj function."
 
     def setUp(self):
         self.bad_path = 56
@@ -43,7 +45,8 @@ class TestReadNeoPickledObj(unittest.TestCase):
 
 
 
-class TestReadNewTdt(unittest.TestCase):
+class TestReadNeoTdt(unittest.TestCase):
+    "Tests for the ReadNeoTdt function."
 
     def setUp(self):
         self.bad_path = 56
@@ -64,6 +67,7 @@ class TestReadNewTdt(unittest.TestCase):
 
 
 class WriteNeoPickledObj(unittest.TestCase):
+    "Tests for the WriteNeoPickledObj function."
 
     def setUp(self):
         self.bad_path = 56
