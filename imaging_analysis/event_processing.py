@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "01 Mar 2018"
+__lastmodified__ = "05 Mar 2018"
 
 import collections
 import six
@@ -31,6 +31,39 @@ def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
     keys = [str(ind + 1) for ind in range(dict_len)]
     # zips keys with our evtlist and makes it a dictionary
     return dict(zip(keys, evts))
+
+
+def TruncateEvent(event, start=None, end=None):
+    """Given an Event object, will remove events before 'start' and after 
+    'end'. Start and end must be in seconds."""
+    # Makes sure event is an Event object
+    if not isinstance(event, neo.core.Event):
+        raise TypeError('%s must be an Event object.' % event)
+    # converts start and end to times
+    if not start:
+        start = event.min()
+    else:
+        start = start * pq.s
+
+    if not end:
+        end = event.max()
+    else:
+        end = end * pq.s
+
+    truncated_event = event.time_slice(start, end)
+
+    return truncated_event
+
+
+def TruncateEvents(event_list, start=None, end=None):
+    """Given a list of Event objects, will iterate through each one and remove
+    events before 'start' and after 'end'. Start and end must be in seconds."""
+    # Makes sure a list is passed
+    if not isinstance(event_list, list):
+        raise TypeError('%s must be a list' % event_list)
+    # Iterate through each item with TrunacteEvent
+    truncated_list = [TruncateEvent(evt, start=start, end=end) for evt in event_list]
+    return truncated_list
 
 
 def ProcessEvents(seg=None, tolerance=None):
