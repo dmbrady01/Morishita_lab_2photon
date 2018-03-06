@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "05 Mar 2018"
+__lastmodified__ = "06 Mar 2018"
 
 
 import scipy.signal as ssp
@@ -26,10 +26,22 @@ def TruncateSignal(signal, start=0, end=0):
     # converts start and end to times
     start = start * pq.s 
     end = end * pq.s
-
+    # Truncate signal
     truncated_signal = signal.time_slice(signal.t_start + start, signal.t_stop - end)
 
     return truncated_signal
+
+
+def TruncateSignals(signal_list, start=0, end=0):
+    """Given a list of AnalogSignal objects, will iterate through each one and remove
+    values before 'start' and after 'end'. Start and end must be in seconds."""
+    # Makes sure a list is passed
+    if not isinstance(signal_list, list):
+        raise TypeError('%s must be a list' % signal_list)
+    # Iterate through each item with TrunacteSignal
+    truncated_list = [TruncateSignal(sig, start=start, end=end) for sig in signal_list]
+    
+    return truncated_list
 
 
 # def NormalizeSignal(signal=None, reference=None, framelen=3001, order=1, return_filt=False):
