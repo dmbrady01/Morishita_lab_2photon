@@ -19,6 +19,7 @@ from imaging_analysis.signal_processing import TruncateSignal
 from imaging_analysis.signal_processing import TruncateSignals
 from imaging_analysis.signal_processing import ButterFilterDesign
 from imaging_analysis.signal_processing import FilterSignal
+from imaging_analysis.signal_processing import DeltaFOverF
 
 class TestTruncateSignal(unittest.TestCase):
     "Tests for the TruncateSignal function."
@@ -224,6 +225,64 @@ class TestFilterSignal(unittest.TestCase):
         test_signal = ssp.savgol_filter(self.signal, self.window_length, 
                                         self.savgol_order, axis=0)
         equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal)
+
+
+
+class TestDeltaFOverF(unittest.TestCase):
+    "Tests for DeltaFOverF function"
+
+    def setUp(self):
+        self.signal = np.random.randn(1000, 1)
+        self.signal2 = np.random.randn(1000, 1)
+        self.period = [0, 100]
+        self.wrong_mode = 'mymode'
+
+    def tearDown(self):
+        del self.signal
+        del self.signal2
+        del self.period
+        del self.wrong_mode
+
+    def test_mode_must_be_correct(self):
+        "Makes sure error is thrown if wrong mode selected."
+        self.assertRaises(ValueError, DeltaFOverF, self.signal, mode=self.wrong_mode)
+
+    def test_median_mode_works(self):
+        "Makes sure median mode works"
+        test_signal = (self.signal - np.median(self.signal))/np.median(self.signal)
+        equal = np.array_equal(test_signal, DeltaFOverF(self.signal, mode='median'))
+        self.assertTrue(equal)
+
+    def test_mean_mode_works(self):
+        "Makes sure mean mode works"
+        test_signal = (self.signal - np.mean(self.signal))/np.mean(self.signal)
+        equal = np.array_equal(test_signal, DeltaFOverF(self.signal, mode='mean'))
+        self.assertTrue(equal)
+
+    def test_reference_mode_works(self):
+        "Makes sure reference mode works"
+        test_signal = (self.signal - self.signal2)/self.signal2
+        signal = DeltaFOverF(self.signal, reference=self.signal2, mode='reference')
+        equal = np.array_equal(test_signal, signal)
+        self.assertTrue(equal)
+
+    def test_period_mean_works(self):
+        "Makes sure period_mean mode works"
+        reference = np.mean(self.signal[self.period[0]:self.period[1]])
+        test_signal = (self.signal - reference)/reference
+        equal = np.array_equal(test_signal, DeltaFOverF(self.signal, 
+                                                        period=self.period,
+                                                        mode='period_mean'))
+        self.assertTrue(equal)
+
+    def test_period_median_works(self):
+        "Makes sure period_median mode works"
+        reference = np.median(self.signal[self.period[0]:self.period[1]])
+        test_signal = (self.signal - reference)/reference
+        equal = np.array_equal(test_signal, DeltaFOverF(self.signal, 
+                                                        period=self.period,
+                                                        mode='period_median'))
         self.assertTrue(equal)
 
 

@@ -89,25 +89,43 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381.469726562, order=5,
     order: filter order
     btype: 'lowpass', 'highpass', 'bandpass', 'bandstop', 'savgol'
     axis: axis of matrix to apply filter"""
+    # If btype is savgol, performs a Savitzky-Golay filter
     if btype == 'savgol':
         return ssp.savgol_filter(signal, window_length, order, axis=axis)
+    # Otherwise performs filfilt (backwards and forwards filtering)
     else:
         b, a = ButterFilterDesign(lowcut=lowcut, highcut=highcut, fs=fs, 
                                 order=order, btype=btype)
         return ssp.filtfilt(b, a, signal, axis=axis)
 
+def DeltaFOverF(signal, reference=None, period=None, mode='median'):
+    """Calcualte DeltaF/F for a signal. There are several modes:
+    'median': (signal - median(signal))/median(signal)
 
-
-# def FilterSignal(signal, type='detrend_lowpass', **kwargs):
-#     """Will filter an AnalogSignal object. There are two types of filters:
-#     'detrend_lowpass': passes signal through a lowpass filter (removes high freq)
-#                        and subtracts Savitzky-Golay filter of original signal (detrend)
-#     'bandpass': passes signal through a bandpass filter (removes high/low freq)
-#     Optional arguments are for specifying filter parameters."""
-#     # Default kwarg params:
-#     options = {'window_length': 3001, 'poly_order': 1, 'axis': 0}
-#     if not isinstance(signal, neo.core.AnalogSignal):
-#         raise TypeError('%s must be an AnalogSignal object' % signal)
+    'mean': (signal - mean(signal))/mean(signal)
+    
+    'reference': (signal - reference_signal)/reference_signal
+    Note that reference must be a same length array as signal
+    
+    'period_mean': ref = mean(signal[period[0]:period[1]] 
+                   (signal - ref)/ref
+    
+    'period_median': same as 'period_mean' but uses median instead
+    Note that period must be a list or tuple of beginning and end timstamps"""
+    if mode == 'median':
+        return (signal - np.median(signal))/np.median(signal)
+    elif mode == 'mean':
+        return (signal - np.mean(signal))/np.mean(signal)
+    elif mode == 'reference':
+        return (signal - reference)/reference
+    elif mode == 'period_mean':
+        reference = signal[period[0]:period[1]]
+        return (signal - np.mean(reference))/np.mean(reference)
+    elif mode == 'period_median':
+        reference = signal[period[0]:period[1]]
+        return (signal - np.median(reference))/np.median(reference)
+    else:
+        raise ValueError('%s is not an accepted mode for calculating deltaf' % mode)
 
 
 # def NormalizeSignal(signal=None, reference=None, framelen=3001, order=1, return_filt=False):
