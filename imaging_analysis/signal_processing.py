@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "06 Mar 2018"
+__lastmodified__ = "07 Mar 2018"
 
 
 import scipy.signal as ssp
@@ -34,7 +34,6 @@ def TruncateSignal(signal, start=0, end=0):
 
     return truncated_signal
 
-
 def TruncateSignals(signal_list, start=0, end=0):
     """Given a list of AnalogSignal objects, will iterate through each one and remove
     values before 'start' and after 'end'. Start and end must be in seconds."""
@@ -45,6 +44,51 @@ def TruncateSignals(signal_list, start=0, end=0):
     truncated_list = [TruncateSignal(sig, start=start, end=end) for sig in signal_list]
     
     return truncated_list
+
+def ButterFilterDesign(lowcut=None, highcut=None, fs=381.469726562, order=5, 
+                    btype='lowpass'):
+    """Constructs the numerator and denominator for the low/high/bandpass/bandstop
+    filter. low and high are the cutoff frequencies, fs is the sampling frequency, 
+    order is the desired filter order, and btype designates what type of filter will
+    ultimately be constructed (lowpass, highpass, bandpass, bandstop)."""
+    # calculate nyquist frequency (half the sampling frequency)
+    nyquist = fs * 0.5
+    # try constructing normalized lowcut
+    try:
+        norm_low = lowcut / nyquist
+    except TypeError:
+        pass
+    # try constructing normalized highcut
+    try:
+        norm_high = highcut / nyquist
+        # Makes sure highcut is lower than nyquist frequency
+        if norm_high > 1:
+            raise ValueError('%s is larger than the nyquist frequency. Choose a smaller highcut (at most half the sampling rate).' % highcut)
+    except TypeError:
+        pass
+    # Construct param to be bassed into butter
+    if btype == 'lowpass':
+        params = norm_high
+    elif btype == 'highpass':
+        params = norm_low
+    elif (btype == 'bandpass') or (btype == 'bandstop'):
+        params = [norm_low, norm_high]
+    else:
+        raise ValueError("%s must be 'lowpass', 'highpass', 'bandpass', or 'bandstop'" % btype)
+    # Return butter
+    return ssp.butter(order, params, btype=btype, analog=False)
+
+
+def FilterSignal(signal, type='detrend_lowpass', **kwargs):
+    """Will filter an AnalogSignal object. There are two types of filters:
+    'detrend_lowpass': passes signal through a lowpass filter (removes high freq)
+                       and subtracts Savitzky-Golay filter of original signal (detrend)
+    'bandpass': passes signal through a bandpass filter (removes high/low freq)
+    Optional arguments are for specifying filter parameters."""
+    # Default kwarg params:
+    options = {'window_length': 3001, 'poly_order': 1, 'axis': 0}
+    if not isinstance(signal, neo.core.AnalogSignal):
+        raise TypeError('%s must be an AnalogSignal object' % signal)
 
 
 # def NormalizeSignal(signal=None, reference=None, framelen=3001, order=1, return_filt=False):
