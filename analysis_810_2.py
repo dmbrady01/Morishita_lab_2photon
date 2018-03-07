@@ -298,7 +298,7 @@ if __name__ == '__main__':
     try:
         dpath = sys.argv[1]
     except IndexError:
-        dpath = '/Users/DB/Development/Morishita_lab_2photon/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
+        dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
     
     # Tries to load a processed pickle object, othewise reads the Tdt folder,
     # processes the data and writes a pickle object
