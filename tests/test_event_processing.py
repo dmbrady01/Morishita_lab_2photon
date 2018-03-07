@@ -65,7 +65,8 @@ class TestTruncateEvent(unittest.TestCase):
     "Code tests for the TruncateEvent function."
 
     def setUp(self):
-        self.evt = Event(np.arange(0, 100 ,1)*pq.s, labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+        self.evt = Event(np.arange(0, 100 ,1)*pq.s, 
+                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
         self.not_evt = np.random.randn(1000, 1)
         self.evt_start = 10
         self.evt_pre_start = self.evt_start - 5
@@ -102,8 +103,10 @@ class TestTruncateEvents(unittest.TestCase):
     "Code tests for TruncateEvents function."
 
     def setUp(self):
-        self.evt = Event(np.arange(0, 100 ,1)*pq.s, labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
-        self.evt2 = Event(np.arange(0, 100 ,1)*pq.s, labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 50))
+        self.evt = Event(np.arange(0, 100 ,1)*pq.s, 
+                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+        self.evt2 = Event(np.arange(0, 100 ,1)*pq.s, 
+                        labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 50))
         self.events = [self.evt, self.evt2]
         self.evt_start = 10
         self.evt_pre_start = self.evt_start - 5

@@ -23,7 +23,8 @@ def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
     True
     """
     # Makes sure that evts is iterable (but not a string)
-    if (not isinstance(evts, collections.Iterable)) or (isinstance(evts, six.string_types)):
+    if (not isinstance(evts, collections.Iterable)) or \
+        (isinstance(evts, six.string_types)):
         raise TypeError('evts needs to be iterable but not a string (list, tuple, etc.).') 
     # Calculates how many keys we need for our dictionary
     dict_len = len(evts)

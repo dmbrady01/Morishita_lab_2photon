@@ -305,7 +305,8 @@ if __name__ == '__main__':
     try:
         # Attempting to load pickled object
         PrintNoNewLine('Trying to load processed pickled object...')
-        seglist = ReadNeoPickledObj(path=dpath, name="processed.pkl", return_block=False)
+        seglist = ReadNeoPickledObj(path=dpath, name="processed.pkl", 
+                                    return_block=False)
         print('Done!')
     
     except IOError:
