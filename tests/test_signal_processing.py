@@ -153,19 +153,78 @@ class TestFilterSignal(unittest.TestCase):
     "Code tests for FilterSignal function."
 
     def setUp(self):
-        self.signal = AnalogSignal(np.random.randn(1000,1), units='V', 
-                                    sampling_rate=1*pq.Hz)
-        self.signal2 = AnalogSignal(np.random.randn(900,1), units='V', 
-                                    sampling_rate=1*pq.Hz)
+        self.T = 5
+        self.fs = 30
+        self.nsamples = int(self.T * self.fs)
+        self.t = np.linspace(0, self.T, self.nsamples, endpoint=False)
+        self.signal = np.sin(1.2*2*np.pi*self.t) + 1.5*np.cos(9*2*np.pi*self.t) + \
+                            0.5*np.sin(12.0*2*np.pi*self.t)
+        self.highcut = 3.667
+        self.lowcut = 0.5
+        self.savgol_order = 1
+        self.order = 5
+        self.window_length = 11
 
     def tearDown(self):
-        del self.signal
-        del self.signal2
+        del self.T 
+        del self.fs
+        del self.nsamples
+        del self.t
+        del self.signal 
+        del self.highcut
+        del self.lowcut
+        del self.savgol_order
+        del self.order
+        del self.window_length
 
-    def test_makes_sure_signal_is_passed(self):
-        "Makes sure signal is passed to function"
-        self.assertRaises(TypeError, FilterSignal, 100)
+    def test_lowpass_works(self):
+        "Tests lowpass functionality"
+        signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
+                            fs=self.fs, order=self.order, btype='lowpass')
+        b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
+                                        fs=self.fs, order=self.order, btype='lowpass')
+        test_signal = ssp.filtfilt(b, a, self.signal)
+        equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal)
 
+    def test_highpass_works(self):
+        "Tests highpass functionality"
+        signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
+                            fs=self.fs, order=self.order, btype='highpass')
+        b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
+                                        fs=self.fs, order=self.order, btype='highpass')
+        test_signal = ssp.filtfilt(b, a, self.signal)
+        equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal)    
+
+    def test_bandpass_works(self):
+        "Tests bandpass functionality"
+        signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
+                            fs=self.fs, order=self.order, btype='bandpass')
+        b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
+                                        fs=self.fs, order=self.order, btype='bandpass')
+        test_signal = ssp.filtfilt(b, a, self.signal)
+        equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal) 
+
+    def test_bandstop_works(self):
+        "Tests bandpass functionality"
+        signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
+                            fs=self.fs, order=self.order, btype='bandstop')
+        b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
+                                        fs=self.fs, order=self.order, btype='bandstop')
+        test_signal = ssp.filtfilt(b, a, self.signal)
+        equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal) 
+
+    def test_savgol_works(self):
+        "Tests savgol functionality"
+        signal = FilterSignal(self.signal, order=self.savgol_order, 
+                            window_length=self.window_length, btype='savgol')
+        test_signal = ssp.savgol_filter(self.signal, self.window_length, 
+                                        self.savgol_order, axis=0)
+        equal = np.array_equal(signal, test_signal)
+        self.assertTrue(equal)
 
 
 if __name__ == '__main__':

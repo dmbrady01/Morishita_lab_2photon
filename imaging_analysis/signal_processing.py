@@ -78,17 +78,36 @@ def ButterFilterDesign(lowcut=None, highcut=None, fs=381.469726562, order=5,
     # Return butter
     return ssp.butter(order, params, btype=btype, analog=False)
 
+def FilterSignal(signal, lowcut=None, highcut=None, fs=381.469726562, order=5, 
+                btype='lowpass', axis=0, window_length=3001):
+    """Given some signal data, uses ButterFilterDesign or savgol_filter to 
+    construct a filter and applies it to signal.
+    signal: data signal
+    lowcut: lower bound for filter
+    highcut: upper bound for filter
+    fs: sampling frequnecy
+    order: filter order
+    btype: 'lowpass', 'highpass', 'bandpass', 'bandstop', 'savgol'
+    axis: axis of matrix to apply filter"""
+    if btype == 'savgol':
+        return ssp.savgol_filter(signal, window_length, order, axis=axis)
+    else:
+        b, a = ButterFilterDesign(lowcut=lowcut, highcut=highcut, fs=fs, 
+                                order=order, btype=btype)
+        return ssp.filtfilt(b, a, signal, axis=axis)
 
-def FilterSignal(signal, type='detrend_lowpass', **kwargs):
-    """Will filter an AnalogSignal object. There are two types of filters:
-    'detrend_lowpass': passes signal through a lowpass filter (removes high freq)
-                       and subtracts Savitzky-Golay filter of original signal (detrend)
-    'bandpass': passes signal through a bandpass filter (removes high/low freq)
-    Optional arguments are for specifying filter parameters."""
-    # Default kwarg params:
-    options = {'window_length': 3001, 'poly_order': 1, 'axis': 0}
-    if not isinstance(signal, neo.core.AnalogSignal):
-        raise TypeError('%s must be an AnalogSignal object' % signal)
+
+
+# def FilterSignal(signal, type='detrend_lowpass', **kwargs):
+#     """Will filter an AnalogSignal object. There are two types of filters:
+#     'detrend_lowpass': passes signal through a lowpass filter (removes high freq)
+#                        and subtracts Savitzky-Golay filter of original signal (detrend)
+#     'bandpass': passes signal through a bandpass filter (removes high/low freq)
+#     Optional arguments are for specifying filter parameters."""
+#     # Default kwarg params:
+#     options = {'window_length': 3001, 'poly_order': 1, 'axis': 0}
+#     if not isinstance(signal, neo.core.AnalogSignal):
+#         raise TypeError('%s must be an AnalogSignal object' % signal)
 
 
 # def NormalizeSignal(signal=None, reference=None, framelen=3001, order=1, return_filt=False):
