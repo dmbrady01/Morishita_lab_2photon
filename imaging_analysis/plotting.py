@@ -13,7 +13,7 @@ __lastmodified__ = "07 Mar 2018"
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def PlotSignalProcessing(signal_list=[], time=None, ylabels=[], titles=[]):
+def PlotSignalProcessing(signal_list=None, time=None, ylabels=None, titles=None):
     """Given a list (or even list of lists if you want to plot several together), 
     creates a single figure for looking at Signal data."""
     if not isinstance(signal_list, list):

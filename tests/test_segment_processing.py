@@ -24,11 +24,11 @@ class TestTruncateSegment(unittest.TestCase):
 
     def setUp(self):
         self.signal = AnalogSignal(np.random.randn(1000,1), units='V', 
-                                    sampling_rate=1*pq.Hz)
+            sampling_rate=1*pq.Hz)
         self.signal_start = 10
         self.signal_end = 10
         self.evt = Event(np.arange(0, 100 ,1)*pq.s, 
-                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+            labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
         self.evt_start = 15
         self.evt_pre_start = self.evt_start - 5
         self.evt_end = 85
@@ -57,7 +57,7 @@ class TestTruncateSegment(unittest.TestCase):
     def test_signals_are_truncated(self):
         "Test to make sure analog starts/ends are truncated"
         trunc_seg = TruncateSegment(self.segment, start=self.signal_start, 
-                                    end=self.signal_end)
+            end=self.signal_end)
         analog = trunc_seg.analogsignals[0]
         true_start = self.signal_start * pq.s
         true_stop = self.signal.t_stop - self.signal_end * pq.s
@@ -68,7 +68,7 @@ class TestTruncateSegment(unittest.TestCase):
     def test_events_are_truncated_the_same_if_clip_same(self):
         "Test to make sure analog starts/ends are truncated"
         trunc_seg = TruncateSegment(self.segment, start=self.signal_start, 
-                                    end=self.signal_end, clip_same=True)
+            end=self.signal_end, clip_same=True)
         event_times = trunc_seg.events[0].times
         test_start = self.signal_start - 1 not in event_times
         true_stop = self.signal.t_stop - self.signal_end * pq.s
@@ -78,8 +78,8 @@ class TestTruncateSegment(unittest.TestCase):
     def test_events_are_truncated_differently_if_clip_not_same(self):
         "Test to make sure analog starts/ends are truncated"
         trunc_seg = TruncateSegment(self.segment, start=self.signal_start, 
-                                    end=self.signal_end, clip_same=False, 
-                                    evt_start=self.evt_start, evt_end=self.evt_end)
+            end=self.signal_end, clip_same=False, evt_start=self.evt_start, 
+            evt_end=self.evt_end)
         event_times = trunc_seg.events[0].times
         test_start = self.evt_pre_start not in event_times
         test_stop = self.evt_post_end not in event_times
@@ -92,15 +92,15 @@ class TestTruncateSegments(unittest.TestCase):
 
     def setUp(self):
         self.signal = AnalogSignal(np.random.randn(1000,1), units='V', 
-                                    sampling_rate=1*pq.Hz)
+            sampling_rate=1*pq.Hz)
         self.signal2 = AnalogSignal(np.random.randn(1000,1), units='V', 
-                                    sampling_rate=1*pq.Hz)
+            sampling_rate=1*pq.Hz)
         self.signal_start = 10
         self.signal_end = 10
         self.evt = Event(np.arange(0, 100 ,1)*pq.s, 
-                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+            labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
         self.evt2 = Event(np.arange(0, 100 ,1)*pq.s, 
-                        labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 50))
+            labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 50))
         self.evt_start = 15
         self.evt_pre_start = self.evt_start - 5
         self.evt_end = 85
@@ -134,7 +134,7 @@ class TestTruncateSegments(unittest.TestCase):
     def test_signals_are_truncated(self):
         "Test to make sure analog starts/ends are truncated for every segment"
         trunc_segs = TruncateSegments(self.segments, start=self.signal_start, 
-                                    end=self.signal_end)
+            end=self.signal_end)
         choice_to_test = np.random.choice(range(len(trunc_segs)))
         analog = trunc_segs[choice_to_test].analogsignals[0]
         true_start = self.signal_start * pq.s
@@ -146,7 +146,7 @@ class TestTruncateSegments(unittest.TestCase):
     def test_events_are_truncated_the_same_if_clip_same(self):
         "Test to make sure analog starts/ends are truncated for every segment"
         trunc_segs = TruncateSegments(self.segments, start=self.signal_start, 
-                                    end=self.signal_end, clip_same=True)
+            end=self.signal_end, clip_same=True)
         choice_to_test = np.random.choice(range(len(trunc_segs)))
         event_times = trunc_segs[choice_to_test].events[0].times
         test_start = self.signal_start - 1 not in event_times
@@ -157,8 +157,8 @@ class TestTruncateSegments(unittest.TestCase):
     def test_events_are_truncated_differently_if_clip_not_same(self):
         "Test to make sure analog starts/ends are truncated"
         trunc_segs = TruncateSegments(self.segments, start=self.signal_start, 
-                                    end=self.signal_end, clip_same=False, 
-                                    evt_start=self.evt_start, evt_end=self.evt_end)
+            end=self.signal_end, clip_same=False, evt_start=self.evt_start, 
+            evt_end=self.evt_end)
         choice_to_test = np.random.choice(range(len(trunc_segs)))
         event_times = trunc_segs[choice_to_test].events[0].times
         test_start = self.evt_pre_start not in event_times

@@ -17,7 +17,8 @@ import quantities as pq
 import numbers
 import neo
 
-def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 'stimulus', 'tray']):
+def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
+    'stimulus', 'tray']):
     """Takes in an ordered list of events and maps it to a dictionary. Keys are numbers starting at 1.
     >>> EvtDict(evts=['event1', 'event2']) == {'1': 'event1', '2': 'event2'}
     True
@@ -25,7 +26,8 @@ def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
     # Makes sure that evts is iterable (but not a string)
     if (not isinstance(evts, collections.Iterable)) or \
         (isinstance(evts, six.string_types)):
-        raise TypeError('evts needs to be iterable but not a string (list, tuple, etc.).') 
+        raise TypeError('evts needs to be iterable but not a string \
+            (list, tuple, etc.).') 
     # Calculates how many keys we need for our dictionary
     dict_len = len(evts)
     # Makes a list of numbers as our key values (but they are strings not ints!)

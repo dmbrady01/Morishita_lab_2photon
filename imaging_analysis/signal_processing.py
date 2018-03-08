@@ -17,6 +17,7 @@ import numpy as np
 import neo
 import quantities as pq
 import copy as cp
+import types
 from neo.core import AnalogSignal
 
 def TruncateSignal(signal, start=0, end=0):
@@ -76,7 +77,8 @@ def ButterFilterDesign(lowcut=None, highcut=None, fs=381.469726562, order=5,
     elif (btype == 'bandpass') or (btype == 'bandstop'):
         params = [norm_low, norm_high]
     else:
-        raise ValueError("%s must be 'lowpass', 'highpass', 'bandpass', or 'bandstop'" % btype)
+        raise ValueError("%s must be 'lowpass', 'highpass', 'bandpass', or 'bandstop'" 
+            % btype)
     # Return butter
     return ssp.butter(order, params, btype=btype, analog=False)
 
@@ -127,7 +129,8 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median'):
         reference = signal[period[0]:period[1]]
         return (signal - np.median(reference))/np.median(reference) * 100.0
     else:
-        raise ValueError('%s is not an accepted mode for calculating deltaf' % mode)
+        raise ValueError('%s is not an accepted mode for calculating deltaf' 
+            % mode)
 
 def NormalizeSignal(signal=None, reference=None, **kwargs):
     """The current method for correcting a signal. These are the steps:
@@ -156,29 +159,38 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     # Update based on kwargs
     options.update(kwargs)
     # Pass signal and reference through filters
-    filt_signal = FilterSignal(signal, lowcut=options['lowcut'], highcut=options['highcut'], 
-                            fs=options['fs'], order=options['order'], btype=options['btype'], 
-                            axis=options['axis'])
-    filt_ref = FilterSignal(reference, lowcut=options['lowcut'], highcut=options['highcut'], 
-                            fs=options['fs'], order=options['order'], btype=options['btype'], 
-                            axis=options['axis'])
-    # Calculate deltaf/f
-    deltaf_sig = DeltaFOverF(filt_signal, reference=filt_ref, mode=options['mode'], 
-                            period=options['period'])
-    deltaf_ref = DeltaFOverF(filt_ref, reference=filt_ref, mode=options['mode'], 
-                            period=options['period'])
+    filt_signal = FilterSignal(signal, lowcut=options['lowcut'], 
+        highcut=options['highcut'], fs=options['fs'], order=options['order'], 
+        btype=options['btype'], axis=options['axis'])
+    # for reference
+    if not isinstance(reference, types.NoneType):
+        filt_ref = FilterSignal(reference, lowcut=options['lowcut'], 
+            highcut=options['highcut'], fs=options['fs'], order=options['order'], 
+            btype=options['btype'], axis=options['axis'])
+        deltaf_ref = DeltaFOverF(filt_ref, reference=filt_ref, 
+            mode=options['mode'], period=options['period'])
+        # Calculate deltaf/f
+        deltaf_sig = DeltaFOverF(filt_signal, reference=filt_ref, 
+            mode=options['mode'], period=options['period'])
+    else:
+        # Calculate deltaf/f
+        deltaf_sig = DeltaFOverF(filt_signal, reference=None, 
+            mode=options['mode'], period=options['period']) 
+        deltaf_ref = 0 
+
     # Detrend data if detrend is true
     if options['detrend']:
         # for signal
         trend_sig = FilterSignal(deltaf_sig, fs=options['fs'], btype='savgol', 
-                                axis=options['axis'], window_length=options['window_length'], 
-                                savgol_order=options['savgol_order'])
+            axis=options['axis'], window_length=options['window_length'], 
+            savgol_order=options['savgol_order'])
         deltaf_sig = deltaf_sig - trend_sig
         # for reference
-        trend_ref = FilterSignal(deltaf_ref, fs=options['fs'], btype='savgol', 
-                                axis=options['axis'], window_length=options['window_length'], 
-                                savgol_order=options['savgol_order'])
-        deltaf_ref = deltaf_ref - trend_ref
+        if not isinstance(reference, types.NoneType):
+            trend_ref = FilterSignal(deltaf_ref, fs=options['fs'], btype='savgol', 
+                axis=options['axis'], window_length=options['window_length'], 
+                savgol_order=options['savgol_order'])
+            deltaf_ref = deltaf_ref - trend_ref
     # Subtract reference out
     subtracted_signal = deltaf_sig - deltaf_ref
     # Return signal with reference subtracted out
@@ -187,9 +199,13 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     else:
         # returns all processing steps (but will jump from filt to deltaf detrended)
         # if detrend = True
-        return subtracted_signal, deltaf_sig, deltaf_ref, filt_signal, filt_ref
+        if not isinstance(reference, types.NoneType):
+            return subtracted_signal, deltaf_sig, deltaf_ref, filt_signal, filt_ref  
+        else:
+            return subtracted_signal, deltaf_sig, filt_signal
 
-def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', name='deltaf_f', **kwargs):
+def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', 
+    name='deltaf_f', **kwargs):
     """Given a segment object, it will extract the analog signal channels specified as
     signal (sig_ch) and reference (ref_ch), and will perform NormalizeSignal on them.
     Will append the new signal to the segment object as 'name'."""
@@ -199,14 +215,25 @@ def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', name='deltaf_f
     if not isinstance(seg, neo.core.Segment):
         raise TypeError('%s must be a Segment object' % seg)
     # Retrieves signal and reference
-    signal = filter(lambda x: x.name == sig_ch, seg.analogsignals)[0]
-    reference = filter(lambda x: x.name == ref_ch, seg.analogsignals)[0]
+    if sig_ch:
+        try:
+            signal = filter(lambda x: x.name == sig_ch, seg.analogsignals)[0]
+        except IndexError:
+            raise ValueError('There is no signal channel named %s' % sig_ch)
+
+    if ref_ch:
+        try:
+            reference = filter(lambda x: x.name == ref_ch, seg.analogsignals)[0]
+        except IndexError:
+            raise ValueError('There is no reference channel named %s' % ref_ch)
+    else:
+        reference = None
     # Build a new AnalogSignal based on the other ones
-    new_signal = NormalizeSignal(signal=signal.magnitude, reference=reference.magnitude, **options)
+    new_signal = NormalizeSignal(signal=signal, reference=reference, **options)
     units = pq.percent # new units are in %
     t_start = signal.t_start # has the same start time as all other analog signal objects in segment
     fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
     # Creates new AnalogSignal object
-    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs, name=name)
+    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs,                     name=name)
     # Adds processed signal back to segment
     seg.analogsignals.append(deltaf_f)

@@ -20,13 +20,14 @@ from imaging_analysis.signal_processing import TruncateSignals
 from imaging_analysis.signal_processing import ButterFilterDesign
 from imaging_analysis.signal_processing import FilterSignal
 from imaging_analysis.signal_processing import DeltaFOverF
+from imaging_analysis.signal_processing import NormalizeSignal
 
 class TestTruncateSignal(unittest.TestCase):
     "Tests for the TruncateSignal function."
 
     def setUp(self):
-        self.signal = AnalogSignal(np.random.randn(1000,1), units='V',
-                                    sampling_rate=1*pq.Hz)
+        self.signal = AnalogSignal(np.random.randn(1000, 1), units='V',
+            sampling_rate=1*pq.Hz)
         self.not_analog = np.random.randn(1000, 1)
         self.signal_start = 10
         self.signal_end = 10
@@ -58,8 +59,10 @@ class TestTruncateSignals(unittest.TestCase):
     "Code tests for TruncateSignals function."
 
     def setUp(self):
-        self.signal = AnalogSignal(np.random.randn(1000,1), units='V', sampling_rate=1*pq.Hz)
-        self.signal2 = AnalogSignal(np.random.randn(900,1), units='V', sampling_rate=1*pq.Hz)
+        self.signal = AnalogSignal(np.random.randn(1000,1), units='V', 
+            sampling_rate=1*pq.Hz)
+        self.signal2 = AnalogSignal(np.random.randn(900,1), units='V', 
+            sampling_rate=1*pq.Hz)
         self.signals = [self.signal, self.signal2]
         self.signal_start = 10
         self.signal_end = 10
@@ -118,34 +121,32 @@ class TestButterFilterDesign(unittest.TestCase):
 
     def test_lowpass_filter_design_works(self):
         "Makes sure lowpass filter design works"
-        output = ButterFilterDesign(highcut=self.high, fs=self.fs, order=self.order, 
-                                btype='lowpass')
+        output = ButterFilterDesign(highcut=self.high, fs=self.fs, 
+            order=self.order, btype='lowpass')
         check = ssp.butter(self.order, self.high/(self.fs*.5), btype='lowpass')
         self.assertTrue(np.array_equal(output, check))
 
     def test_highpass_filter_design_works(self):
         "Makes sure highpass filter design works"
-        output = ButterFilterDesign(lowcut=self.low, fs=self.fs, order=self.order, 
-                                btype='highpass')
+        output = ButterFilterDesign(lowcut=self.low, fs=self.fs, 
+            order=self.order, btype='highpass')
         check = ssp.butter(self.order, self.low/(self.fs*.5), btype='highpass')
         self.assertTrue(np.array_equal(output, check))
 
     def test_bandpass_filter_design_works(self):
         "Makes sure bandpass filter design works"
         output = ButterFilterDesign(lowcut=self.low, highcut=self.high, fs=self.fs, 
-                                order=self.order, btype='bandpass')
+            order=self.order, btype='bandpass')
         check = ssp.butter(self.order, 
-                            [self.low/(self.fs*.5), self.high/(self.fs*.5)], 
-                            btype='bandpass')
+            [self.low/(self.fs*.5), self.high/(self.fs*.5)], btype='bandpass')
         self.assertTrue(np.array_equal(output, check))
 
     def test_bandstop_filter_design_works(self):
         "Makes sure bandstop filter design works"
         output = ButterFilterDesign(lowcut=self.low, highcut=self.high, fs=self.fs, 
-                                order=self.order, btype='bandstop')
+            order=self.order, btype='bandstop')
         check = ssp.butter(self.order, 
-                            [self.low/(self.fs*.5), self.high/(self.fs*.5)], 
-                            btype='bandstop')
+            [self.low/(self.fs*.5), self.high/(self.fs*.5)], btype='bandstop')
         self.assertTrue(np.array_equal(output, check))
 
 
@@ -181,9 +182,9 @@ class TestFilterSignal(unittest.TestCase):
     def test_lowpass_works(self):
         "Tests lowpass functionality"
         signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
-                            fs=self.fs, order=self.order, btype='lowpass')
+            fs=self.fs, order=self.order, btype='lowpass')
         b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
-                                        fs=self.fs, order=self.order, btype='lowpass')
+            fs=self.fs, order=self.order, btype='lowpass')
         test_signal = ssp.filtfilt(b, a, self.signal)
         equal = np.array_equal(signal, test_signal)
         self.assertTrue(equal)
@@ -191,9 +192,9 @@ class TestFilterSignal(unittest.TestCase):
     def test_highpass_works(self):
         "Tests highpass functionality"
         signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
-                            fs=self.fs, order=self.order, btype='highpass')
+            fs=self.fs, order=self.order, btype='highpass')
         b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
-                                        fs=self.fs, order=self.order, btype='highpass')
+            fs=self.fs, order=self.order, btype='highpass')
         test_signal = ssp.filtfilt(b, a, self.signal)
         equal = np.array_equal(signal, test_signal)
         self.assertTrue(equal)    
@@ -201,9 +202,9 @@ class TestFilterSignal(unittest.TestCase):
     def test_bandpass_works(self):
         "Tests bandpass functionality"
         signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
-                            fs=self.fs, order=self.order, btype='bandpass')
+            fs=self.fs, order=self.order, btype='bandpass')
         b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
-                                        fs=self.fs, order=self.order, btype='bandpass')
+            fs=self.fs, order=self.order, btype='bandpass')
         test_signal = ssp.filtfilt(b, a, self.signal)
         equal = np.array_equal(signal, test_signal)
         self.assertTrue(equal) 
@@ -211,9 +212,9 @@ class TestFilterSignal(unittest.TestCase):
     def test_bandstop_works(self):
         "Tests bandpass functionality"
         signal = FilterSignal(self.signal, lowcut=self.lowcut, highcut=self.highcut, 
-                            fs=self.fs, order=self.order, btype='bandstop')
+            fs=self.fs, order=self.order, btype='bandstop')
         b, a = ButterFilterDesign(lowcut=self.lowcut, highcut=self.highcut, 
-                                        fs=self.fs, order=self.order, btype='bandstop')
+            fs=self.fs, order=self.order, btype='bandstop')
         test_signal = ssp.filtfilt(b, a, self.signal)
         equal = np.array_equal(signal, test_signal)
         self.assertTrue(equal) 
@@ -221,9 +222,9 @@ class TestFilterSignal(unittest.TestCase):
     def test_savgol_works(self):
         "Tests savgol functionality"
         signal = FilterSignal(self.signal, savgol_order=self.savgol_order, 
-                            window_length=self.window_length, btype='savgol')
+            window_length=self.window_length, btype='savgol')
         test_signal = ssp.savgol_filter(self.signal, self.window_length, 
-                                        self.savgol_order, axis=0)
+            self.savgol_order, axis=0)
         equal = np.array_equal(signal, test_signal)
         self.assertTrue(equal)
 
@@ -251,18 +252,21 @@ class TestDeltaFOverF(unittest.TestCase):
     def test_median_mode_works(self):
         "Makes sure median mode works"
         test_signal = (self.signal - np.median(self.signal))/np.median(self.signal)
+        test_signal = test_signal * 100.0
         equal = np.array_equal(test_signal, DeltaFOverF(self.signal, mode='median'))
         self.assertTrue(equal)
 
     def test_mean_mode_works(self):
         "Makes sure mean mode works"
         test_signal = (self.signal - np.mean(self.signal))/np.mean(self.signal)
+        test_signal = test_signal * 100.0
         equal = np.array_equal(test_signal, DeltaFOverF(self.signal, mode='mean'))
         self.assertTrue(equal)
 
     def test_reference_mode_works(self):
         "Makes sure reference mode works"
         test_signal = (self.signal - self.signal2)/self.signal2
+        test_signal = test_signal * 100.0
         signal = DeltaFOverF(self.signal, reference=self.signal2, mode='reference')
         equal = np.array_equal(test_signal, signal)
         self.assertTrue(equal)
@@ -271,19 +275,105 @@ class TestDeltaFOverF(unittest.TestCase):
         "Makes sure period_mean mode works"
         reference = np.mean(self.signal[self.period[0]:self.period[1]])
         test_signal = (self.signal - reference)/reference
+        test_signal = test_signal * 100.0
         equal = np.array_equal(test_signal, DeltaFOverF(self.signal, 
-                                                        period=self.period,
-                                                        mode='period_mean'))
+            period=self.period, mode='period_mean'))
         self.assertTrue(equal)
 
     def test_period_median_works(self):
         "Makes sure period_median mode works"
         reference = np.median(self.signal[self.period[0]:self.period[1]])
         test_signal = (self.signal - reference)/reference
+        test_signal = test_signal * 100.0
         equal = np.array_equal(test_signal, DeltaFOverF(self.signal, 
-                                                        period=self.period,
-                                                        mode='period_median'))
+            period=self.period, mode='period_median'))
         self.assertTrue(equal)
+
+
+class TestNormalizeSignal(unittest.TestCase):
+    "Tests for NormalizeSignal function"
+
+    def setUp(self):
+        self.fs = 1000.0
+        self.N = self.fs*10
+        self.t = np.linspace(0,self.N/self.fs, self.N)
+        self.f1 = 25
+        self.f2 = 1
+        self.f3 = 65
+        self.signal = 2*np.cos(2*np.pi*self.f1*self.t) + \
+            .25*np.cos(2*np.pi*self.f2*self.t) + \
+            .1*np.cos(2*np.pi*self.f3*self.t) + \
+            .05*np.random.randn(self.t.shape[0])
+        self.reference = 1*np.cos(2*np.pi*self.f1*self.t) + \
+            .1*np.cos(2*np.pi*self.f2*self.t) + \
+            .05*np.cos(2*np.pi*self.f3*self.t) + \
+            .05*np.random.randn(self.t.shape[0])
+
+    def tearDown(self):
+        del self.fs
+        del self.N
+        del self.t 
+        del self.f1
+        del self.f2 
+        del self.f3 
+        del self.signal
+        del self.reference
+
+    def test_no_reference_nor_detrend(self):
+        "Tests with no reference and no detrend."
+        output = NormalizeSignal(self.signal, fs=self.fs, detrend=False)
+        test_output = FilterSignal(self.signal, highcut=40.0, fs=self.fs)
+        test_output = DeltaFOverF(test_output)
+        equal = np.array_equal(test_output, output)
+        self.assertTrue(equal)
+
+    def test_no_reference_with_detrend(self):
+        "Tests with no reference but detrend"
+        output = NormalizeSignal(self.signal, fs=self.fs, detrend=True)
+        test_output = FilterSignal(self.signal, highcut=40.0, fs=self.fs)
+        test_output = DeltaFOverF(test_output)
+        test_output = test_output - FilterSignal(test_output, btype='savgol')
+        equal = np.array_equal(test_output, output)
+        self.assertTrue(equal)
+
+    def test_with_reference_no_detrend(self):
+        "Tests with reference and no detrend."
+        output = NormalizeSignal(self.signal, self.reference, 
+            fs=self.fs, detrend=False)
+        test_sig = FilterSignal(self.signal, highcut=40.0, fs=self.fs)
+        test_ref = FilterSignal(self.reference, highcut=40.0, fs=self.fs)
+        test_sig = DeltaFOverF(test_sig)
+        test_ref = DeltaFOverF(test_ref)
+        test_output = test_sig - test_ref
+        equal = np.array_equal(test_output, output)
+        self.assertTrue(equal)
+
+    def test_with_reference_with_detrend(self):
+        "Tests with reference and detrend."
+        output = NormalizeSignal(self.signal, self.reference, 
+            fs=self.fs, detrend=True)
+        test_sig = FilterSignal(self.signal, highcut=40.0, fs=self.fs)
+        test_ref = FilterSignal(self.reference, highcut=40.0, fs=self.fs)
+        test_sig = DeltaFOverF(test_sig)
+        test_ref = DeltaFOverF(test_ref)
+        test_sig = test_sig - FilterSignal(test_sig, btype='savgol')
+        test_ref = test_ref - FilterSignal(test_ref, btype='savgol')
+        test_output = test_sig - test_ref
+        equal = np.array_equal(test_output, output)
+        self.assertTrue(equal)
+
+    def test_return_all_signals_no_reference(self):
+        "Tests with return all signals and no reference."
+        output = NormalizeSignal(self.signal, fs=self.fs, return_all_signals=True)
+        self.assertEqual(len(output), 3)
+
+    def test_return_all_signals_with_reference(self):
+        "Tests with return all signals with reference."
+        output = NormalizeSignal(self.signal, self.reference, fs=self.fs,
+            return_all_signals=True)
+        self.assertEqual(len(output), 5)
+
+
 
 
 if __name__ == '__main__':

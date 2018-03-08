@@ -12,7 +12,7 @@ __lastmodified__ = "07 Mar 2018"
 # Import unittest modules
 import unittest
 
-class TestPlotSignals(unittest.TestCase):
+class TestPlotSignalProcessing(unittest.TestCase):
     "Tests for the PlotSignals function."
 
     def setUp(self):
