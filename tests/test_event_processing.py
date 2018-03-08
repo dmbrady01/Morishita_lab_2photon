@@ -7,57 +7,55 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "05 Mar 2018"
+__lastmodified__ = "08 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
 from neo.core import Event
 import quantities as pq
 import numpy as np
-from imaging_analysis.event_processing import EvtDict
+import pandas as pd
+from imaging_analysis.event_processing import LoadEventParams
 from imaging_analysis.event_processing import TruncateEvent
 from imaging_analysis.event_processing import TruncateEvents
 from imaging_analysis.event_processing import ProcessEvents
 
-class TestEvtDict(unittest.TestCase):
-    "Code tests for EvtDict function"
+class TestLoadEventParams(unittest.TestCase):
+    "Code tests for LoadEventParams function"
     
     def setUp(self):
-        self.list1 = ['event1', 'event2']
-        self.dict1 = {'1': 'event1', '2': 'event2'}
-        self.string = 'hello'
+        self.dpath = 'imaging_analysis/event_params.json'
+        self.evtdict = {
+            'channels': ['ch1'], 
+            'combinations': {
+                'one': [1],
+                'two': [0]
+            }
+        }
 
     def tearDown(self):
-        del self.list1
-        del self.dict1
-        del self.string
+        del self.dpath
+        del self.evtdict
 
-    def test_returns_a_dict(self):
-        "Makes sure EvtDict returns a dictionary"
-        self.assertIsInstance(EvtDict(), dict)
+    def test_returns_a_dataframe(self):
+        "Makes sure function returns a dataframe and checks dpath works"
+        self.assertIsInstance(LoadEventParams(self.dpath), pd.core.frame.DataFrame)
 
-    def test_dict_length_same_as_given_list(self):
-        "Makes sure the dictionary length is equal to given list length"
-        self.assertEqual(len(EvtDict(self.list1)), len(self.list1))
+    def test_makes_sure_dpath_is_correct(self):
+        "Makes sure dpath is correct is supplied"
+        self.assertRaises(IOError, LoadEventParams, dpath='/not/path')
 
-    def test_dict_key_begins_at_one(self):
-        "Makes sure the first key is 1"
-        results = EvtDict(self.list1)
-        keys = [int(key) for key in results.keys()]
-        self.assertEqual(min(keys), 1)
+    def test_makes_sure_evtdict_is_correct(self):
+        "Makes sure evtdict is correct is supplied"
+        self.assertRaises(TypeError, LoadEventParams, evtdict='not a dict')
 
-    def test_keys_are_strings(self):
-        "Makes sure keys are strings (not integers or floats)"
-        keys = EvtDict().keys()
-        str_check = [isinstance(key, str) for key in keys]
-        self.assertTrue(all(str_check))
-
-    def test_argument_must_be_iterable(self):
-        self.assertRaises(TypeError, EvtDict, self.string)
-
-    def test_returns_properly_ordered_dict(self):
-        "Makes sure that the list is mapped to the dictionary in the right order"
-        self.assertEqual(EvtDict(self.list1), self.dict1)
+    def test_makes_sure_dataframe_has_right_structure(self):
+        "Checks dataframe has right structure and that passing an evtdict works"
+        output = LoadEventParams(evtdict=self.evtdict)
+        check = pd.DataFrame(data=self.evtdict['combinations'].values(),
+            index=self.evtdict['combinations'].keys(), 
+            columns=self.evtdict['channels'])
+        pd.testing.assert_frame_equal(output, check)
 
 
 

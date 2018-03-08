@@ -9,32 +9,35 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "05 Mar 2018"
+__lastmodified__ = "08 Mar 2018"
 
 import collections
 import six
 import quantities as pq
 import numbers
 import neo
+import pandas as pd
+import os
+import json
 
-def EvtDict(evts=['correct', 'incorrect', 'iti_start', 'omission', 'premature', 
-    'stimulus', 'tray']):
-    """Takes in an ordered list of events and maps it to a dictionary. Keys are numbers starting at 1.
-    >>> EvtDict(evts=['event1', 'event2']) == {'1': 'event1', '2': 'event2'}
-    True
-    """
-    # Makes sure that evts is iterable (but not a string)
-    if (not isinstance(evts, collections.Iterable)) or \
-        (isinstance(evts, six.string_types)):
-        raise TypeError('evts needs to be iterable but not a string \
-            (list, tuple, etc.).') 
-    # Calculates how many keys we need for our dictionary
-    dict_len = len(evts)
-    # Makes a list of numbers as our key values (but they are strings not ints!)
-    keys = [str(ind + 1) for ind in range(dict_len)]
-    # zips keys with our evtlist and makes it a dictionary
-    return dict(zip(keys, evts))
-
+def LoadEventParams(dpath=None, evtdict=None):
+    """Checks that loaded event parameters (either through a directory path or
+    from direct input (dpath vs evtdict)) has the correct structure:
+    1) Must contain 'channels' and 'combinations'
+    2) Number of channels must equal length of each list for each combination
+    Results are returned as a dataframe"""
+    # Load event params
+    if dpath:
+        if not os.path.exists(dpath):
+            raise IOError('%s cannot be found. Please check that it exists' % dpath)
+        else:
+            evtdict = json.load(open(dpath, 'r'))
+    else:
+        if not isinstance(evtdict, dict):
+            raise TypeError('%s must be a dictionary' % evtdict)
+    # returns dataframe
+    return pd.DataFrame(data=evtdict['combinations'].values(),
+        index=evtdict['combinations'].keys(), columns=evtdict['channels'])
 
 def TruncateEvent(event, start=None, end=None):
     """Given an Event object, will remove events before 'start' and after 

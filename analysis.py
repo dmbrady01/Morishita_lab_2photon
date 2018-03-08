@@ -8,16 +8,16 @@ analysis.py: Python script that processes and analyzes fiber photometry data.
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "07 Mar 2018"
+__lastmodified__ = "08 Mar 2018"
 
 import sys
-from imaging_analysis.event_processing import EvtDict
+from imaging_analysis.event_processing import LoadEventParams
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
-
 #######################################################################
 # VARIABLES TO ALTER
+path_to_event_params = 'imaging_analysis/event_params.json'
 truncate_begin = 10 # how many seconds to remove from the beginning of the recording
 truncate_end = 0 # how many seconds to remove from the end of the recording
 lowpass_filter = 40.0 # Will remove frequencies above this number
@@ -28,7 +28,7 @@ deltaf_options = {}
 
 ##########################################################################
 # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
-event_dict = EvtDict()
+evtframe = LoadEventParams(dpath=path_to_event_params)
 
 # Checks if a directory path to the data is provided, if not, will
 # use what is specified in except

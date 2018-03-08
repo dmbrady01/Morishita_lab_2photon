@@ -1,0 +1,12 @@
+{
+    "channels" : ["DIn1", "DIn2", "DIn3"],
+    "combinations": {
+        "correct": [0, 0, 1],
+        "incorrect": [0, 1, 0],
+        "iti_start": [0, 1, 1],
+        "omission": [1, 0, 0],
+        "premature_response": [1, 0, 1],
+        "stimulus_appears": [1, 1, 0],
+        "tray_activated": [1, 1, 1]
+    }
+}
