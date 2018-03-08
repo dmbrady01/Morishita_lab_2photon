@@ -11,7 +11,8 @@ __lastmodified__ = "07 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
-from neo.core import AnalogSignal
+from neo.core import AnalogSignal, Segment
+import neo
 import numpy as np
 import quantities as pq
 import scipy.signal as ssp
@@ -21,6 +22,7 @@ from imaging_analysis.signal_processing import ButterFilterDesign
 from imaging_analysis.signal_processing import FilterSignal
 from imaging_analysis.signal_processing import DeltaFOverF
 from imaging_analysis.signal_processing import NormalizeSignal
+from imaging_analysis.signal_processing import ProcessSignalData
 
 class TestTruncateSignal(unittest.TestCase):
     "Tests for the TruncateSignal function."
@@ -373,6 +375,116 @@ class TestNormalizeSignal(unittest.TestCase):
             return_all_signals=True)
         self.assertEqual(len(output), 5)
 
+
+
+class TestProcessSignalData(unittest.TestCase):
+    "Tests for ProcessSignalData"
+    
+    def setUp(self):
+        self.fs = 1000.0
+        self.N = self.fs*10
+        self.t = np.linspace(0,self.N/self.fs, self.N)
+        self.f1 = 25
+        self.f2 = 1
+        self.f3 = 65
+        self.signal = 2*np.cos(2*np.pi*self.f1*self.t) + \
+            .25*np.cos(2*np.pi*self.f2*self.t) + \
+            .1*np.cos(2*np.pi*self.f3*self.t) + \
+            .05*np.random.randn(self.t.shape[0])
+        self.analog1 = AnalogSignal(self.signal, units='V', 
+            sampling_rate=self.fs * pq.s, name='Signal')
+        self.reference = 1*np.cos(2*np.pi*self.f1*self.t) + \
+            .1*np.cos(2*np.pi*self.f2*self.t) + \
+            .05*np.cos(2*np.pi*self.f3*self.t) + \
+            .05*np.random.randn(self.t.shape[0])
+        self.analog2 = AnalogSignal(self.reference, units='V', 
+            sampling_rate=self.fs * pq.s, name='Reference')
+        self.segment = Segment()
+        self.segment.analogsignals.append(self.analog1)
+        self.segment.analogsignals.append(self.analog2)
+
+    def tearDown(self):
+        del self.fs
+        del self.N
+        del self.t 
+        del self.f1
+        del self.f2 
+        del self.f3 
+        del self.signal
+        del self.reference
+        del self.analog1 
+        del self.analog2
+        del self.segment
+
+    def test_must_pass_segment(self):
+        "Makes sure segment object is passed"
+        self.assertRaises(TypeError, ProcessSignalData, [100])
+
+    def test_check_sig_ch_exists(self):
+        "Makes sure error is raised if sig_ch is not the name of an AnalogSignal"
+        self.assertRaises(ValueError, ProcessSignalData, seg=self.segment,
+            sig_ch='Not here', ref_ch='Reference')
+
+    def test_check_ref_ch_exists(self):
+        "Makes sure error is raised if ref_ch is not the name of an AnalogSignal"
+        self.assertRaises(ValueError, ProcessSignalData, seg=self.segment,
+            sig_ch='Signal', ref_ch='Not here')
+
+    def test_analogsignal_is_added_to_segment(self):
+        "Makes sure AnalogSignal is added to segment"
+        original_length = len(self.segment.analogsignals)
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = len(self.segment.analogsignals)
+        self.assertEqual(original_length + 1, output)
+
+    def test_analogsignal_is_added_to_segment_is_correct_object(self):
+        "Makes sure AnalogSignal is added to segment and is correct object"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1]
+        self.assertIsInstance(output, neo.core.AnalogSignal)
+
+    def test_added_analogsignal_has_correct_name(self):
+        "Makes sure added AnalogSignal has correct name"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1]
+        self.assertEqual('Test', output.name)
+
+    def test_added_analogsignal_has_correct_units(self):
+        "Makes sure added AnalogSignal has correct units (%)"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1]
+        self.assertEqual(output.units, pq.percent)
+
+    def test_added_analogsignal_has_correct_t_start(self):
+        "Makes sure added AnalogSignal has correct t_start"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1]
+        output_tstart = output.t_start 
+        correct_tstart = self.segment.analogsignals[0].t_start
+        self.assertEqual(output_tstart, correct_tstart)
+
+    def test_added_analogsignal_has_correct_sampling_rate(self):
+        "Makes sure added AnalogSignal has correct sampling_rate"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1]
+        output_rate = output.sampling_rate
+        correct_rate = self.segment.analogsignals[0].sampling_rate
+        self.assertEqual(output_rate, correct_rate)
+
+    def test_correct_functionality(self):
+        "Tests that NormalizeSignal is run correctly"
+        ProcessSignalData(seg=self.segment, sig_ch='Signal', ref_ch='Reference', 
+            name='Test', fs=self.fs)
+        output = self.segment.analogsignals[-1].magnitude
+        test_signal = NormalizeSignal(self.analog1, self.analog2, fs=self.fs)
+        equal = np.array_equal(output, test_signal)
+        self.assertTrue(equal)
 
 
 
