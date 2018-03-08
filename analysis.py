@@ -72,6 +72,8 @@ except IOError:
         # NormalizeSignal has a ton of options, you can pass in paramters using
         # the deltaf_options dictionary above. For example, if you want it to be mean centered
         # and not run the savgol_filter, set deltaf_options = {'mode': 'mean', 'detrend': False}
+        PrintNoNewLine('\nCalculating delta_f/f...')
         ProcessSignalData(seg=segment, sig_ch=signal_channel, ref_ch=reference_channel,
-                        name=deltaf_ch_name, fs=sampling_rate, **deltaf_options)
+                        name=deltaf_ch_name, fs=sampling_rate, highcut=lowpass_filter, **deltaf_options)
+        print('Done!')
 
