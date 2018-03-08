@@ -151,7 +151,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'detrend': True,
         'mode': 'median',
         'period': None,
-        'return_intermediate_signals': False
+        'return_all_signals': False
         }
     # Update based on kwargs
     options.update(kwargs)
@@ -182,7 +182,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     # Subtract reference out
     subtracted_signal = deltaf_sig - deltaf_ref
     # Return signal with reference subtracted out
-    if not return_intermediate_signals:
+    if not options['return_all_signals']:
         return subtracted_signal
     else:
         # returns all processing steps (but will jump from filt to deltaf detrended)
