@@ -63,7 +63,6 @@ def TruncateEvent(event, start=None, end=None):
 
     return truncated_event
 
-
 def TruncateEvents(event_list, start=None, end=None):
     """Given a list of Event objects, will iterate through each one and remove
     events before 'start' and after 'end'. Start and end must be in seconds."""
@@ -74,8 +73,7 @@ def TruncateEvents(event_list, start=None, end=None):
     truncated_list = [TruncateEvent(evt, start=start, end=end) for evt in event_list]
     return truncated_list
 
-
-def ProcessEvents(seg=None, tolerance=None):
+def ProcessEvents(seg=None, tolerance=None, evtframe=None):
     """Takes a segment object and tolerance"""
     # Makes sure that tolerance is a number
     if not isinstance(tolerance, numbers.Number):
@@ -85,10 +83,25 @@ def ProcessEvents(seg=None, tolerance=None):
     # Makes sure that seg is a segment object
     if not isinstance(seg, neo.core.segment.Segment):
         raise TypeError('%s needs to be a neo segment object' % seg)
+    # Makes sure evtframe has been passed
+    if not isinstance(evtframe, pd.core.frame.DataFrame):
+        raise TypeError('%s needs to be a pandas DataFrame object' % evtframe)
     # Checks if events have already been processed
     if 'Events' in [event.name for event in seg.events]:
         print("Events array has already been processed")
     else:
-        eventlist = list()
-        event_times = list()
-        event_labels = list()
+        eventlist = list() # Will store the relevant event channel data 
+        event_times = list() # Will store every event timestamp
+        event_labels = list() # Will store every event label
+
+        # Iterates through the event object in seg and pulls out the relevent ones
+        for event_obj in seg.events:
+            # Checks if event object is type we care about (DIn1, DIn2, etc.)
+            if event_obj.name in evtframe.columns:
+                # Adds dictionary to eventlist containing event times and ch
+                pass
+
+
+
+
+

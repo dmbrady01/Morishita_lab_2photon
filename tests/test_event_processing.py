@@ -137,7 +137,6 @@ class TestTruncateEvents(unittest.TestCase):
 
 
 
-
 class TestProcessEvents(unittest.TestCase):
     "Code tests for ProcessEvents function"
 
@@ -154,6 +153,10 @@ class TestProcessEvents(unittest.TestCase):
     def test_seg_must_be_a_seg_object(self):
         "Makes sure seg is a seg object"
         self.assertRaises(TypeError, ProcessEvents, seg=self.wrong_type)
+
+    def test_evtframe_must_be_a_dataframe_object(self):
+        "Makes sure evtframe is a pandas datafrane object"
+        self.assertRaises(TypeError, ProcessEvents, evtframe=self.wrong_type)
 
 
 
