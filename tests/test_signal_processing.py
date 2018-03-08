@@ -220,7 +220,7 @@ class TestFilterSignal(unittest.TestCase):
 
     def test_savgol_works(self):
         "Tests savgol functionality"
-        signal = FilterSignal(self.signal, order=self.savgol_order, 
+        signal = FilterSignal(self.signal, savgol_order=self.savgol_order, 
                             window_length=self.window_length, btype='savgol')
         test_signal = ssp.savgol_filter(self.signal, self.window_length, 
                                         self.savgol_order, axis=0)

@@ -16,6 +16,8 @@ import scipy.signal as ssp
 import numpy as np
 import neo
 import quantities as pq
+import copy as cp
+from neo.core import AnalogSignal
 
 def TruncateSignal(signal, start=0, end=0):
     """Given an AnalogSignal object, will remove the first 'start' seconds and the 
@@ -78,8 +80,8 @@ def ButterFilterDesign(lowcut=None, highcut=None, fs=381.469726562, order=5,
     # Return butter
     return ssp.butter(order, params, btype=btype, analog=False)
 
-def FilterSignal(signal, lowcut=None, highcut=None, fs=381.469726562, order=5, 
-                btype='lowpass', axis=0, window_length=3001):
+def FilterSignal(signal, lowcut=None, highcut=None, fs=381, order=5, 
+                btype='lowpass', axis=0, window_length=3001, savgol_order=1):
     """Given some signal data, uses ButterFilterDesign or savgol_filter to 
     construct a filter and applies it to signal.
     signal: data signal
@@ -91,7 +93,7 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381.469726562, order=5,
     axis: axis of matrix to apply filter"""
     # If btype is savgol, performs a Savitzky-Golay filter
     if btype == 'savgol':
-        return ssp.savgol_filter(signal, window_length, order, axis=axis)
+        return ssp.savgol_filter(signal, window_length, savgol_order, axis=axis)
     # Otherwise performs filfilt (backwards and forwards filtering)
     else:
         b, a = ButterFilterDesign(lowcut=lowcut, highcut=highcut, fs=fs, 
@@ -99,7 +101,7 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381.469726562, order=5,
         return ssp.filtfilt(b, a, signal, axis=axis)
 
 def DeltaFOverF(signal, reference=None, period=None, mode='median'):
-    """Calcualte DeltaF/F for a signal. There are several modes:
+    """Calcualte DeltaF/F for a signal. Units are %. There are several modes:
     'median': (signal - median(signal))/median(signal)
 
     'mean': (signal - mean(signal))/mean(signal)
@@ -113,55 +115,98 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median'):
     'period_median': same as 'period_mean' but uses median instead
     Note that period must be a list or tuple of beginning and end timstamps"""
     if mode == 'median':
-        return (signal - np.median(signal))/np.median(signal)
+        return (signal - np.median(signal))/np.median(signal) * 100.0
     elif mode == 'mean':
-        return (signal - np.mean(signal))/np.mean(signal)
+        return (signal - np.mean(signal))/np.mean(signal) * 100.0
     elif mode == 'reference':
-        return (signal - reference)/reference
+        return (signal - reference)/reference * 100.0
     elif mode == 'period_mean':
         reference = signal[period[0]:period[1]]
-        return (signal - np.mean(reference))/np.mean(reference)
+        return (signal - np.mean(reference))/np.mean(reference) * 100.0
     elif mode == 'period_median':
         reference = signal[period[0]:period[1]]
-        return (signal - np.median(reference))/np.median(reference)
+        return (signal - np.median(reference))/np.median(reference) * 100.0
     else:
         raise ValueError('%s is not an accepted mode for calculating deltaf' % mode)
 
+def NormalizeSignal(signal=None, reference=None, **kwargs):
+    """The current method for correcting a signal. These are the steps:
+    1) Lowpass filter signal and reference
+    2) Calculate deltaf/f for signal and reference
+    3) Detrend deltaf/f using a savgol filter (if detrend is True)
+    4) Subtract reference from signal
 
-# def NormalizeSignal(signal=None, reference=None, framelen=3001, order=1, return_filt=False):
-#     """Given a signal and a reference, it returns the signal - savgol_filter(reference).
-#     If only a signal is given, it returns the signal - savgol_filter(signal). 
-#     If return_filt = True, then we just return the filtered signal or reference."""
-#     # We determine which axis the signal is recorded (column or row vector)
-#     if signal.shape[0] > signal.shape[1]:
-#         axis = 0
-#     else:
-#         axis = 1
-#     # We filter the signal with a Savtizky-Golay filter
-#     if reference:
-#         filtered_signal = ssp.savgol_filter(reference, framelen, order, axis=axis)
-#     else:
-#         filtered_signal = ssp.savgol_filter(signal, framelen, order, axis=axis)
-#     # Returns the signal - filtered signal (or just the filtered signal)
-#     if return_filt:
-#         return filtered_signal
-#     else:
-#         return signal - filtered_signal
+    There are no code tests for this since it is likely to change when you come
+    up with a better strategy."""
+    # Default options
+    options = {
+        'btype': 'lowpass', 
+        'highcut': 40.0, 
+        'lowcut': None,
+        'order': 5,
+        'axis': 0,
+        'fs': 381,
+        'window_length': 3001,
+        'savgol_order': 1,
+        'detrend': True,
+        'mode': 'median',
+        'period': None,
+        'return_intermediate_signals': False
+        }
+    # Update based on kwargs
+    options.update(kwargs)
+    # Pass signal and reference through filters
+    filt_signal = FilterSignal(signal, lowcut=options['lowcut'], highcut=options['highcut'], 
+                            fs=options['fs'], order=options['order'], btype=options['btype'], 
+                            axis=options['axis'])
+    filt_ref = FilterSignal(reference, lowcut=options['lowcut'], highcut=options['highcut'], 
+                            fs=options['fs'], order=options['order'], btype=options['btype'], 
+                            axis=options['axis'])
+    # Calculate deltaf/f
+    deltaf_sig = DeltaFOverF(filt_signal, reference=filt_ref, mode=options['mode'], 
+                            period=options['period'])
+    deltaf_ref = DeltaFOverF(filt_ref, reference=filt_ref, mode=options['mode'], 
+                            period=options['period'])
+    # Detrend data if detrend is true
+    if options['detrend']:
+        # for signal
+        trend_sig = FilterSignal(deltaf_sig, fs=options['fs'], btype='savgol', 
+                                axis=options['axis'], window_length=options['window_length'], 
+                                savgol_order=options['savgol_order'])
+        deltaf_sig = deltaf_sig - trend_sig
+        # for reference
+        trend_ref = FilterSignal(deltaf_ref, fs=options['fs'], btype='savgol', 
+                                axis=options['axis'], window_length=options['window_length'], 
+                                savgol_order=options['savgol_order'])
+        deltaf_ref = deltaf_ref - trend_ref
+    # Subtract reference out
+    subtracted_signal = deltaf_sig - deltaf_ref
+    # Return signal with reference subtracted out
+    if not return_intermediate_signals:
+        return subtracted_signal
+    else:
+        # returns all processing steps (but will jump from filt to deltaf detrended)
+        # if detrend = True
+        return subtracted_signal, deltaf_sig, deltaf_ref, filt_signal, filt_ref
 
-
-# def SubtractNoise(signal=None, reference=None, framelen=3001, order=1):
-#     """Given a signal and reference, it subtracts the filtered reference from
-#     the signal. Both signals are median subtracted/scaled first."""
-#     # First we center and scale the signal/reference by the median
-#     median_signal = (signal - np.median(signal))/np.median(signal)
-#     median_reference = (reference - np.median(reference))/np.median(reference)
-#     # Then we filter the reference with a Savtizky-Golay filter
-#     normalized_sig = NormalizeSignal(median_signal, median_reference, framelen, order)
-#     # We return the median_subtracted_signal - the filtered_reference
-#     return median_signal - filt_reference
-
-
-
-
-# def NormalizeSignalData(seg=None, signal=['LMag 1'], reference=['LMag 2']):
-#     pass
+def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', name='deltaf_f', **kwargs):
+    """Given a segment object, it will extract the analog signal channels specified as
+    signal (sig_ch) and reference (ref_ch), and will perform NormalizeSignal on them.
+    Will append the new signal to the segment object as 'name'."""
+    # Gets any keyword arguments
+    options = kwargs
+    # Check that segment object was passed
+    if not isinstance(seg, neo.core.Segment):
+        raise TypeError('%s must be a Segment object' % seg)
+    # Retrieves signal and reference
+    signal = filter(lambda x: x.name == sig_ch, seg.analogsignals)[0]
+    reference = filter(lambda x: x.name == ref_ch, seg.analogsignals)[0]
+    # Build a new AnalogSignal based on the other ones
+    new_signal = NormalizeSignal(signal=signal.magnitude, reference=reference.magnitude, **options)
+    units = pq.percent # new units are in %
+    t_start = signal.t_start # has the same start time as all other analog signal objects in segment
+    fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
+    # Creates new AnalogSignal object
+    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs, name=name)
+    # Adds processed signal back to segment
+    seg.analogsignals.append(deltaf_f)
