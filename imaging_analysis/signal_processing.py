@@ -106,7 +106,11 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381, order=5,
 
 def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
     """Calcualte DeltaF/F for a signal. Units are %. 
-    Offset will first add offset to signal (to prevent divide by 0 errors)
+    
+    Offset will first add offset to signal (and reference if provided) 
+    to prevent divide by 0 errors. Note that this will change the output of
+    deltaf/f (10-9)/9 is not the same as (1010-1009)/1009. So use small values.
+
     There are several modes:
     'median': (signal - median(signal))/median(signal)
 
@@ -126,6 +130,7 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
     elif mode == 'mean':
         return (signal - np.mean(signal))/np.mean(signal) * 100.0
     elif mode == 'reference':
+        reference = reference + offset
         return (signal - reference)/reference * 100.0
     elif mode == 'period_mean':
         reference = signal[period[0]:period[1]]

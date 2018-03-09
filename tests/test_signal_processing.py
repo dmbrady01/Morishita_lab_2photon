@@ -7,7 +7,7 @@ test_signal_processing.py: Python script that contains tests for signal_processi
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "07 Mar 2018"
+__lastmodified__ = "09 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -240,6 +240,7 @@ class TestDeltaFOverF(unittest.TestCase):
         self.signal2 = np.random.randn(1000, 1)
         self.period = [0, 100]
         self.wrong_mode = 'mymode'
+        self.offset = 10
 
     def tearDown(self):
         del self.signal
@@ -290,6 +291,13 @@ class TestDeltaFOverF(unittest.TestCase):
         equal = np.array_equal(test_signal, DeltaFOverF(self.signal, 
             period=self.period, mode='period_median'))
         self.assertTrue(equal)
+
+    def test_offset_works(self):
+        "Makes sure offset works"
+        reference = DeltaFOverF(self.signal, period=self.period, mode='mean')
+        test = DeltaFOverF(self.signal, period=self.period, mode='mean', offset=10000)
+        equal = np.array_equal(test, reference)
+        self.assertFalse(equal)
 
 
 class TestNormalizeSignal(unittest.TestCase):
