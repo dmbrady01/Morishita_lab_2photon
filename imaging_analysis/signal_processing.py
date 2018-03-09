@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "07 Mar 2018"
+__lastmodified__ = "09 Mar 2018"
 
 
 import scipy.signal as ssp
@@ -83,7 +83,7 @@ def ButterFilterDesign(lowcut=None, highcut=None, fs=381.469726562, order=5,
     return ssp.butter(order, params, btype=btype, analog=False)
 
 def FilterSignal(signal, lowcut=None, highcut=None, fs=381, order=5, 
-                btype='lowpass', axis=0, window_length=3001, savgol_order=1):
+        btype='lowpass', axis=0, window_length=3001, savgol_order=1):
     """Given some signal data, uses ButterFilterDesign or savgol_filter to 
     construct a filter and applies it to signal.
     signal: data signal
@@ -92,7 +92,9 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381, order=5,
     fs: sampling frequnecy
     order: filter order
     btype: 'lowpass', 'highpass', 'bandpass', 'bandstop', 'savgol'
-    axis: axis of matrix to apply filter"""
+    axis: axis of matrix to apply filter
+    offset: constant added to entire signal at end (to prevent divide by 0 errors
+    later)"""
     # If btype is savgol, performs a Savitzky-Golay filter
     if btype == 'savgol':
         return ssp.savgol_filter(signal, window_length, savgol_order, axis=axis)
@@ -102,8 +104,10 @@ def FilterSignal(signal, lowcut=None, highcut=None, fs=381, order=5,
                                 order=order, btype=btype)
         return ssp.filtfilt(b, a, signal, axis=axis)
 
-def DeltaFOverF(signal, reference=None, period=None, mode='median'):
-    """Calcualte DeltaF/F for a signal. Units are %. There are several modes:
+def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
+    """Calcualte DeltaF/F for a signal. Units are %. 
+    Offset will first add offset to signal (to prevent divide by 0 errors)
+    There are several modes:
     'median': (signal - median(signal))/median(signal)
 
     'mean': (signal - mean(signal))/mean(signal)
@@ -116,6 +120,7 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median'):
     
     'period_median': same as 'period_mean' but uses median instead
     Note that period must be a list or tuple of beginning and end timstamps"""
+    signal = signal + offset
     if mode == 'median':
         return (signal - np.median(signal))/np.median(signal) * 100.0
     elif mode == 'mean':
@@ -154,7 +159,8 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'detrend': True,
         'mode': 'median',
         'period': None,
-        'return_all_signals': False
+        'return_all_signals': False,
+        'offset': 0
         }
     # Update based on kwargs
     options.update(kwargs)
@@ -168,14 +174,14 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             highcut=options['highcut'], fs=options['fs'], order=options['order'], 
             btype=options['btype'], axis=options['axis'])
         deltaf_ref = DeltaFOverF(filt_ref, reference=filt_ref, 
-            mode=options['mode'], period=options['period'])
+            mode=options['mode'], period=options['period'], offset=options['offset'])
         # Calculate deltaf/f
         deltaf_sig = DeltaFOverF(filt_signal, reference=filt_ref, 
-            mode=options['mode'], period=options['period'])
+            mode=options['mode'], period=options['period'], offset=options['offset'])
     else:
         # Calculate deltaf/f
         deltaf_sig = DeltaFOverF(filt_signal, reference=None, 
-            mode=options['mode'], period=options['period']) 
+            mode=options['mode'], period=options['period'], offset=options['offset']) 
         deltaf_ref = 0 
 
     # Detrend data if detrend is true
