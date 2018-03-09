@@ -11,20 +11,26 @@ __datewritten__ = "07 Mar 2018"
 __lastmodified__ = "08 Mar 2018"
 
 import sys
-from imaging_analysis.event_processing import LoadEventParams
+from imaging_analysis.event_processing import LoadEventParams, ProcessEvents
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
 #######################################################################
 # VARIABLES TO ALTER
+# Loading event labeling/combo parameters
 path_to_event_params = 'imaging_analysis/event_params.json'
+# For truncating the recordings/events
 truncate_begin = 10 # how many seconds to remove from the beginning of the recording
 truncate_end = 0 # how many seconds to remove from the end of the recording
+# For filtering and calculating deltaf/f
 lowpass_filter = 40.0 # Will remove frequencies above this number
-signal_channel = 'LMag 1'
-reference_channel = 'LMag 2'
-deltaf_ch_name = 'DeltaF_F'
-deltaf_options = {}
+signal_channel = 'LMag 1' # Name of our signal channel
+reference_channel = 'LMag 2' # Name of our reference channel
+deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
+deltaf_options = {} # Any parameters you want to pass when calculating deltaf/f
+# For calculating events and event labels
+tolerance = .1 # Tolerance window (in seconds) for finding coincident events
+processed_event_ch_name = 'Events'
 
 ##########################################################################
 # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
@@ -75,5 +81,15 @@ except IOError:
         PrintNoNewLine('\nCalculating delta_f/f...')
         ProcessSignalData(seg=segment, sig_ch=signal_channel, ref_ch=reference_channel,
                         name=deltaf_ch_name, fs=sampling_rate, highcut=lowpass_filter, **deltaf_options)
+        # Appends an Event object that has all event timestamps and the proper label
+        # (determined by the evtframe loaded earlier). Uses a tolerance (in seconds)
+        # to determine if events co-occur. For example, if tolerance is 1 second
+        # and ch1 fires an event, ch2 fires an event 0.5 seconds later, and ch3 fires
+        # an event 3 seconds later, the output array will be [1, 1, 0] and will
+        # match the label in evtframe (e.g. 'omission')
+        print('Done!')
+        ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
+            name=processed_event_ch_name)
+        PrintNoNewLine('\nProcessing event times and labels...')
         print('Done!')
 
