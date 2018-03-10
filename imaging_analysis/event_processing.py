@@ -229,7 +229,13 @@ def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events'):
         # Appends event objec to segment object
         seg.events.append(results)
 
-
+def ProcessTrials(seg=None, name='Events', startoftrial=None):
+    # Gets processed event object
+    try:
+        event_obj = filter(lambda x: x.name == 'Events', seg.events)[0]
+    except IndexError:
+        print('%s does not have an events object named %s. Make sure to \
+            run ProcessEvents first!' % (seg, name))
 
 
 

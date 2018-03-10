@@ -23,6 +23,8 @@ from imaging_analysis.event_processing import ExtractEventsToList
 from imaging_analysis.event_processing import ProcessEventList
 from imaging_analysis.event_processing import ProcessEvents
 
+
+
 class TestLoadEventParams(unittest.TestCase):
     "Code tests for LoadEventParams function"
     
@@ -111,6 +113,8 @@ class TestLoadEventParams(unittest.TestCase):
         typedf.sort_index(inplace=True)
         self.typedf.sort_index(inplace=True)
         pd.testing.assert_frame_equal(self.typedf, typedf)
+
+
 
 class TestTruncateEvent(unittest.TestCase):
     "Code tests for the TruncateEvent function."
@@ -354,6 +358,7 @@ class TestProcessEventList(unittest.TestCase):
         self.assertTrue(equal)     
 
 
+
 class TestProcessEvents(unittest.TestCase):
     "Code tests for ProcessEvents function"
 
@@ -382,8 +387,6 @@ class TestProcessEvents(unittest.TestCase):
         init_len = len(self.segment.events)
         ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df)
         self.assertTrue(init_len + 1, len(self.segment.events))
-
-
 
 
 
