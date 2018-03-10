@@ -229,7 +229,20 @@ def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events'):
         # Appends event objec to segment object
         seg.events.append(results)
 
-def ProcessTrials(seg=None, name='Events', startoftrial=None):
+def ProcessTrials(seg=None, name='Events', startoftrial=None, typedf=None):
+    """Takes a segment object, the name of Event channel to process, a list
+    of events that deem start of trial, and the results/type dataframe.
+    Returns a dataframe of event times, event names, trial number, and trial 
+    outcome."""
+    # Make sure startoftrial is passed
+    if not isinstance(startoftrial, list):
+        raise TypeError('%s must be a list' % startoftrial)
+    # Make sure typedf is a dataframe
+    if not isinstance(typedf, pd.core.frame.DataFrame):
+        raise TypeError('%s must be a pandas dataframe.' % typedf)
+    # Makes sure segment object is passed
+    if not isinstance(seg, neo.core.segment.Segment):
+        raise TypeError('%s must be a segment object' % seg)
     # Gets processed event object
     try:
         event_obj = filter(lambda x: x.name == 'Events', seg.events)[0]

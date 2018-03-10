@@ -22,6 +22,7 @@ from imaging_analysis.event_processing import TruncateEvents
 from imaging_analysis.event_processing import ExtractEventsToList
 from imaging_analysis.event_processing import ProcessEventList
 from imaging_analysis.event_processing import ProcessEvents
+from imaging_analysis.event_processing import ProcessTrials
 
 
 
@@ -387,6 +388,44 @@ class TestProcessEvents(unittest.TestCase):
         init_len = len(self.segment.events)
         ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df)
         self.assertTrue(init_len + 1, len(self.segment.events))
+
+
+
+class TestProcessTrials(unittest.TestCase):
+    "Code tests for ProcessTrials function"
+
+    def setUp(self):
+        self.evt = Event(times=np.arange(0, 100 , 1)*pq.s, name='Ch1', 
+                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+        self.evt2 = Event(times=np.arange(0, 100 , 3)*pq.s, name='Ch2', 
+                        labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 17))
+        self.segment = Segment()
+        self.segment.events.append(self.evt)
+        self.segment.events.append(self.evt2)
+        self.df = pd.DataFrame(data=[[1, 0], [1, 1]], index=['start', 'stop'],
+            columns=['Ch1', 'Ch2'])
+        self.staroftrial = ['start']
+
+    def tearDown(self):
+        del self.evt
+        del self.evt2 
+        del self.segment
+
+    def test_startoflist_is_a_list(self):
+        "Makes sure startoflist is a list"
+        self.assertRaises(TypeError, ProcessTrials, startoftrial='not a segment')
+
+    def test_typedf_is_a_dataframe(self):
+        "Makes sure typedf is a dataframe"
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+            typedf='not a dataframe')
+
+    def test_seg_is_a_seg_object(self):
+        "Makes sure seg is a segment object"
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+            typedf=self.df, seg='not a seg object')
+
+
 
 
 
