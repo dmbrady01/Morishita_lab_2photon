@@ -19,7 +19,6 @@ import warnings
 import os
 import sys
 
-from imaging_analysis.event_processing import EvtDict
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 
@@ -72,7 +71,7 @@ def process_trials(seg, evtdict):
         trials['eventcode'] = events.labels
         tidx = 0
         for idevt, evt in enumerate(trials):
-            evtname = evtdict[evt['eventcode']]
+#            evtname = evtdict[evt['eventcode']]
             if evtname == 'iti_start':
                 tidx += 1
             trials['eventname'][idevt] = evtname
@@ -282,8 +281,8 @@ def find_peak(seg, varname):
 def slice_segment(seg, tslice):
     for i, sig in enumerate(seg.analogsignals):
         seg.analogsignals[i] = sig.time_slice(tslice[0], tslice[1])
-    for i, spk in enumerate(seg.spiketrains):
-        seg.spiketrains[i] = spk.time_slice(tslice[0], tslice[1])
+    # for i, spk in enumerate(seg.spiketrains):
+    #     seg.spiketrains[i] = spk.time_slice(tslice[0], tslice[1])
     for i, evt in enumerate(seg.events):
         seg.events[i] = evt.time_slice(tslice[0], tslice[1])
 
@@ -344,7 +343,7 @@ if __name__ == '__main__':
         print('Done!')
     # %% subsetting part of the data
     seg_toplot = seglist[0]
-    slice_segment(seg_toplot, [539*pq.s,554*pq.s])
+#    slice_segment(seg_toplot, [539*pq.s,554*pq.s])
     # %% process trials
     trialblock = process_trials(seg_toplot, event_dict)
     process_epoch(
