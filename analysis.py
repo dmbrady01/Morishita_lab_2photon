@@ -34,7 +34,7 @@ processed_event_ch_name = 'Events'
 
 ##########################################################################
 # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
-evtframe = LoadEventParams(dpath=path_to_event_params)
+start, end, epoch, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_to_event_params)
 
 # Checks if a directory path to the data is provided, if not, will
 # use what is specified in except
