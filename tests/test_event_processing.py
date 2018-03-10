@@ -15,6 +15,7 @@ from neo.core import Event, Segment
 import quantities as pq
 import numpy as np
 import pandas as pd
+from collections import OrderedDict
 from imaging_analysis.event_processing import LoadEventParams
 from imaging_analysis.event_processing import TruncateEvent
 from imaging_analysis.event_processing import TruncateEvents
@@ -27,21 +28,45 @@ class TestLoadEventParams(unittest.TestCase):
     
     def setUp(self):
         self.dpath = 'imaging_analysis/event_params.json'
-        self.evtdict = {
+        self.evtdict = OrderedDict({
             'channels': ['ch1'], 
-            'combinations': {
-                'one': [1],
-                'two': [0]
-            }
-        }
+            'events': {
+                'one': {
+                    'code': [1],
+                    'plot': '-k',
+                    'type': 'results'
+                },
+                'two': {
+                    'code': [0],
+                    'plot': 'b',
+                    'type': 'start'
+                }
+            },
+            'startoftrial': ['start'],
+            'endoftrial': ['results'],
+            'epoch': ['results']
+        })
+        self.codedf = pd.DataFrame(data=[[1], [0]], index=['one', 'two'], 
+            columns=['ch1'])
+        self.codedf.index.name = 'event'
+        self.plotdf = pd.DataFrame(data=[['-k'], ['b']], index=['one', 'two'],
+            columns=['plot'])
+        self.plotdf.index.name = 'event'
+        self.typedf = pd.DataFrame(data=[['results'], ['start']], index=['one', 'two'],
+            columns=['type'])
+        self.typedf.index.name = 'event'
 
     def tearDown(self):
         del self.dpath
         del self.evtdict
+        del self.codedf
+        del self.plotdf
+        del self.typedf
 
     def test_returns_a_dataframe(self):
         "Makes sure function returns a dataframe and checks dpath works"
-        self.assertIsInstance(LoadEventParams(self.dpath), pd.core.frame.DataFrame)
+        start, end, epoch, code, plot, typedf = LoadEventParams(dpath=self.dpath)
+        self.assertIsInstance(code, pd.core.frame.DataFrame)
 
     def test_makes_sure_dpath_is_correct(self):
         "Makes sure dpath is correct is supplied"
@@ -51,15 +76,41 @@ class TestLoadEventParams(unittest.TestCase):
         "Makes sure evtdict is correct is supplied"
         self.assertRaises(TypeError, LoadEventParams, evtdict='not a dict')
 
-    def test_makes_sure_dataframe_has_right_structure(self):
-        "Checks dataframe has right structure and that passing an evtdict works"
-        output = LoadEventParams(evtdict=self.evtdict)
-        check = pd.DataFrame(data=self.evtdict['combinations'].values(),
-            index=self.evtdict['combinations'].keys(), 
-            columns=self.evtdict['channels'])
-        pd.testing.assert_frame_equal(output, check)
+    def test_makes_sure_startoftrial_is_returned(self):
+        "Makes sure start of trials is returned"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        self.assertEqual(start, self.evtdict['startoftrial'])
 
+    def test_makes_sure_endoftrial_is_returned(self):
+        "Makes sure end of trials is returned"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        self.assertEqual(end, self.evtdict['endoftrial'])
 
+    def test_makes_sure_epoch_is_returned(self):
+        "Makes sure epoch is returned"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        self.assertEqual(epoch, self.evtdict['epoch'])
+
+    def test_makes_sure_code_dataframe_has_right_structure(self):
+        "Checks code dataframe has right structure"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        code.sort_index(inplace=True)
+        self.codedf.sort_index(inplace=True)
+        pd.testing.assert_frame_equal(self.codedf, code)
+
+    def test_makes_sure_plot_dataframe_has_right_structure(self):
+        "Checks plot dataframe has right structure"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        plot.sort_index(inplace=True)
+        self.plotdf.sort_index(inplace=True)
+        pd.testing.assert_frame_equal(self.plotdf, plot)
+
+    def test_makes_sure_results_dataframe_has_right_structure(self):
+        "Checks results dataframe has right structure"
+        start, end, epoch, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        typedf.sort_index(inplace=True)
+        self.typedf.sort_index(inplace=True)
+        pd.testing.assert_frame_equal(self.typedf, typedf)
 
 class TestTruncateEvent(unittest.TestCase):
     "Code tests for the TruncateEvent function."

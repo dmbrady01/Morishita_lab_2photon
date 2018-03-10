@@ -12,6 +12,7 @@ __datewritten__ = "01 Mar 2018"
 __lastmodified__ = "09 Mar 2018"
 
 import quantities as pq
+from collections import OrderedDict
 import numbers
 import neo
 from neo.core import Event
@@ -22,22 +23,46 @@ import json
 
 def LoadEventParams(dpath=None, evtdict=None):
     """Checks that loaded event parameters (either through a directory path or
-    from direct input (dpath vs evtdict)) has the correct structure:
-    1) Must contain 'channels' and 'combinations'
-    2) Number of channels must equal length of each list for each combination
-    Results are returned as a dataframe"""
+    from direct input (dpath vs evtdict)). Returns three dataframes and three lists
+    in this order: startoftrial, endoftrial, epochs, event_type, plot, results
+    Dataframes:
+    1) 'event_type' that convert ch codes to event
+    2) 'plot' that maps event to specific plotting styles
+    3) 'results' that maps event to its type (start trial, result, end trial, etc.)
+    Lists:
+    1) 'endoftrial': event types that signal the end of a trial (default type = results)
+    2) 'startoftrial': event types that signal the start of a trial (default type = start)
+    3) 'epoch': event types that signal different epochs (default type = results)
+    """
     # Load event params
     if dpath:
         if not os.path.exists(dpath):
             raise IOError('%s cannot be found. Please check that it exists' % dpath)
         else:
-            evtdict = json.load(open(dpath, 'r'))
+            evtdict = json.load(open(dpath, 'r'), object_pairs_hook=OrderedDict)
     else:
         if not isinstance(evtdict, dict):
             raise TypeError('%s must be a dictionary' % evtdict)
+    # Constructs endoftrial list
+    endoftrial = evtdict['endoftrial']
+    # Constructs startoftrial list
+    startoftrial = evtdict['startoftrial']
+    # Constructs epoch list
+    epochs = evtdict['epoch']
+    # Constructs code dataframe
+    code_event_pairs = [(x, y['code']) for x, y in evtdict['events'].items()]
+    channels = evtdict['channels']
+    events, codes = zip(*code_event_pairs)
+    event_type = pd.DataFrame(data=list(codes), index=list(events), columns=channels)
+    event_type.index.name = 'event'
+    # Constructs plotting dataframe
+    plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
+    plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
+    # Constructs results dataframe
+    results_event_pairs = [(x, y['type']) for x, y in evtdict['events'].items()]
+    results = pd.DataFrame(results_event_pairs, columns=['event', 'type']).set_index('event')
     # returns dataframe
-    return pd.DataFrame(data=evtdict['combinations'].values(),
-        index=evtdict['combinations'].keys(), columns=evtdict['channels'])
+    return startoftrial, endoftrial, epochs, event_type, plot, results
 
 def TruncateEvent(event, start=None, end=None):
     """Given an Event object, will remove events before 'start' and after 

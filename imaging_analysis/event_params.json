@@ -1,12 +1,43 @@
 {
     "channels" : ["DIn1", "DIn2", "DIn3"],
-    "combinations": {
-        "correct": [0, 0, 1],
-        "incorrect": [0, 1, 0],
-        "iti_start": [0, 1, 1],
-        "omission": [1, 0, 0],
-        "premature_response": [1, 0, 1],
-        "stimulus_appears": [1, 1, 0],
-        "tray_activated": [1, 1, 1]
-    }
+    "events": {
+        "correct": {
+            "code": [0, 0, 1],
+            "plot": "-b",
+            "type": "results"
+        },
+        "incorrect": {
+            "code": [0, 1, 0],
+            "plot": "-r",
+            "type": "results"
+        },
+        "iti_start": {
+            "code": [0, 1, 1],
+            "plot": "-k",
+            "type": "start"
+        },
+        "omission": {
+            "code": [1, 0, 0],
+            "plot": "-g",
+            "type": "results"
+        },
+        "premature_response": {
+            "code": [1, 0, 1],
+            "plot": "-y",
+            "type": "results"
+        },
+        "stimulus_appears": {
+            "code": [1, 1, 0],
+            "plot": "--k",
+            "type": "stimulus"
+        },
+        "tray_activated": {
+            "code": [1, 1, 1],
+            "plot": "-.k",
+            "type": "other"
+        }
+    },
+    "endoftrial": ["results"],
+    "startoftrial": ["start"],
+    "epoch": ["results"]
 }
