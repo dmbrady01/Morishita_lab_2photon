@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "09 Mar 2018"
+__lastmodified__ = "10 Mar 2018"
 
 import quantities as pq
 from collections import OrderedDict

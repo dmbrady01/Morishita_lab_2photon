@@ -7,7 +7,7 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "09 Mar 2018"
+__lastmodified__ = "10 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -334,19 +334,54 @@ class TestProcessEventList(unittest.TestCase):
             tolerance=1, evtframe=self.df)
         self.assertIsInstance(eventlabels, list)
 
+    def test_event_times_are_correct(self):
+        "Checks that events times are correct"
+        eventtimes, eventlabels = ProcessEventList(eventlist=self.eventlist, 
+            tolerance=1, evtframe=self.df)
+        equal = np.array_equal(np.array(eventtimes), np.arange(0, 100 , 1)*pq.s)
+        self.assertTrue(equal)     
+
+    def test_event_labels_are_correct(self):
+        "Checks that events labels are correct"
+        eventtimes, eventlabels = ProcessEventList(eventlist=self.eventlist, 
+            tolerance=0.1, evtframe=self.df)
+        test_array = np.arange(0, 100, 1)
+        mask_array = np.arange(0, 100, 3)
+        test_array = test_array.astype('S')
+        test_array[mask_array] = 'stop'
+        test_array[np.where(test_array != 'stop')[0]] = 'start'
+        equal = np.array_equal(eventlabels, test_array)
+        self.assertTrue(equal)     
+
 
 class TestProcessEvents(unittest.TestCase):
     "Code tests for ProcessEvents function"
 
     def setUp(self):
-        self.wrong_type = 'hello'
+        self.evt = Event(times=np.arange(0, 100 , 1)*pq.s, name='Ch1', 
+                        labels=np.repeat(np.array(['t0', 't1'], dtype='S'), 50))
+        self.evt2 = Event(times=np.arange(0, 100 , 3)*pq.s, name='Ch2', 
+                        labels=np.repeat(np.array(['t2', 't3'], dtype='S'), 17))
+        self.segment = Segment()
+        self.segment.events.append(self.evt)
+        self.segment.events.append(self.evt2)
+        self.df = pd.DataFrame(data=[[1, 0], [1, 1]], index=['start', 'stop'],
+            columns=['Ch1', 'Ch2'])
 
     def tearDown(self):
-        del self.wrong_type
+        del self.evt
+        del self.evt2 
+        del self.segment
 
     def test_seg_must_be_a_seg_object(self):
         "Makes sure seg is a seg object"
-        self.assertRaises(TypeError, ProcessEvents, seg=self.wrong_type)
+        self.assertRaises(TypeError, ProcessEvents, seg='not a segment')
+
+    def test_event_object_is_added(self):
+        "Makes sure event object is added to seg"
+        init_len = len(self.segment.events)
+        ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df)
+        self.assertTrue(init_len + 1, len(self.segment.events))
 
 
 
