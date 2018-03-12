@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "10 Mar 2018"
+__lastmodified__ = "11 Mar 2018"
 
 import quantities as pq
 from collections import OrderedDict
@@ -229,13 +229,40 @@ def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events'):
         # Appends event objec to segment object
         seg.events.append(results)
 
-def ProcessTrials(seg=None, name='Events', startoftrial=None, typedf=None):
+def ResultOfTrial(listtocheck=None, noresults='NONE', multipleresults='MULTIPLE',
+        appendmultiple=False):
+    """Checks the result of a trial. Assumes that a trial can only have one
+    results. Trials with no results will be labeled noresults. If multiple 
+    results are found, results are set to MULTIPLE. If appendmultiple, then multiple 
+    results will also have the result list added.
+    Examples:
+    1) ['omission'] -> 'omission'
+    2) [] -> 'NONE'
+    3) ['omission', 'premature'] -> 'MULTIPLE'
+    4) ['omission', 'premature'] and appendmultiple=True -> 'MULTIPLE_omission_premature'"""
+    if not isinstance(listtocheck, list):
+        raise TypeError("%s must be a list" % listtocheck)
+    if len(listtocheck) == 1:
+        return listtocheck[0]
+    elif len(listtocheck) == 0:
+        return noresults
+    else:
+        if appendmultiple:
+            return multipleresults + '_' + '_'.join(listtocheck)
+        else:
+            return multipleresults
+
+def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None, 
+        typedf=None, appendmultiple=False):
     """Takes a segment object, the name of Event channel to process, a list
     of events that deem start of trial, and the results/type dataframe.
     Returns a dataframe of event times, event names, trial number, and trial 
     outcome."""
     # Make sure startoftrial is passed
     if not isinstance(startoftrial, list):
+        raise TypeError('%s must be a list' % startoftrial)
+    # Make sure epochs is passed
+    if not isinstance(epochs, list):
         raise TypeError('%s must be a list' % startoftrial)
     # Make sure typedf is a dataframe
     if not isinstance(typedf, pd.core.frame.DataFrame):
@@ -249,6 +276,11 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, typedf=None):
     except IndexError:
         print('%s does not have an events object named %s. Make sure to \
             run ProcessEvents first!' % (seg, name))
+    ## Get relevent event types
+    # get events that signify start of trial
+    start_events = typeframe.loc[typeframe.type.isin(startoftrial)].index
+    # get events that signify different epochs
+    epoch_events = typeframe.loc[typeframe.type.isin(epochs)].index
     # Transforms seg.events object into a dataframe with times and labels
     # as columns
     labels = pd.Series(event_obj.labels, name='event_type')
@@ -262,6 +294,16 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, typedf=None):
     trial_df.loc[trial_df.event_type.isin(start_events), 'trial_idx'] = 1
     # Uses cumulative sum to determine trial number
     trial_df['trial_idx'] = trial_df['trial_idx'].cumsum()
+    # Get results from each trial
+    results_by_trial = trial_df.groupby('trial_idx').agg({'event_type': 
+        lambda x: [evt for evt in list(x) if evt in epoch_events]})
+    # Result processing
+    results_by_trial['results'] = results_by_trial.event_type.apply(lambda x: 
+        ResultOfTrial(x, appendmultiple=appendmultiple))
+    # Merged dataframe
+    return_df = pd.merge(trial_df, results_by_trial.drop('event_type', axis=1), 
+        how='left', left_on='trial_idx', right_index=True)
+    return return_df
 
 
 

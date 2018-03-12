@@ -7,7 +7,7 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "10 Mar 2018"
+__lastmodified__ = "11 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -22,6 +22,7 @@ from imaging_analysis.event_processing import TruncateEvents
 from imaging_analysis.event_processing import ExtractEventsToList
 from imaging_analysis.event_processing import ProcessEventList
 from imaging_analysis.event_processing import ProcessEvents
+from imaging_analysis.event_processing import ResultOfTrial
 from imaging_analysis.event_processing import ProcessTrials
 
 
@@ -391,6 +392,42 @@ class TestProcessEvents(unittest.TestCase):
 
 
 
+class TestResultOfTrial(unittest.TestCase):
+    "Code tests for ResultOfTrial function"
+
+    def setUp(self):
+        self.result = ['omission']
+        self.results_mult = ['omission', 'premature']
+
+    def tearDown(self):
+        del self.result 
+        del self.results_mult
+
+    def test_listtocheck_is_a_list(self):
+        "Makes sure listtocheck is a list"
+        self.assertRaises(TypeError, ResultOfTrial, listtocheck='not a list')
+
+    def test_noresults_label(self):
+        "Checks that noresults is returned of empty list"
+        self.assertEqual(ResultOfTrial(listtocheck=[], noresults='NOPE'), 'NOPE')
+
+    def test_result_is_returned_if_length_one(self):
+        "Checks that results is returned if length of one"
+        self.assertEqual(ResultOfTrial(listtocheck=self.result), self.result[0])
+
+    def test_multipleresults_label(self):
+        "Checks that multiple is returned of list containing multiple entries"
+        self.assertEqual(ResultOfTrial(listtocheck=self.results_mult, 
+            multipleresults='MANY'), 'MANY')
+
+    def test_multipleresults_label_and_append(self):
+        """Checks that multiple and events are returned of list containing 
+        multiple entries and append is true"""
+        self.assertEqual(ResultOfTrial(listtocheck=self.results_mult, 
+            multipleresults='MANY', appendmultiple=True), 'MANY_omission_premature')
+
+
+
 class TestProcessTrials(unittest.TestCase):
     "Code tests for ProcessTrials function"
 
@@ -405,6 +442,7 @@ class TestProcessTrials(unittest.TestCase):
         self.df = pd.DataFrame(data=[[1, 0], [1, 1]], index=['start', 'stop'],
             columns=['Ch1', 'Ch2'])
         self.staroftrial = ['start']
+        self.epochs = ['stop']
 
     def tearDown(self):
         del self.evt
@@ -413,17 +451,22 @@ class TestProcessTrials(unittest.TestCase):
 
     def test_startoflist_is_a_list(self):
         "Makes sure startoflist is a list"
-        self.assertRaises(TypeError, ProcessTrials, startoftrial='not a segment')
+        self.assertRaises(TypeError, ProcessTrials, startoftrial='not a list')
+
+    def test_epochs_is_a_list(self):
+        "Makes sure epochs is a list"
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+            epochs='not an epoch')
 
     def test_typedf_is_a_dataframe(self):
         "Makes sure typedf is a dataframe"
         self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
-            typedf='not a dataframe')
+            epochs=self.epochs, typedf='not a dataframe')
 
     def test_seg_is_a_seg_object(self):
         "Makes sure seg is a segment object"
         self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
-            typedf=self.df, seg='not a seg object')
+            epochs=self.epochs, typedf=self.df, seg='not a seg object')
 
 
 
