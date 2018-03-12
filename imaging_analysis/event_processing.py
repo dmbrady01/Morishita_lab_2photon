@@ -249,6 +249,19 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, typedf=None):
     except IndexError:
         print('%s does not have an events object named %s. Make sure to \
             run ProcessEvents first!' % (seg, name))
+    # Transforms seg.events object into a dataframe with times and labels
+    # as columns
+    labels = pd.Series(event_obj.labels, name='event_type')
+    times = pd.Series(event_obj.times, name='time')
+    trial_df = pd.concat([times, labels], axis=1)
+    # Adds trial index column to dataframe
+    trial_df['trial_idx'] = 0
+    # get events that signify start of trial
+    start_events = typeframe.loc[typeframe.type.isin(startoftrial)].index
+    # Marks start of trial
+    trial_df.loc[trial_df.event_type.isin(start_events), 'trial_idx'] = 1
+    # Uses cumulative sum to determine trial number
+    trial_df['trial_idx'] = trial_df['trial_idx'].cumsum()
 
 
 
