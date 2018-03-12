@@ -39,5 +39,5 @@
     },
     "endoftrial": ["results"],
     "startoftrial": ["start"],
-    "epoch": ["results"]
+    "epochs": ["results"]
 }

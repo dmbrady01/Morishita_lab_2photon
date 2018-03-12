@@ -48,7 +48,7 @@ def LoadEventParams(dpath=None, evtdict=None):
     # Constructs startoftrial list
     startoftrial = evtdict['startoftrial']
     # Constructs epoch list
-    epochs = evtdict['epoch']
+    epochs = evtdict['epochs']
     # Constructs code dataframe
     code_event_pairs = [(x, y['code']) for x, y in evtdict['events'].items()]
     channels = evtdict['channels']
@@ -278,9 +278,9 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
             run ProcessEvents first!' % (seg, name))
     ## Get relevent event types
     # get events that signify start of trial
-    start_events = typeframe.loc[typeframe.type.isin(startoftrial)].index
+    start_events = typedf.loc[typedf.type.isin(startoftrial)].index
     # get events that signify different epochs
-    epoch_events = typeframe.loc[typeframe.type.isin(epochs)].index
+    epoch_events = typedf.loc[typedf.type.isin(epochs)].index
     # Transforms seg.events object into a dataframe with times and labels
     # as columns
     labels = pd.Series(event_obj.labels, name='event_type')
@@ -289,7 +289,7 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     # Adds trial index column to dataframe
     trial_df['trial_idx'] = 0
     # get events that signify start of trial
-    start_events = typeframe.loc[typeframe.type.isin(startoftrial)].index
+    start_events = typedf.loc[typedf.type.isin(startoftrial)].index
     # Marks start of trial
     trial_df.loc[trial_df.event_type.isin(start_events), 'trial_idx'] = 1
     # Uses cumulative sum to determine trial number

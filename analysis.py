@@ -8,10 +8,10 @@ analysis.py: Python script that processes and analyzes fiber photometry data.
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "08 Mar 2018"
+__lastmodified__ = "12 Mar 2018"
 
 import sys
-from imaging_analysis.event_processing import LoadEventParams, ProcessEvents
+from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
@@ -34,7 +34,7 @@ processed_event_ch_name = 'Events'
 
 ##########################################################################
 # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
-start, end, epoch, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_to_event_params)
+start, end, epochs, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_to_event_params)
 
 # Checks if a directory path to the data is provided, if not, will
 # use what is specified in except
@@ -88,8 +88,23 @@ except IOError:
         # an event 3 seconds later, the output array will be [1, 1, 0] and will
         # match the label in evtframe (e.g. 'omission')
         print('Done!')
+        PrintNoNewLine('\nProcessing event times and labels...')
         ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
             name=processed_event_ch_name)
-        PrintNoNewLine('\nProcessing event times and labels...')
         print('Done!')
+        # Takes processed events and segments them by trial number. Trial start
+        # is determined by events in the list 'start' from LoadEventParams. This
+        # can be set in the event_params.json. Additionally, the result of the 
+        # trial is set by matching the epoch type to the typeframe dataframe 
+        # (also from LoadEventParams). Example of epochs are 'correct', 'omission',
+        # etc. 
+        # The result of this process is a dataframe with each event and their
+        # timestamp in chronological order, with the trial number and trial outcome
+        # appended to each event/timestamp.
+        PrintNoNewLine('\nProcessing event times and labels...')
+        trials = ProcessTrials(seg=segment, name=processed_event_ch_name, 
+            startoftrial=start, epochs=epochs, typedf=typeframe, 
+            appendmultiple=False)
+        print('Done!')
+
 
