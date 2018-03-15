@@ -101,7 +101,7 @@ except IOError:
         # The result of this process is a dataframe with each event and their
         # timestamp in chronological order, with the trial number and trial outcome
         # appended to each event/timestamp.
-        PrintNoNewLine('\nProcessing event times and labels...')
+        PrintNoNewLine('\nProcessing trials...')
         trials = ProcessTrials(seg=segment, name=processed_event_ch_name, 
             startoftrial=start, epochs=epochs, typedf=typeframe, 
             appendmultiple=False)

@@ -120,14 +120,14 @@ def ExtractEventsToList(seg=None, evtframe=None, time_name='times', ch_name='ch'
             eventlist.append({time_name: event_obj.times, ch_name: idx})
     # Makes sure eventlist has something in it
     if len(eventlist) == 0:
-        raise ValueError('Segment object does not contain event channels that \
-            match those specified in eventframe. Check segment object or \
-            event params.json')
+        raise ValueError("""Segment object does not contain event channels that
+            match those specified in eventframe. Check segment object or
+            event params.json""")
     # Makes sure that eventlist length matches evtframe column length
     elif len(eventlist) != evtframe.columns.shape[0]:
-        raise ValueError('Evtframe has too many or too few channels compared to \
-            the segment.events list. Either segment.events has duplicate entries or \
-            event params.json is not correct.')
+        raise ValueError("""Evtframe has too many or too few channels compared to
+            the segment.events list. Either segment.events has duplicate entries or
+            event params.json is not correct.""")
     else:
         return eventlist
 
@@ -253,11 +253,11 @@ def ResultOfTrial(listtocheck=None, noresults='NONE', multipleresults='MULTIPLE'
             return multipleresults
 
 def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None, 
-        typedf=None, appendmultiple=False):
+        typedf=None, appendmultiple=False, firsttrial=True):
     """Takes a segment object, the name of Event channel to process, a list
     of events that deem start of trial, and the results/type dataframe.
     Returns a dataframe of event times, event names, trial number, and trial 
-    outcome."""
+    outcome. If firsttrial, will only pass events from the first trial or later."""
     # Make sure startoftrial is passed
     if not isinstance(startoftrial, list):
         raise TypeError('%s must be a list' % startoftrial)
@@ -272,10 +272,10 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
         raise TypeError('%s must be a segment object' % seg)
     # Gets processed event object
     try:
-        event_obj = filter(lambda x: x.name == 'Events', seg.events)[0]
+        event_obj = filter(lambda x: x.name == name, seg.events)[0]
     except IndexError:
-        print('%s does not have an events object named %s. Make sure to \
-            run ProcessEvents first!' % (seg, name))
+        raise IndexError("""%s does not have an events object named %s. Make sure 
+            to run ProcessEvents first!""" % (seg, name))
     ## Get relevent event types
     # get events that signify start of trial
     start_events = typedf.loc[typedf.type.isin(startoftrial)].index
@@ -303,7 +303,11 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     # Merged dataframe
     return_df = pd.merge(trial_df, results_by_trial.drop('event_type', axis=1), 
         how='left', left_on='trial_idx', right_index=True)
-    return return_df
+    # Only returns events that started with first trial
+    if firsttrial:
+        return return_df.loc[return_df.trial_idx >= 1, :]
+    else:
+        return return_df
 
 
 

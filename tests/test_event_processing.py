@@ -441,8 +441,12 @@ class TestProcessTrials(unittest.TestCase):
         self.segment.events.append(self.evt2)
         self.df = pd.DataFrame(data=[[1, 0], [1, 1]], index=['start', 'stop'],
             columns=['Ch1', 'Ch2'])
-        self.staroftrial = ['start']
-        self.epochs = ['stop']
+        self.startoftrial = ['start']
+        self.epochs = ['results']
+        self.name = 'MyEvents'
+        self.typeframe = pd.DataFrame(data=['start', 'results'], columns=['type'], 
+            index=['start', 'stop'])
+        ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df, name=self.name)
 
     def tearDown(self):
         del self.evt
@@ -455,21 +459,44 @@ class TestProcessTrials(unittest.TestCase):
 
     def test_epochs_is_a_list(self):
         "Makes sure epochs is a list"
-        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.startoftrial, 
             epochs='not an epoch')
 
     def test_typedf_is_a_dataframe(self):
         "Makes sure typedf is a dataframe"
-        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.startoftrial, 
             epochs=self.epochs, typedf='not a dataframe')
 
     def test_seg_is_a_seg_object(self):
         "Makes sure seg is a segment object"
-        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.staroftrial, 
+        self.assertRaises(TypeError, ProcessTrials, startoftrial=self.startoftrial, 
             epochs=self.epochs, typedf=self.df, seg='not a seg object')
 
+    def test_process_trials_returns_error_if_name_incorrect(self):
+        "Makes sure IndexError is returned if name is incorrect"
+        self.assertRaises(IndexError, ProcessTrials, seg=self.segment, 
+            name='Wrong Name', startoftrial=self.startoftrial, 
+            epochs=self.epochs, typedf=self.typeframe)
 
+    def test_process_trials_returns_dataframe(self):
+        "Makes sure dataframe is returned"
+        output = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, typedf=self.typeframe)
+        self.assertIsInstance(output, pd.core.frame.DataFrame)
 
+    def test_process_trials_starts_with_first_trial_default(self):
+        "Makes sure dataframe only has events from first trial if firsttrail=True"
+        output = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=True)
+        self.assertEqual(output.trial_idx.min(), 1)
+
+    def test_process_trials_starts_with_first_trial(self):
+        "Makes sure dataframe can have events before first trial if firsttrail=False"
+        output = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=False)
+        self.assertEqual(output.trial_idx.min(), 0)
 
 
 if __name__ == '__main__':
