@@ -288,8 +288,6 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     trial_df = pd.concat([times, labels], axis=1)
     # Adds trial index column to dataframe
     trial_df['trial_idx'] = 0
-    # get events that signify start of trial
-    start_events = typedf.loc[typedf.type.isin(startoftrial)].index
     # Marks start of trial
     trial_df.loc[trial_df.event_type.isin(start_events), 'trial_idx'] = 1
     # Uses cumulative sum to determine trial number
@@ -309,7 +307,12 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     else:
         return return_df
 
-
+def GroupTrialsByEpoch(seg=None, trialsframe=None):
+    """Given a segment object and a trials dataframe, will go through 
+    each epoch type and collect when the trial started and stopped."""
+    epochs = set(trials.results.values)
+    for epoch in epochs:
+        pass
 
 
 
