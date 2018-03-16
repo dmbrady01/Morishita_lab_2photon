@@ -11,7 +11,7 @@ __datewritten__ = "07 Mar 2018"
 __lastmodified__ = "12 Mar 2018"
 
 import sys
-from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials
+from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
@@ -106,5 +106,15 @@ except IOError:
             startoftrial=start, epochs=epochs, typedf=typeframe, 
             appendmultiple=False)
         print('Done!')
+        # With processed trials, we comb through each epoch ('correct', 'omission'
+        # etc.) and find start/end times for each trial. Start time is determined
+        # by the earliest 'start' event in a trial. Stop time is determined by
+        # 1) the earliest 'end' event in a trial, 2) or the 'last' event in a trial
+        # or the 3) 'next' event in the following trial.
+        PrintNoNewLine('\nCalculating epoch times and trials...')
+        GroupTrialsByEpoch(seg=segment, trials=trials, startoftrial=start, 
+            endoftrial=end, endeventmissing='last')
+        Print('Done!')
+
 
 

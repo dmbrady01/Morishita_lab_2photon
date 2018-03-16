@@ -317,7 +317,21 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
     event in endoftrial. If endoftrial is missing, stopped can be determined
     by two modes:
     endeventmissing = 'next': end of trial is the start of the next one
+    (last trial ends on its last event)
     endeventmissing = 'last': end of trial is the last event of that trial"""
+    # Makes sure trials is a dataframe
+    if not isinstance(trials, pd.core.frame.DataFrame):
+        raise TypeError('%s must be a dataframe' % trials)
+    # Makes sure startoftrial is a list
+    if not isinstance(startoftrial, list):
+        raise TypeError('%s must be a list' % startoftrial)
+    # Makes sure endoftrial is a list
+    if not isinstance(endoftrial, list):
+        raise TypeError('%s must be a list' % endoftrial)
+    # Makes sure seg is a segment object
+    if not isinstance(seg, neo.core.Segment):
+        raise TypeError('%s must be a segment object' % seg)
+    # Gets a set of the epochs
     epochs = trials.results.unique()
     for epoch in epochs:
         # Makes a dataframe of events only concerning a specific epoch
