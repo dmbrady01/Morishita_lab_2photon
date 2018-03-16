@@ -15,7 +15,7 @@ import quantities as pq
 from collections import OrderedDict
 import numbers
 import neo
-from neo.core import Event
+from neo.core import Event, Epoch
 import pandas as pd
 import numpy as np
 import os
@@ -283,36 +283,75 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     epoch_events = typedf.loc[typedf.type.isin(epochs)].index
     # Transforms seg.events object into a dataframe with times and labels
     # as columns
-    labels = pd.Series(event_obj.labels, name='event_type')
+    labels = pd.Series(event_obj.labels, name='event')
     times = pd.Series(event_obj.times, name='time')
     trial_df = pd.concat([times, labels], axis=1)
     # Adds trial index column to dataframe
     trial_df['trial_idx'] = 0
     # Marks start of trial
-    trial_df.loc[trial_df.event_type.isin(start_events), 'trial_idx'] = 1
+    trial_df.loc[trial_df.event.isin(start_events), 'trial_idx'] = 1
     # Uses cumulative sum to determine trial number
     trial_df['trial_idx'] = trial_df['trial_idx'].cumsum()
     # Get results from each trial
-    results_by_trial = trial_df.groupby('trial_idx').agg({'event_type': 
+    results_by_trial = trial_df.groupby('trial_idx').agg({'event': 
         lambda x: [evt for evt in list(x) if evt in epoch_events]})
     # Result processing
-    results_by_trial['results'] = results_by_trial.event_type.apply(lambda x: 
+    results_by_trial['results'] = results_by_trial.event.apply(lambda x: 
         ResultOfTrial(x, appendmultiple=appendmultiple))
     # Merged dataframe
-    return_df = pd.merge(trial_df, results_by_trial.drop('event_type', axis=1), 
+    return_df = pd.merge(trial_df, results_by_trial.drop('event', axis=1), 
         how='left', left_on='trial_idx', right_index=True)
+    # Attach event type to trials dataframe
+    return_df['event_type'] = return_df.event.apply(lambda x: typedf.loc[x, 'type'])
     # Only returns events that started with first trial
     if firsttrial:
         return return_df.loc[return_df.trial_idx >= 1, :]
     else:
         return return_df
 
-def GroupTrialsByEpoch(seg=None, trialsframe=None):
+def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None, 
+        endoftrial=None, endeventmissing='last'):
     """Given a segment object and a trials dataframe, will go through 
-    each epoch type and collect when the trial started and stopped."""
-    epochs = set(trials.results.values)
+    each epoch type and collect when the trial started and stopped.
+    Started is by the start events in startoftrial, stopped is by
+    event in endoftrial. If endoftrial is missing, stopped can be determined
+    by two modes:
+    endeventmissing = 'next': end of trial is the start of the next one
+    endeventmissing = 'last': end of trial is the last event of that trial"""
+    epochs = trials.results.unique()
     for epoch in epochs:
-        pass
-
-
+        # Makes a dataframe of events only concerning a specific epoch
+        epochframe = trials.loc[trials.results == epoch, :]
+        start_times = []
+        durations = []
+        # Goes through each trial in that epoch to figure out start times and
+        # durations
+        for trial_num in epochframe.trial_idx.unique():
+            # Makes a dataframe of events for a specific trial
+            trialframe = epochframe.loc[epochframe.trial_idx == trial_num]
+            # Mask for start events
+            startmask = trialframe.event_type.isin(startoftrial)
+            # Gets the earliest timestamp for a start event
+            starttime = trialframe.loc[startmask, 'time'].min()
+            # Mask for end events
+            endmask = trialframe.event_type.isin(endoftrial)
+            # Checks if there are end events in the trial. If so, takes the
+            # earliest one as the end of the trial
+            if trialframe.loc[endmask].shape[0]:
+                endtime = trialframe.loc[endmask, 'time'].min()
+            # Otherwise gets the last event in the trial if 'last' mode is chosen
+            elif endeventmissing == 'last':
+                endtime = trialframe.time.max()
+            # Or gets the first event of the next trial if 'next' mode is chosen
+            elif endeventmissing == 'next':
+                endtime = trials.loc[trials.trial_idx == trial_num + 1, 'time'].min()
+                # For the last trial, trial ends with the last timestamp
+                if np.isnan(endtime):
+                    endtime = trials.time.max()
+            duration = endtime - starttime
+            durations.append(duration)
+            start_times.append(starttime)
+        # Adds durations and start times to create an Epoch
+        seg.epochs.append(Epoch(times=np.array(start_times) * pq.s,
+            durations=np.array(durations) * pq.s, name=epoch))
 

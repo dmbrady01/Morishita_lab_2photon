@@ -37,7 +37,7 @@
             "type": "other"
         }
     },
-    "endoftrial": ["results"],
+    "endoftrial": ["end"],
     "startoftrial": ["start"],
     "epochs": ["results"]
 }

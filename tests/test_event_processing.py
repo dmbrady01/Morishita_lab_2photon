@@ -447,11 +447,18 @@ class TestProcessTrials(unittest.TestCase):
         self.typeframe = pd.DataFrame(data=['start', 'results'], columns=['type'], 
             index=['start', 'stop'])
         ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df, name=self.name)
+        self.columns = ['time', 'event', 'trial_idx', 'results', 'event_type']
 
     def tearDown(self):
         del self.evt
         del self.evt2 
         del self.segment
+        del self.df 
+        del self.startoftrial 
+        del self.epochs
+        del self.name 
+        del self.typeframe 
+        del self.columns
 
     def test_startoflist_is_a_list(self):
         "Makes sure startoflist is a list"
@@ -497,6 +504,13 @@ class TestProcessTrials(unittest.TestCase):
             startoftrial=self.startoftrial, epochs=self.epochs, 
             typedf=self.typeframe, firsttrial=False)
         self.assertEqual(output.trial_idx.min(), 0)
+
+    def test_correct_columns(self):
+        "Makes sure dataframe has the correct columns"
+        output = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=False)
+        self.assertTrue(all(output.columns == self.columns))                
 
 
 if __name__ == '__main__':
