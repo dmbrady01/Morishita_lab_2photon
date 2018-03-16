@@ -447,7 +447,8 @@ class TestProcessTrials(unittest.TestCase):
         self.typeframe = pd.DataFrame(data=['start', 'results'], columns=['type'], 
             index=['start', 'stop'])
         ProcessEvents(seg=self.segment, tolerance=1, evtframe=self.df, name=self.name)
-        self.columns = ['time', 'event', 'trial_idx', 'results', 'event_type']
+        self.columns = ['time', 'event', 'trial_idx', 'results', \
+            'with_previous_results', 'event_type']
 
     def tearDown(self):
         del self.evt

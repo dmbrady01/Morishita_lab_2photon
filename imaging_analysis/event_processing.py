@@ -306,6 +306,13 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     # Merged dataframe
     trials = pd.merge(trial_df, results_by_trial.drop('event', axis=1), 
         how='left', left_on='trial_idx', right_index=True)
+    # New column with previous result too (example: 'omission_correct')
+    trials['with_previous_results'] = np.nan
+    for idx in trials.trial_idx[trials.trial_idx > 1]:
+        current_results = trials.loc[trials.trial_idx == idx, 'results'].values[0]
+        previous_results = trials.loc[trials.trial_idx == idx - 1, 'results'].values[0]
+        combined = previous_results + '_' + current_results
+        trials.loc[trials.trial_idx == idx, 'with_previous_results'] = combined
     # Attach event type to trials dataframe
     trials['event_type'] = trials.event.apply(lambda x: typedf.loc[x, 'type'])
     # Only returns events that started with first trial
