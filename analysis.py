@@ -117,7 +117,7 @@ except IOError:
         PrintNoNewLine('\nCalculating epoch times and trials...')
         GroupTrialsByEpoch(seg=segment, trials=trials, startoftrial=start, 
             endoftrial=end, endeventmissing=how_trial_ends)
-        Print('Done!')
+        print('Done!')
 
 
 
