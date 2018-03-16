@@ -510,8 +510,28 @@ class TestProcessTrials(unittest.TestCase):
         output = ProcessTrials(seg=self.segment, name=self.name, 
             startoftrial=self.startoftrial, epochs=self.epochs, 
             typedf=self.typeframe, firsttrial=False)
-        self.assertTrue(all(output.columns == self.columns))                
+        self.assertTrue(all(output.columns == self.columns))  
 
+    def test_trials_dataframe_has_name_trials(self):
+        "Makes sure dataframe has the correct name"
+        output = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=False)
+        self.assertEqual(output.name, 'trials')
+
+    def test_dataframes_attribute_added_to_segment(self):
+        "Makes sure dataframes attribute is added to segment object"
+        ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=False, returndf=False)
+        self.assertTrue(hasattr(self.segment, 'dataframes')) 
+
+    def test_dataframe_appended_to_segment(self):
+        "Makes sure dataframe is appended to dataframe part of segment object"
+        df = ProcessTrials(seg=self.segment, name=self.name, 
+            startoftrial=self.startoftrial, epochs=self.epochs, 
+            typedf=self.typeframe, firsttrial=False, returndf=True)
+        pd.testing.assert_frame_equal(df, self.segment.dataframes[0])
 
 
 class TestGroupTrialsByEpoch(unittest.TestCase):
@@ -530,9 +550,12 @@ class TestGroupTrialsByEpoch(unittest.TestCase):
             'omission', 'NONE', 'NONE', 'NONE', 'correct', 'correct', 'correct'])
         self.trials['event_type'] = np.array(['start', 'end', 'results', \
             'other', 'start', 'stimulus', 'other', 'start', 'stimulus', 'results'])
+        self.trials.name = 'trials'
         self.startoftrial = ['start']
         self.endoftrial = ['end']
         self.segment = Segment()
+        self.segment.dataframes = []
+        self.segment.dataframes.append(self.trials)
 
     def tearDown(self):
         del self.trials 
@@ -569,6 +592,13 @@ class TestGroupTrialsByEpoch(unittest.TestCase):
     def test_epochs_added_to_segment(self):
         "Makes sure epochs are added to segment object"
         GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial)
+        self.assertEqual(len(self.segment.epochs), 
+            self.trials.results.unique().shape[0])
+
+    def test_epochs_added_to_segment_if_trials_is_not_passed_but_in_seg(self):
+        "Makes sure trials is used in segment.dataframes if no trials variable passed"
+        GroupTrialsByEpoch(seg=self.segment, trials=None, 
             startoftrial=self.startoftrial, endoftrial=self.endoftrial)
         self.assertEqual(len(self.segment.epochs), 
             self.trials.results.unique().shape[0])

@@ -36,7 +36,7 @@ processed_event_ch_name = 'Events'
 how_trial_ends = 'last'
 
 ##########################################################################
-# This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
+# This loads our event params json
 start, end, epochs, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_to_event_params)
 
 # Checks if a directory path to the data is provided, if not, will
@@ -114,10 +114,11 @@ except IOError:
         # by the earliest 'start' event in a trial. Stop time is determined by
         # 1) the earliest 'end' event in a trial, 2) or the 'last' event in a trial
         # or the 3) 'next' event in the following trial.
-        PrintNoNewLine('\nCalculating epoch times and trials...')
-        GroupTrialsByEpoch(seg=segment, trials=trials, startoftrial=start, 
-            endoftrial=end, endeventmissing=how_trial_ends)
+        PrintNoNewLine('\nCalculating epoch times and durations...')
+        GroupTrialsByEpoch(seg=segment, startoftrial=start, endoftrial=end, 
+            endeventmissing=how_trial_ends)
         print('Done!')
+    # Saves everything to pickeled object
 
 
 

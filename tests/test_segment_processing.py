@@ -7,7 +7,7 @@ test_signal_processing.py: Python script that contains tests for signal_processi
 
 __author__ = "DM Brady"
 __datewritten__ = "06 Mar 2018"
-__lastmodified__ = "06 Mar 2018"
+__lastmodified__ = "16 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -15,8 +15,10 @@ from neo.core import AnalogSignal, Event, Segment
 import numpy as np
 import quantities as pq
 import copy as cp
+import pandas as pd
 from imaging_analysis.segment_processing import TruncateSegment
 from imaging_analysis.segment_processing import TruncateSegments
+from imaging_analysis.segment_processing import AppendDataframesToSegment
 
 
 class TestTruncateSegment(unittest.TestCase):
@@ -164,6 +166,46 @@ class TestTruncateSegments(unittest.TestCase):
         test_start = self.evt_pre_start not in event_times
         test_stop = self.evt_post_end not in event_times
         self.assertTrue(all([test_start, test_stop]))
+
+
+
+class TestAppendDataframesToSegment(unittest.TestCase):
+    "Tests for AppendDataframesToSegment"
+
+    def setUp(self):
+        self.segment = Segment()
+        self.df = pd.DataFrame()
+        self.segment2 = Segment()
+        self.segment2.dataframes = []
+        self.segment2.dataframes.append(pd.DataFrame())
+
+    def tearDown(self):
+        del self.segment 
+        del self.df
+
+    def test_segment_check(self):
+        "Makes sure segment object is passed"
+        self.assertRaises(TypeError, AppendDataframesToSegment, 'not a segment')
+
+    def test_dataframe_check(self):
+        "Makes sure dataframe object is passed"
+        self.assertRaises(TypeError, AppendDataframesToSegment, self.segment,
+            'not a dataframe')
+
+    def test_segment_has_dataframe_attribute_if_none_before(self):
+        "Makes sure segment has dataframes attribute if it didnt before"
+        AppendDataframesToSegment(self.segment, self.df)
+        self.assertTrue(hasattr(self.segment, 'dataframes'))
+
+    def test_dataframe_object_is_added(self):
+        "Makes sure dataframe object is added to dataframes"
+        AppendDataframesToSegment(self.segment, self.df)
+        self.assertIsInstance(self.segment.dataframes[0], pd.core.frame.DataFrame)
+
+    def test_segment_does_not_erase_if_dataframes_already_exists(self):
+        "Makes sure it adds to dataframes if dataframes already exists"
+        AppendDataframesToSegment(self.segment2, self.df)
+        self.assertEqual(len(self.segment2.dataframes), 2)
 
 
 

@@ -58,6 +58,7 @@ def LoadEventParams(dpath=None, evtdict=None):
     # Constructs plotting dataframe
     plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
     plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
+    plot.name = 'plotframe'
     # Constructs results dataframe
     results_event_pairs = [(x, y['type']) for x, y in evtdict['events'].items()]
     results = pd.DataFrame(results_event_pairs, columns=['event', 'type']).set_index('event')
@@ -253,11 +254,13 @@ def ResultOfTrial(listtocheck=None, noresults='NONE', multipleresults='MULTIPLE'
             return multipleresults
 
 def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None, 
-        typedf=None, appendmultiple=False, firsttrial=True):
+        typedf=None, appendmultiple=False, firsttrial=True, returndf=True):
     """Takes a segment object, the name of Event channel to process, a list
     of events that deem start of trial, and the results/type dataframe.
     Returns a dataframe of event times, event names, trial number, and trial 
-    outcome. If firsttrial, will only pass events from the first trial or later."""
+    outcome. If firsttrial, will only pass events from the first trial or later.
+    If returndf=True, will return a dataframe. Either way, it will append the
+    dataframe"""
     # Make sure startoftrial is passed
     if not isinstance(startoftrial, list):
         raise TypeError('%s must be a list' % startoftrial)
@@ -299,15 +302,21 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     results_by_trial['results'] = results_by_trial.event.apply(lambda x: 
         ResultOfTrial(x, appendmultiple=appendmultiple))
     # Merged dataframe
-    return_df = pd.merge(trial_df, results_by_trial.drop('event', axis=1), 
+    trials = pd.merge(trial_df, results_by_trial.drop('event', axis=1), 
         how='left', left_on='trial_idx', right_index=True)
     # Attach event type to trials dataframe
-    return_df['event_type'] = return_df.event.apply(lambda x: typedf.loc[x, 'type'])
+    trials['event_type'] = trials.event.apply(lambda x: typedf.loc[x, 'type'])
     # Only returns events that started with first trial
     if firsttrial:
-        return return_df.loc[return_df.trial_idx >= 1, :]
-    else:
-        return return_df
+        trials = trials.loc[trials.trial_idx >= 1, :]
+    # Add name to dataframe
+    trials.name = 'trials'
+    # Add to segment object
+    from imaging_analysis.segment_processing import AppendDataframesToSegment
+    AppendDataframesToSegment(seg, trials)
+    # return dataframe if asked
+    if returndf:
+        return trials
 
 def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None, 
         endoftrial=None, endeventmissing='last'):
@@ -319,6 +328,10 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
     endeventmissing = 'next': end of trial is the start of the next one
     (last trial ends on its last event)
     endeventmissing = 'last': end of trial is the last event of that trial"""
+    # Assign trials for segment object if trials is not given
+    if trials is None:
+        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
+        #trials = [x for x in seg.dataframes if x.name = 'trials'][0]
     # Makes sure trials is a dataframe
     if not isinstance(trials, pd.core.frame.DataFrame):
         raise TypeError('%s must be a dataframe' % trials)
