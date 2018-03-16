@@ -7,7 +7,7 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "11 Mar 2018"
+__lastmodified__ = "16 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -24,7 +24,7 @@ from imaging_analysis.event_processing import ProcessEventList
 from imaging_analysis.event_processing import ProcessEvents
 from imaging_analysis.event_processing import ResultOfTrial
 from imaging_analysis.event_processing import ProcessTrials
-
+from imaging_analysis.event_processing import GroupTrialsByEpoch
 
 
 class TestLoadEventParams(unittest.TestCase):
@@ -511,6 +511,108 @@ class TestProcessTrials(unittest.TestCase):
             startoftrial=self.startoftrial, epochs=self.epochs, 
             typedf=self.typeframe, firsttrial=False)
         self.assertTrue(all(output.columns == self.columns))                
+
+
+
+class TestGroupTrialsByEpoch(unittest.TestCase):
+    "Tests for GroupTrialsByEpoch function"
+
+    def setUp(self):
+        self.trials = pd.DataFrame()
+        self.trials['time'] = np.array([113.64892769, 118.64899683, 125.64938855, \
+            125.79111004, 126.99205732, 131.99212646, 138.99219036, 139.09721184, \
+            144.09728098, 145.57216859])
+        self.trials['event'] = np.array(['iti_start', 'iti_end', 'omission', \
+            'tray_activated', 'iti_start', 'stimulus_appears', 'tray_activated', \
+            'iti_start', 'stimulus_appears', 'correct'])
+        self.trials['trial_idx'] = np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+        self.trials['results'] = np.array(['omission', 'omission', 'omission', \
+            'omission', 'NONE', 'NONE', 'NONE', 'correct', 'correct', 'correct'])
+        self.trials['event_type'] = np.array(['start', 'end', 'results', \
+            'other', 'start', 'stimulus', 'other', 'start', 'stimulus', 'results'])
+        self.startoftrial = ['start']
+        self.endoftrial = ['end']
+        self.segment = Segment()
+
+    def tearDown(self):
+        del self.trials 
+        del self.startoftrial
+        del self.endoftrial
+        del self.segment
+
+    def test_trials_is_a_dataframe(self):
+        "Make sure trials is a dataframe"
+        self.assertRaises(TypeError, GroupTrialsByEpoch, trials='not a dataframe')
+
+    def test_startoftrial_is_a_list(self):
+        "Make sure startoftrial is a list"
+        self.assertRaises(TypeError, GroupTrialsByEpoch, trials=self.trials, 
+            startoftrial='not a list')
+
+    def test_endoftrial_is_a_list(self):
+        "Make sure endoftrial is a list"
+        self.assertRaises(TypeError, GroupTrialsByEpoch, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial='not a list')
+
+    def test_seg_is_a_segment_object(self):
+        "Make sure seg is a segment object"
+        self.assertRaises(TypeError, GroupTrialsByEpoch, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial, 
+            seg='not a segment object')
+
+    def test_endeventmissing_is_correct(self):
+        "Make sure endeventmissing is correct"
+        self.assertRaises(ValueError, GroupTrialsByEpoch, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial, 
+            seg=self.segment, endeventmissing='not a choice')
+
+    def test_epochs_added_to_segment(self):
+        "Makes sure epochs are added to segment object"
+        GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial)
+        self.assertEqual(len(self.segment.epochs), 
+            self.trials.results.unique().shape[0])
+
+    def test_starts_times_are_correct(self):
+        "Makes sure start time for each epoch is correct"
+        correct_times = self.trials.loc[[0, 4, 7], 'time'].values * pq.s
+        GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial)
+        output_times = np.array([x.times[0] for x in self.segment.epochs])
+        check = np.array_equal(correct_times, output_times)
+        self.assertTrue(check)
+
+    def test_durations_are_correct_if_end_event_exists(self):
+        "Makes sure duration is correct if there is an end event"
+        correct_duration = self.trials.iloc[:10, 0].diff().values[1] * pq.s
+        GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial)
+        output_duration = np.array([x.durations[0] for x in self.segment.epochs \
+            if x.name == 'omission'])
+        self.assertEqual(correct_duration, output_duration)
+
+    def test_durations_are_correct_if_endeventmissing_is_last(self):
+        "Makes sure duration is correct if endeventmissing = last"
+        correct_duration = self.trials.loc[6, 'time'] - self.trials.loc[4, 'time']
+        correct_duration = correct_duration * pq.s
+        GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial, 
+            endeventmissing='last')
+        output_duration = np.array([x.durations[0] for x in self.segment.epochs \
+            if x.name == 'NONE'])
+        self.assertEqual(correct_duration, output_duration)
+
+    def test_durations_are_correct_if_endeventmissing_is_next(self):
+        "Makes sure duration is correct if endeventmissing = next"
+        correct_duration = self.trials.loc[7, 'time'] - self.trials.loc[4, 'time']
+        correct_duration = correct_duration * pq.s
+        GroupTrialsByEpoch(seg=self.segment, trials=self.trials, 
+            startoftrial=self.startoftrial, endoftrial=self.endoftrial, 
+            endeventmissing='next')
+        output_duration = np.array([x.durations[0] for x in self.segment.epochs \
+            if x.name == 'NONE'])
+        self.assertEqual(correct_duration, output_duration)
+
 
 
 if __name__ == '__main__':

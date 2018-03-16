@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "11 Mar 2018"
+__lastmodified__ = "16 Mar 2018"
 
 import quantities as pq
 from collections import OrderedDict
@@ -331,6 +331,9 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
     # Makes sure seg is a segment object
     if not isinstance(seg, neo.core.Segment):
         raise TypeError('%s must be a segment object' % seg)
+    # Make sure endeventmissing is either last or next
+    if endeventmissing not in ['last', 'next']:
+        raise ValueError("endeventmissing must be 'last' or 'next'")
     # Gets a set of the epochs
     epochs = trials.results.unique()
     for epoch in epochs:

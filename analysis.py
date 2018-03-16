@@ -8,7 +8,7 @@ analysis.py: Python script that processes and analyzes fiber photometry data.
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "12 Mar 2018"
+__lastmodified__ = "16 Mar 2018"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch
@@ -31,6 +31,9 @@ deltaf_options = {} # Any parameters you want to pass when calculating deltaf/f
 # For calculating events and event labels
 tolerance = .1 # Tolerance window (in seconds) for finding coincident events
 processed_event_ch_name = 'Events'
+# How is a trial considered over? The 'last' event in a trial or the first event
+# in the 'next' trial?
+how_trial_ends = 'last'
 
 ##########################################################################
 # This loads our event dictionary {'1': 'correct', '2': 'incorrect', ...}
@@ -113,7 +116,7 @@ except IOError:
         # or the 3) 'next' event in the following trial.
         PrintNoNewLine('\nCalculating epoch times and trials...')
         GroupTrialsByEpoch(seg=segment, trials=trials, startoftrial=start, 
-            endoftrial=end, endeventmissing='last')
+            endoftrial=end, endeventmissing=how_trial_ends)
         Print('Done!')
 
 
