@@ -55,6 +55,7 @@ def LoadEventParams(dpath=None, evtdict=None):
     events, codes = zip(*code_event_pairs)
     event_type = pd.DataFrame(data=list(codes), index=list(events), columns=channels)
     event_type.index.name = 'event'
+    event_type.name = 'eventframe'
     # Constructs plotting dataframe
     plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
     plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
@@ -62,6 +63,7 @@ def LoadEventParams(dpath=None, evtdict=None):
     # Constructs results dataframe
     results_event_pairs = [(x, y['type']) for x, y in evtdict['events'].items()]
     results = pd.DataFrame(results_event_pairs, columns=['event', 'type']).set_index('event')
+    results.name = 'resultsframe'
     # returns dataframe
     return startoftrial, endoftrial, epochs, event_type, plot, results
 

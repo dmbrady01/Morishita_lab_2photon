@@ -207,7 +207,10 @@ class TestAppendDataframesToSegment(unittest.TestCase):
         AppendDataframesToSegment(self.segment2, self.df)
         self.assertEqual(len(self.segment2.dataframes), 2)
 
-
+    def test_segment_works_with_list_of_dataframes(self):
+        "Makes sure it works with a list of dataframes"
+        AppendDataframesToSegment(self.segment, [self.df, self.df])
+        self.assertEqual(len(self.segment.dataframes), 2)
 
 if __name__ == '__main__':
     unittest.main()

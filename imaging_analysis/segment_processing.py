@@ -52,14 +52,21 @@ def TruncateSegments(list_of_segments, start=0, end=0, clip_same=True, evt_start
 
 def AppendDataframesToSegment(segment, dataframe):
     """Given a segment object, will check to see if it has the correct attribute.
-    If not, will create 'dataframes' attribute and append dataframe to it."""
+    If not, will create 'dataframes' attribute and append dataframe to it or cycle
+    through a list of dataframes and append them all."""
     # Checks segment and dataframe types
     if not isinstance(segment, neo.core.Segment):
         raise TypeError('%s must be a segment object' % segment)
-    if not isinstance(dataframe, pd.core.frame.DataFrame):
-        raise TypeError('%s must be a dataframe object' % dataframe)
+    if isinstance(dataframe, pd.core.frame.DataFrame):
+        dataframe = [dataframe]
+    elif isinstance(dataframe, list) and \
+        all(isinstance(x, pd.core.frame.DataFrame) for x in dataframe):
+        dataframe = dataframe 
+    else:
+        raise TypeError('%s must be a dataframe or list of dataframes object' % dataframe)
     # checks if attribute exists, if not creates it
     if not hasattr(segment, 'dataframes'):
         segment.dataframes = []
     # Adds dataframe to segment object
-    segment.dataframes.append(dataframe)
+    for df in dataframe:
+        segment.dataframes.append(df)

@@ -12,7 +12,7 @@ __lastmodified__ = "16 Mar 2018"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch
-from imaging_analysis.segment_processing import TruncateSegments
+from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
 #######################################################################
@@ -34,6 +34,10 @@ processed_event_ch_name = 'Events'
 # How is a trial considered over? The 'last' event in a trial or the first event
 # in the 'next' trial?
 how_trial_ends = 'last'
+# Save processed trials as pickle object? Honestly, its faster just to run 
+# the processing again
+save_pickle = False 
+pickle_name = 'processed.pkl'
 
 ##########################################################################
 # This loads our event params json
@@ -69,6 +73,8 @@ except IOError:
 
     # Iterates through each segment in seglist. Right now, there is only one segment
     for segment in seglist:
+        # Appends processed event_param.json info to segment object
+        AppendDataframesToSegment(segment, [evtframe, plotframe, typeframe])
         # Extracts the sampling rate from the signal channel
         sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
         # Appends an analog signal object that is delta F/F. The name of the channel is
@@ -118,7 +124,11 @@ except IOError:
         GroupTrialsByEpoch(seg=segment, startoftrial=start, endoftrial=end, 
             endeventmissing=how_trial_ends)
         print('Done!')
-    # Saves everything to pickeled object
-
+    # Option to save pickle object
+    if save_pickle:
+        # Saves everything to pickeled object
+        PrintNoNewLine('\nWriting processed pickled object...')
+        WriteNeoPickledObj(block, path=dpath, name=pickle_name)
+        print('Done')
 
 
