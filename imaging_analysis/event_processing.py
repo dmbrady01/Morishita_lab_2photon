@@ -327,20 +327,9 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     if returndf:
         return trials
 
-def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None, 
-        endoftrial=None, endeventmissing='last'):
-    """Given a segment object and a trials dataframe, will go through 
-    each epoch type and collect when the trial started and stopped.
-    Started is by the start events in startoftrial, stopped is by
-    event in endoftrial. If endoftrial is missing, stopped can be determined
-    by two modes:
-    endeventmissing = 'next': end of trial is the start of the next one
-    (last trial ends on its last event)
-    endeventmissing = 'last': end of trial is the last event of that trial"""
-    # Assign trials for segment object if trials is not given
-    if trials is None:
-        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
-        #trials = [x for x in seg.dataframes if x.name = 'trials'][0]
+def CalculateStartsAndDurations(trials=None, epoch_column=None, 
+        startoftrial=None, endoftrial=None, endeventmissing='next'):
+    """Given a trialframe and epoch_column, calculates start and durations."""
     # Makes sure trials is a dataframe
     if not isinstance(trials, pd.core.frame.DataFrame):
         raise TypeError('%s must be a dataframe' % trials)
@@ -350,17 +339,16 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
     # Makes sure endoftrial is a list
     if not isinstance(endoftrial, list):
         raise TypeError('%s must be a list' % endoftrial)
-    # Makes sure seg is a segment object
-    if not isinstance(seg, neo.core.Segment):
-        raise TypeError('%s must be a segment object' % seg)
     # Make sure endeventmissing is either last or next
     if endeventmissing not in ['last', 'next']:
         raise ValueError("endeventmissing must be 'last' or 'next'")
     # Gets a set of the epochs
-    epochs = trials.results.unique()
+    epochs = trials.loc[trials[epoch_column].notnull(), epoch_column].unique()
+    # to return (list of tuples)
+    final_list = []
     for epoch in epochs:
         # Makes a dataframe of events only concerning a specific epoch
-        epochframe = trials.loc[trials.results == epoch, :]
+        epochframe = trials.loc[trials[epoch_column] == epoch, :]
         start_times = []
         durations = []
         # Goes through each trial in that epoch to figure out start times and
@@ -390,7 +378,39 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
             duration = endtime - starttime
             durations.append(duration)
             start_times.append(starttime)
-        # Adds durations and start times to create an Epoch
-        seg.epochs.append(Epoch(times=np.array(start_times) * pq.s,
-            durations=np.array(durations) * pq.s, name=epoch))
+        final_list.append((start_times, durations, epoch))
+    return final_list
+
+def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None, 
+        endoftrial=None, endeventmissing='next'):
+    """Given a segment object and a trials dataframe, will go through 
+    each epoch type and collect when the trial started and stopped.
+    Started is by the start events in startoftrial, stopped is by
+    event in endoftrial. If endoftrial is missing, stopped can be determined
+    by two modes:
+    endeventmissing = 'next': end of trial is the start of the next one
+    (last trial ends on its last event)
+    endeventmissing = 'last': end of trial is the last event of that trial"""
+    # Makes sure seg is a segment object
+    if not isinstance(seg, neo.core.Segment):
+        raise TypeError('%s must be a segment object' % seg)
+    # Assign trials for segment object if trials is not given
+    if trials is None:
+        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
+    # Calculate epochs for results column
+    epoch_list = CalculateStartsAndDurations(trials=trials, epoch_column='results', startoftrial=startoftrial, endoftrial=endoftrial, 
+        endeventmissing=endeventmissing)
+    # Adds durations and start times to create an Epoch
+    for epoch in epoch_list:
+        seg.epochs.append(Epoch(times=np.array(epoch[0]) * pq.s,
+            durations=np.array(epoch[1]) * pq.s, name=epoch[2]))
+    # Now calculates epochs with previous trial results
+    # Gets a set of the epochs
+    prev_epoch_list = CalculateStartsAndDurations(trials=trials, 
+        epoch_column='with_previous_results', startoftrial=startoftrial, 
+        endoftrial=endoftrial, endeventmissing=endeventmissing)
+    # Adds durations and start times to create an Epoch
+    for epoch in prev_epoch_list:
+        seg.epochs.append(Epoch(times=np.array(epoch[0]) * pq.s,
+            durations=np.array(epoch[1]) * pq.s, name=epoch[2]))
 
