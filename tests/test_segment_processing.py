@@ -7,11 +7,11 @@ test_signal_processing.py: Python script that contains tests for signal_processi
 
 __author__ = "DM Brady"
 __datewritten__ = "06 Mar 2018"
-__lastmodified__ = "16 Mar 2018"
+__lastmodified__ = "22 Mar 2018"
 
 # Import unittest modules and event_processing
 import unittest
-from neo.core import AnalogSignal, Event, Segment
+from neo.core import AnalogSignal, Event, Segment, Epoch
 import numpy as np
 import quantities as pq
 import copy as cp
@@ -19,6 +19,7 @@ import pandas as pd
 from imaging_analysis.segment_processing import TruncateSegment
 from imaging_analysis.segment_processing import TruncateSegments
 from imaging_analysis.segment_processing import AppendDataframesToSegment
+from imaging_analysis.segment_processing import AlignEventsAndSignals
 
 
 class TestTruncateSegment(unittest.TestCase):
@@ -211,6 +212,34 @@ class TestAppendDataframesToSegment(unittest.TestCase):
         "Makes sure it works with a list of dataframes"
         AppendDataframesToSegment(self.segment, [self.df, self.df])
         self.assertEqual(len(self.segment.dataframes), 2)
+
+
+
+class TestAlignEventsAndSignals(unittest.TestCase):
+    "Tests for AlighEventsAndSignals"
+
+    def setUp(self):
+        self.segment = Segment()
+        self.epoch = Epoch(name='my epoch')
+        self.segment.epochs.append(self.epoch)
+
+    def tearDown(self):
+        del self.segment
+
+    def test_segment_object_passed(self):
+        "Makes sure segment object is passed"
+        self.assertRaises(TypeError, AlignEventsAndSignals, seg='not a segment')
+
+    def test_epoch_name_correct(self):
+        "Makes sure epoch_name must be correct"
+        self.assertRaises(ValueError, AlignEventsAndSignals, seg=self.segment, 
+            epoch_name='not an epoch')
+
+    def test_analog_ch_name_correct(self):
+        "Makes sure analog_ch_name must be correct"
+        self.assertRaises(ValueError, AlignEventsAndSignals, seg=self.segment, 
+            epoch_name='my epoch', analog_ch_name='not a channel')
+
 
 if __name__ == '__main__':
     unittest.main()
