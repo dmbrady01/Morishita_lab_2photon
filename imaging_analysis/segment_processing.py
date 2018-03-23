@@ -16,6 +16,7 @@ import quantities as pq
 import neo
 import pandas as pd
 import os
+import numpy as np
 
 def TruncateSegment(segment, start=0, end=0, clip_same=True, evt_start=None, evt_end=None):
     """Given a Segment object, will remove the first 'start' seconds and the 
@@ -51,7 +52,7 @@ def TruncateSegments(list_of_segments, start=0, end=0, clip_same=True, evt_start
         evt_start=evt_start, evt_end=evt_end) for x in list_of_segments]
     return truncated_list
 
-def AppendDataframesToSegment(segment, dataframe):
+def AppendDataframesToSegment(segment, dataframe, names):
     """Given a segment object, will check to see if it has the correct attribute.
     If not, will create 'dataframes' attribute and append dataframe to it or cycle
     through a list of dataframes and append them all."""
@@ -67,10 +68,10 @@ def AppendDataframesToSegment(segment, dataframe):
         raise TypeError('%s must be a dataframe or list of dataframes object' % dataframe)
     # checks if attribute exists, if not creates it
     if not hasattr(segment, 'dataframes'):
-        segment.dataframes = []
+        segment.dataframes = {}
     # Adds dataframe to segment object
-    for df in dataframe:
-        segment.dataframes.append(df)
+    for name, df in zip(names, dataframe):
+        segment.dataframes.update({name: df})
 
 def AppendDictToSegment(segment, dicts):
     """Given a segment object, will check to see if it has the correct attribute.
@@ -176,7 +177,7 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
 
     # Extract trials dataframe
     try:
-        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
+        trials = seg.dataframes['trials']
     except:
         raise ValueError("""There is no trials dataframe in the segment object.
             Did you run ProcessTrials?""")
@@ -309,11 +310,11 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     AppendDictToSegment(seg, final_dict)
 
     if to_csv:
-        dpath = path + os.sep + name
-        signal_df.to_csv(name + '_all_traces.csv')
-        event_df.to_csv(name + '_all_events.csv')
-        avg_df.to_csv(name + '_average_trace.csv')
-        pe_df.to_csv(name + '_point_estimate.csv')
+        dpath = dpath + os.sep + name
+        signal_df.to_csv(dpath + '_all_traces.csv')
+        event_df.to_csv(dpath + '_all_events.csv')
+        avg_df.to_csv(dpath + '_average_trace.csv')
+        pe_df.to_csv(dpath + '_point_estimate.csv')
 
 
 

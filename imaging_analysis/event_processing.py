@@ -322,7 +322,7 @@ def ProcessTrials(seg=None, name='Events', startoftrial=None, epochs=None,
     trials.name = 'trials'
     # Add to segment object
     from imaging_analysis.segment_processing import AppendDataframesToSegment
-    AppendDataframesToSegment(seg, trials)
+    AppendDataframesToSegment(seg, trials, ['trials'])
     # return dataframe if asked
     if returndf:
         return trials
@@ -396,7 +396,7 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
         raise TypeError('%s must be a segment object' % seg)
     # Assign trials for segment object if trials is not given
     if trials is None:
-        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
+        trials = seg.dataframes['trials']
     # Calculate epochs for results column
     epoch_list = CalculateStartsAndDurations(trials=trials, epoch_column='results', startoftrial=startoftrial, endoftrial=endoftrial, 
         endeventmissing=endeventmissing)

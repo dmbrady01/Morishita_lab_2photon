@@ -75,7 +75,8 @@ except IOError:
     # Iterates through each segment in seglist. Right now, there is only one segment
     for segment in seglist:
         # Appends processed event_param.json info to segment object
-        AppendDataframesToSegment(segment, [evtframe, plotframe, typeframe])
+        AppendDataframesToSegment(segment, [evtframe, plotframe, typeframe], 
+            ['eventframe', 'plotframe', 'resultsframe'])
         # Extracts the sampling rate from the signal channel
         sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
         # Appends an analog signal object that is delta F/F. The name of the channel is
