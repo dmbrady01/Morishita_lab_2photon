@@ -72,8 +72,8 @@ def AppendDataframesToSegment(segment, dataframe):
         segment.dataframes.append(df)
 
 def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None, 
-        event_ch_name=None, event=None, event_type='type', 
-        prewindow=0, postwindow=0, window_type='event', clip=False):
+        event_ch_name=None, event=None, event_type='type', prewindow=0, 
+        postwindow=0, window_type='event', clip=False):
     """Takes a segment object and spits out four dataframes:
     1) all analog traces for a specified epoch and window centered at an event
     2) all event traces for a specified epoch and window centered at an event
@@ -84,16 +84,17 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     Takes the following arguments:
     1) seg: segment object to be processed. Must have processed analog signals,
     events, epochs, and dataframes
-    2) epoch: the type of epoch to analyze (e.g. 'omission', 'correct_correct')
-    3) event: the event to align by (e.g. 'result', 'iti_start', 'start')
-    4) event_type: 'label' means the exact name of an event ('iti_start',
+    2) epoch_name: the type of epoch to analyze (e.g. 'omission', 'correct_correct')
+    3) analog_ch_name: name of the analog channel to analyze (e.g. 'deltaf_f')
+    4) event: the event to align by (e.g. 'result', 'iti_start', 'start')
+    5) event_class: 'label' means the exact name of an event ('iti_start',
     'tray_activated'), 'type' means the type of event specified in event_params.json
     ('results', 'start', 'end')
-    5) prewindow: time in seconds to begin collecting before event or trial
-    6) postwindow: time in seconds to end collecting after event or trial
-    7) window_type: 'event' means the pre/post windows are only around the alignment
+    6) prewindow: time in seconds to begin collecting before event or trial
+    7) postwindow: time in seconds to end collecting after event or trial
+    8) window_type: 'event' means the pre/post windows are only around the alignment
     event. 'trial' means the pre/post windows are collected around the entire trial
-    8) clip: only relevant for window_type='trial', clip=True will only keep values
+    9) clip: only relevant for window_type='trial', clip=True will only keep values
     within the specified window (even though trials may be different lengths), so
     there will be NaN values for shorter trials. clip=False will use the longest
     trial as a default and just collect the values. clip=False is more relevant
@@ -101,8 +102,8 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
 
     Example:
     AlignEventsAndSignals(segment, epoch_name='correct_incorrect', 
-        analog_ch_name='deltaf_f', event_ch_name='Events', event='start', 
-        event_type='type', prewindow=2, postwindow=8, window_type='event')
+        analog_ch_name='deltaf_f', event='start', event_type='type', 
+        prewindow=2, postwindow=8, window_type='event')
 
     Will find all 'correct_incorrect' trials, look for the first event type called
     'start' in each trial, and collect 2 seconds before and 8 seconds after that
@@ -110,8 +111,8 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
 
     Example 2:
     AlignEventsAndSignals(segment, epoch_name='incorrect', analog_ch_name='deltaf_f',
-        event_ch_name='Events', event='tray_activated', event_type='label',
-        prewindow=1, postwindow=1, window_type='trial', clip=True)
+        event='tray_activated', event_type='label', prewindow=1, postwindow=1, 
+        window_type='trial', clip=True)
 
     Will find all 'incorrect' trials, and take 1 seconds before the start of each
     trial to 1 second after each trial. The data will be aligned at tray_activated.
@@ -125,6 +126,7 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     # Extract epoch object
     try:
         epoch = filter(lambda x: x.name == epoch_name, seg.epochs)[0]
+        epoch_mask = epoch.times
     except:
         raise ValueError("""%s not in segment object. Did you not run 
             GroupTrialsByEpoch or misspell the epoch_name?"""
@@ -137,4 +139,123 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
         raise ValueError("""%s not in segment object. Did you not run 
             ProcessSignalData or misspell the analog_ch_name?"""
             % analog_ch_name)
+
+    # Extract events object
+    try:
+        events = filter(lambda x: x.name == event_ch_name, seg.events)[0]
+    except:
+        raise ValueError("""%s not in segment object. Did you not run 
+            ProcessEvents or misspell the event_ch_name?"""
+            % event_ch_name)
+
+    # Extract trials dataframe
+    try:
+        trials = filter(lambda x: x.name == 'trials', seg.dataframes)[0]
+    except:
+        raise ValueError("""There is no trials dataframe in the segment object.
+            Did you run ProcessTrials?""")
+
+    # converts pre and post windows to seconds
+    prewindow = prewindow * pq.s 
+    postwindow = postwindow * pq.s
+
+    # Makes sure event_type is correct
+    if event_type == 'label':
+        event_mask = 'event'
+    elif event_type == 'type':
+        event_mask = 'event_type'
+    else:
+        raise ValueError("""event_type must be either 'label' for specific events 
+            (i.e. tray_activated) or 'type' for classes of events (i.e. results)""")
+
+    # Makes sure event is in event or event_type column
+    if not event in trials.loc[:, event_mask].values:
+        raise ValueError("""%s is not found in trials dataframe. 
+            Is event_type correct?""" % event)
+
+    # Gets trial indices for that epoch
+    trial_indices = trials.loc[trials.time.isin(epoch_mask), 'trial_idx'].unique()
+    # Make trials column names
+    # Starts at 1 and increments
+    trial_names = ['trial' + str(ind + 1) for ind in range(len(trial_indices))]
+    # Starts at the actual trial number
+    #trial_names = ['trial' + str(ind) for ind in trial_indices]
+    
+    # Time when event of interest occured
+    trial_start = epoch.times
+    trial_end = trial_start + epoch.durations
+    event_time = trials.loc[(trials[event_mask] == event) & \
+        (trials.trial_idx.isin(trial_indices)), 'time'].unique() * pq.s
+
+    # Get time window around event
+    if window_type == 'event':
+        windows = np.array([event_time - prewindow, event_time + postwindow]).T * pq.s
+        longest_pre_window = prewindow 
+        longest_post_window = postwindow
+    # Get time window around each trial
+    elif window_type == 'trial':
+        # Finds the trial with the longest window between pre trial and event
+        longest_pre_window = np.max(event_time - (trial_start - prewindow))
+        # Finds the trial with the longest window between event and post trial
+        longest_post_window = np.max((trial_end + postwindow) - event_time)
+        
+        if clip is True:
+            # if clipped then we only take values around each trial
+            windows = np.array([trial_start - prewindow, 
+                trial_end - postwindow]).T * pq.s
+        else:
+            # if not clipped then we take values around each trial according to
+            # the longest pre/post windows possible
+            windows = np.array([event_time - longest_pre_window, 
+                event_time + longest_post_window]).T * pq.s
+    
+    # Calculates how many rows dataframe will be (must be event)
+    pre_len = int(np.ceil((longest_pre_window.magnitude - 0)/signal.sampling_period))
+    post_len = int(np.ceil((longest_post_window.magnitude - 0)/signal.sampling_period))
+    # Create index starting at prewindow and ending at postwindow
+    start_index = -1 * pre_len * signal.sampling_period.magnitude
+    end_index = post_len * signal.sampling_period.magnitude
+    len_index = pre_len + post_len + 1
+    index = np.linspace(start_index, end_index, len_index)
+    # creates analog signal and event dataframes
+    signal_df = pd.DataFrame(np.nan, index=index, columns=trial_names)
+    event_df = pd.DataFrame(np.nan, index=index, columns=trial_names)
+
+    # Goes through each trial to get relevant time stamps and resets them
+    for trial in range(trial_indices.shape[0]):
+        # Get the timestamp of the aligning event in that trial
+        centering_event = event_time[trial]
+        # Get the start/end of the window
+        window_start, window_end = windows[trial]
+        # get analog signal for that time frame
+        sig_values = signal.time_slice(window_start, window_end).magnitude 
+        # get corresponding time stamps for the time signal
+        sig_times = signal.time_slice(window_start, window_end).times - centering_event
+        # because the sampling frequency might not exactly align with the event
+        # windows (event happens at 2 seconds, but sampling is at 1.997 and 2.001 
+        # seconds) we have to align them
+        # make a dataframe with signal magnitude and signal timestamps
+        sig_df = pd.DataFrame(sig_values, index=sig_times)
+        # do a fuzzy merge that aligns event time index with sampling freq index
+        aligned_sig = pd.merge_asof(signal_df, sig_df, left_index=True, 
+            right_index=True).iloc[:, -1]
+        # Assign signal to signal dataframe
+        signal_df.iloc[:, trial] = aligned_sig 
+        # get event times
+        evt_times = events.time_slice(window_start, window_end).times
+        if len(evt_times) > 0:
+            # get labels for those events
+            evt_labels = events.labels[np.isin(events.times, evt_times)]
+            # Find the closest sampled index to event (since sampling frequency
+            # might not match when event occurs)
+            evt_indices = [(np.abs(index - x.magnitude)).argmin() for x in 
+                (evt_times - centering_event)]
+            event_df.iloc[evt_indices, trial] = evt_labels
+
+
+
+
+
+
+
 

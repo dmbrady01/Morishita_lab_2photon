@@ -222,9 +222,22 @@ class TestAlignEventsAndSignals(unittest.TestCase):
         self.segment = Segment()
         self.epoch = Epoch(name='my epoch')
         self.segment.epochs.append(self.epoch)
+        self.signal = AnalogSignal(np.random.randn(1000,1), units='V', 
+            sampling_rate=1*pq.Hz, name='my signal')
+        self.segment.analogsignals.append(self.signal)
+        self.trials = pd.DataFrame()
+        self.trials.name = 'trials'
+        self.segment2 = Segment()
+        self.segment2.epochs.append(self.epoch)
+        self.segment2.analogsignals.append(self.signal)
+        self.segment2.dataframes = [self.trials]
 
     def tearDown(self):
         del self.segment
+        del self.epoch 
+        del self.signal
+        del self.trials 
+        del self.segment2
 
     def test_segment_object_passed(self):
         "Makes sure segment object is passed"
@@ -239,6 +252,16 @@ class TestAlignEventsAndSignals(unittest.TestCase):
         "Makes sure analog_ch_name must be correct"
         self.assertRaises(ValueError, AlignEventsAndSignals, seg=self.segment, 
             epoch_name='my epoch', analog_ch_name='not a channel')
+
+    def test_trials_dataframe_exists(self):
+        "Makes sure trials dataframe exists"
+        self.assertRaises(ValueError, AlignEventsAndSignals, seg=self.segment, 
+            epoch_name='my epoch', analog_ch_name='my signal')
+
+    def test_event_type_is_correct(self):
+        "Makes sure event_type is label or type"
+        self.assertRaises(ValueError, AlignEventsAndSignals, seg=self.segment2, 
+            epoch_name='my epoch', analog_ch_name='my signal', event_type='wrong')
 
 
 if __name__ == '__main__':
