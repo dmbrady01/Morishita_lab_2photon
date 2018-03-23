@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-analysis.py: Python script that processes and analyzes fiber photometry data.
+process_data.py: Python script that processes fiber photometry data. It truncates
+the signal, filters it, labels events, processes trials, and groups trials by epoch.
 """
 
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "16 Mar 2018"
+__lastmodified__ = "23 Mar 2018"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch
@@ -36,7 +37,7 @@ processed_event_ch_name = 'Events'
 how_trial_ends = 'last'
 # Save processed trials as pickle object? Honestly, its faster just to run 
 # the processing again
-save_pickle = False 
+save_pickle = True 
 pickle_name = 'processed.pkl'
 
 ##########################################################################
@@ -55,7 +56,7 @@ except IndexError:
 try:
     # Attempting to load pickled object
     PrintNoNewLine('Trying to load processed pickled object...')
-    seglist = ReadNeoPickledObj(path=dpath, name="processed.pkl", 
+    seglist = ReadNeoPickledObj(path=dpath, name=pickle_name, 
                                 return_block=False)
     print('Done!')
 
@@ -124,6 +125,9 @@ except IOError:
         GroupTrialsByEpoch(seg=segment, startoftrial=start, endoftrial=end, 
             endeventmissing=how_trial_ends)
         print('Done!')
+
+        # add processed flag to segment
+        segment.processed = True
     # Option to save pickle object
     if save_pickle:
         # Saves everything to pickeled object

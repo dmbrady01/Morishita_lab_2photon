@@ -15,6 +15,7 @@ __lastmodified__ = "22 Mar 2018"
 import quantities as pq
 import neo
 import pandas as pd
+import os
 
 def TruncateSegment(segment, start=0, end=0, clip_same=True, evt_start=None, evt_end=None):
     """Given a Segment object, will remove the first 'start' seconds and the 
@@ -71,14 +72,36 @@ def AppendDataframesToSegment(segment, dataframe):
     for df in dataframe:
         segment.dataframes.append(df)
 
+def AppendDictToSegment(segment, dicts):
+    """Given a segment object, will check to see if it has the correct attribute.
+    If not, will create 'analyzed' attribute and append dictionary to it or cycle
+    through a list of dictionaries and append them all."""
+    # Checks segment and dataframe types
+    if not isinstance(segment, neo.core.Segment):
+        raise TypeError('%s must be a segment object' % segment)
+    if isinstance(dicts, dict):
+        dicts = [dicts]
+    elif isinstance(dicts, list) and all(isinstance(x, dict) for x in dicts):
+        dicts = dicts
+    else:
+        raise TypeError('%s must be a dictionary or list of dictionaries' % dicts)
+    # checks if attribute exists, if not creates it
+    if not hasattr(segment, 'analyzed'):
+        segment.analyzed = {}
+    # Adds dataframe to segment object
+    for d in dicts:
+        segment.analyzed.update(d)
+
 def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None, 
         event_ch_name=None, event=None, event_type='type', prewindow=0, 
-        postwindow=0, window_type='event', clip=False):
+        postwindow=0, window_type='event', clip=False, name=None, to_csv=False,
+        dpath=''):
     """Takes a segment object and spits out four dataframes:
-    1) all analog traces for a specified epoch and window centered at an event
-    2) all event traces for a specified epoch and window centered at an event
-    2) average analog trace +/- sem for a specified epoch and window
-    3) average analog value of the average analog trace +/- sem for a 
+    1) 'all_traces' - all analog traces for a specified epoch and window 
+    centered at an event
+    2) 'all_events' all events for a specified epoch and window centered at an event
+    2) 'average_trace' average analog trace and sem for a specified epoch and window
+    3) 'point_estimate' average analog value of the average analog trace and sem for a 
     specified epoch and window
 
     Takes the following arguments:
@@ -99,6 +122,9 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     there will be NaN values for shorter trials. clip=False will use the longest
     trial as a default and just collect the values. clip=False is more relevant
     for plotting.
+    10) name: name of collection of analyzed dataframes
+    11) to_csv: whether dataframes should be written to csv or only appended
+    to segment.analyze
 
     Example:
     AlignEventsAndSignals(segment, epoch_name='correct_incorrect', 
@@ -252,6 +278,42 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
                 (evt_times - centering_event)]
             event_df.iloc[evt_indices, trial] = evt_labels
 
+    # Do forward fill and backward fill for stray NaN values if clip=False
+    # These values come from the events not being totally inline with the
+    # sampling frequency
+    if clip is False:
+        signal_df = signal_df.ffill().bfill()
+
+    # Calculate average signal
+    avg_df = pd.DataFrame()
+    avg_df['avg'] = signal_df.mean(axis=1)
+    avg_df['se'] = signal_df.sem(axis=1)
+
+    # Calculate average of average (point estimate)
+    pe_df = pd.DataFrame(np.nan, columns=['avg', 'se'], index=[0])
+    pe_df.loc[0, 'avg'] = avg_df.avg.mean()
+    pe_df.loc[0, 'se'] = avg_df.se.sem()
+
+    # Creates a dictionary with name or constructes name
+    if not name:
+        name = '_'.join([analog_ch_name, event_ch_name, event, event_type, 
+            epoch_name, str(prewindow), str(postwindow), window_type, str(clip)])
+
+    final_dict = {name: {
+        'all_traces': signal_df,
+        'all_events': event_df,
+        'average_trace': avg_df,
+        'point_estimate': pe_df
+    }}
+
+    AppendDictToSegment(seg, final_dict)
+
+    if to_csv:
+        dpath = path + os.sep + name
+        signal_df.to_csv(name + '_all_traces.csv')
+        event_df.to_csv(name + '_all_events.csv')
+        avg_df.to_csv(name + '_average_trace.csv')
+        pe_df.to_csv(name + '_point_estimate.csv')
 
 
 
