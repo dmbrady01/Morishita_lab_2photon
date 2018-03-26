@@ -18,7 +18,7 @@ from imaging_analysis.utils import PrintNoNewLine
 from imaging_analysis.plotting import PlotAverageSignal
 
 dpath = '/Users/DB/Development/Monkey_frog/data/'
-name = 'three_animals_combined'
+name = 'three_days_from_one_animal'
 
 
 # CHANGE HERE (all_traces for single animal, average_trace for mult-animal)
@@ -26,7 +26,12 @@ csv1 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_D
 csv2 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175/correct_stimulus_all_traces.csv'
 csv3 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/correct_stimulus_all_traces.csv'
 csvs = [csv1, csv2, csv3] # add csv3, cs4 here
-multi_animal = False # True if combining multiple animals. Make sure csv is average_trace!
+
+# If all_traces.csv is chosen, it is assumed to be combining info from one animal
+if 'all_traces' in np.random.choice(csvs):
+    multi_animal = False 
+else:
+    multi_animal = True # True if combining multiple animals. Make sure csv is average_trace!
 
 # For plotting
 plot_events = [0, 5]
