@@ -50,7 +50,7 @@ start, end, epochs, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175'
+    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173'
 
 # Tries to load a processed pickle object, othewise reads the Tdt folder,
 # processes the data and writes a pickle object

@@ -13,37 +13,41 @@ __lastmodified__ = "23 Mar 2018"
 
 import pandas as pd
 import os
+import numpy as np
+from imaging_analysis.utils import PrintNoNewLine
+from imaging_analysis.plotting import PlotAverageSignal
 
-dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175'
-name = 'new_data'
+dpath = '/Users/DB/Development/Monkey_frog/data/'
+name = 'three_animals_combined'
 
 
 # CHANGE HERE (all_traces for single animal, average_trace for mult-animal)
-csv1 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174/all_traces.csv'
-csv2 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175/all_traces.csv'
-csvs = [csv1, csv2] # add csv3, cs4 here
-multi_animal = True # True if combining multiple animals. Make sure csv is average_trace!
+csv1 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174/correct_stimulus_all_traces.csv'
+csv2 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175/correct_stimulus_all_traces.csv'
+csv3 = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/correct_stimulus_all_traces.csv'
+csvs = [csv1, csv2, csv3] # add csv3, cs4 here
+multi_animal = False # True if combining multiple animals. Make sure csv is average_trace!
 
 # For plotting
 plot_events = [0, 5]
 sem = True
 save_plot = True
-plot_title = 'My plot title'
+plot_title = 'Three animals combined'
 color = 'b'
 alpha = 0.1
 
 combined_list = []
 for csv in csvs:
-    data1 = pd.read_csv(csv)
+    data1 = pd.read_csv(csv, index_col=0)
     if multi_animal is True:
-        data1 = data1.avg
+        data1 = data1.loc[:, 'avg']
     combined_list.append(data1)
 
 combined = pd.concat(combined_list, axis=1)
-
+combined = combined.bfill().ffill()
 # Calculate average signal
 # Calculate average signal
-avg_df = pd.DataFrame()
+avg_df = pd.DataFrame(index=combined.index)
 avg_df['avg'] = combined.mean(axis=1)
 avg_df['sd'] = combined.std(axis=1)
 avg_df['se'] = combined.sem(axis=1)
@@ -54,10 +58,10 @@ pe_df.loc[0, 'avg'] = avg_df.avg.mean()
 pe_df.loc[0, 'sd'] = avg_df.sd.mean()
 pe_df.loc[0, 'se'] = avg_df.se.sem()
 
-dpath = dpath + os.sep + name
-combined.to_csv(dpath + '_all_traces.csv')
-avg_df.to_csv(dpath + '_average_trace.csv')
-pe_df.to_csv(dpath + '_point_estimate.csv')
+csv_dpath = dpath + os.sep + name
+combined.to_csv(csv_dpath + '_all_traces.csv')
+avg_df.to_csv(csv_dpath + '_average_trace.csv')
+pe_df.to_csv(csv_dpath + '_point_estimate.csv')
 
 PrintNoNewLine('Plotting data...')
 PlotAverageSignal(combined, mode='raw', events=plot_events, sem=sem, save=save_plot, 

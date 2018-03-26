@@ -20,6 +20,7 @@ def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True,
     It will draw the average trace +/- the sem (if sem=True) or the sd (sem=False).
     events is a list of times when there should be vertical lines (trial start, 
     stimulus onset, end, etc.)"""
+    plt.figure()
     if mode == 'raw':
         avg = traces.mean(axis=1)
         if sem:
