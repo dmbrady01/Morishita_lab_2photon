@@ -14,6 +14,7 @@ __lastmodified__ = "23 Mar 2018"
 import sys
 from imaging_analysis.utils import ReadNeoPickledObj, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.segment_processing import AlignEventsAndSignals
+from imaging_analysis.plotting import PlotAverageSignal
 #######################################################################
 # VARIABLES TO ALTER
 # for loading your processed data
@@ -53,7 +54,10 @@ to_csv = True
 # PLOTTING parameters
 save_plot = True 
 plot_title = 'Correct Trials'
-
+color = 'b'
+alpha = 0.1
+plot_events = [0, 5] # times when you want a vertical line in the plot (trial start, stimulus on, etc.)
+sem = True #plot standard error of the mean. if false, plots standard deviation
 
 try:
     dpath = sys.argv[1]
@@ -77,4 +81,10 @@ for segment in seglist:
         event_ch_name=event_ch_name, event=event, event_type=event_type, 
         prewindow=prewindow, postwindow=postwindow, window_type=window_type, 
         clip=clip, name=name, to_csv=to_csv, dpath=dpath)
+    print('Done!')
+
+    traces = seg.analyzed[name]['all_traces']
+    PrintNoNewLine('Plotting data...')
+    PlotAverageSignal(traces, mode='raw', events=plot_events, sem=sem, save=save_plot, 
+        title=plot_title, color=color, alpha=alpha, dpath=dpath)
     print('Done!')
