@@ -47,3 +47,9 @@ def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True,
             dpath = os.getcwd()
         dpath = dpath + os.sep + title
         plt.savefig(dpath + '.pdf')
+
+def PlotRaster():
+    test['grouping'] = (test.index.to_series()/191.).astype(int)
+    t = test.groupby('grouping').mean()
+    t = t.set_index('index')
+    sns.heatmap(t.T)
