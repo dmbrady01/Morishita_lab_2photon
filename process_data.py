@@ -37,7 +37,8 @@ processed_event_ch_name = 'Events'
 how_trial_ends = 'last'
 # Save processed trials as pickle object? Honestly, its faster just to run 
 # the processing again
-save_pickle = True 
+load_pickle_object = False
+save_pickle = False 
 pickle_name = 'processed.pkl'
 
 ##########################################################################
@@ -55,11 +56,13 @@ except IndexError:
 # processes the data and writes a pickle object
 try:
     # Attempting to load pickled object
-    PrintNoNewLine('Trying to load processed pickled object...')
-    seglist = ReadNeoPickledObj(path=dpath, name=pickle_name, 
+    if load_pickle_object:
+        PrintNoNewLine('Trying to load processed pickled object...')
+        seglist = ReadNeoPickledObj(path=dpath, name=pickle_name, 
                                 return_block=False)
-    print('Done!')
-
+        print('Done!')
+    else:
+        raise IOError
 except IOError:
     # Reads data from Tdt folder
     PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')

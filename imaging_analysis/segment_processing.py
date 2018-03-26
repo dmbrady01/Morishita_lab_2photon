@@ -288,11 +288,13 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     # Calculate average signal
     avg_df = pd.DataFrame()
     avg_df['avg'] = signal_df.mean(axis=1)
+    avg_df['sd'] = signal_df.std(axis=1)
     avg_df['se'] = signal_df.sem(axis=1)
 
     # Calculate average of average (point estimate)
-    pe_df = pd.DataFrame(np.nan, columns=['avg', 'se'], index=[0])
+    pe_df = pd.DataFrame(np.nan, columns=['avg', 'sd', 'se'], index=[0])
     pe_df.loc[0, 'avg'] = avg_df.avg.mean()
+    pe_df.loc[0, 'sd'] = avg_df.sd.mean()
     pe_df.loc[0, 'se'] = avg_df.se.sem()
 
     # Creates a dictionary with name or constructes name
