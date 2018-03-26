@@ -34,20 +34,20 @@ event = 'iti_start'
 # or is it a class of events like 'start'? if so event_type = 'type'
 event_type = 'type'
 # what is the pre window (in seconds)
-prewindow = 2
+prewindow = 0
 # what is the post window (in seconds)
-postwindow = 8
+postwindow = 0
 # what type of window do you want? just around the event? ('event') or around the
 # entire trial ('trial')? Around the trial is probably used for plotting
-window_type = 'event'
+window_type = 'trial'
 # Do you want to clip the signal (only relevant if window_type = 'trial')
 # If clipped, then every trial has values only between prewindow and postwindow
 # even though trial lengths differ. That means there will be NaN values. If
 # not clipped, then the windows are determined by the trials with the longest
 # pre and post windows around the trial. You want clip=False for plotting
-clip = False
+clip = True
 # What do you want to call this analysis? i.e. 2seconds_iti_start_8seconds, etc.
-name = 'correct_start'
+name = 'correct_stimulus_pe'
 # Do you want to save to csv? All data is saved in each segments 'analyzed'
 # attribute
 to_csv = True
@@ -62,7 +62,7 @@ sem = True #plot standard error of the mean. if false, plots standard deviation
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024174'
+    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024175'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:
@@ -83,7 +83,7 @@ for segment in seglist:
         clip=clip, name=name, to_csv=to_csv, dpath=dpath)
     print('Done!')
 
-    traces = seg.analyzed[name]['all_traces']
+    traces = segment.analyzed[name]['all_traces']
     PrintNoNewLine('Plotting data...')
     PlotAverageSignal(traces, mode='raw', events=plot_events, sem=sem, save=save_plot, 
         title=plot_title, color=color, alpha=alpha, dpath=dpath)
