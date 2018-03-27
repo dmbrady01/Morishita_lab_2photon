@@ -49,7 +49,7 @@ def ReadNeoTdt(path, return_block=True):
         raise TypeError('%s is not a string' % path)
     # Checks to see if path exists
     if not os.path.exists(path):
-        raise IOError('%s cannot be found. Please check that it exists' % path)
+        raise IOError('%s cannot be found. Please check that it exists' % dpath)
     # Reads folder of files
     reader = io.TdtIO(dirname=path)
     # Reads block
