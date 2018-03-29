@@ -65,6 +65,9 @@ xmax = None
 ymin = None 
 ymax = None
 
+# smoothing window in msecs (None if you don't want to use it.)
+smoothing_window = 500
+
 try:
     dpath = sys.argv[1]
 except IndexError:
@@ -90,8 +93,11 @@ for segment in seglist:
     print('Done!')
 
     traces = segment.analyzed[name]['all_traces']
+    sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
+
     PrintNoNewLine('Plotting data...')
     PlotAverageSignal(traces, mode='raw', events=plot_events, sem=sem, save=save_plot, 
         title=plot_title, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
-        ymin=ymin, ymax=ymax)
+        ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, 
+        sampling_frequency=sampling_rate)
     print('Done!')

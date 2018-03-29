@@ -142,6 +142,75 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
         raise ValueError('%s is not an accepted mode for calculating deltaf' 
             % mode)
 
+def SmoothSignal(x, window_len=11, window='flat'):
+    """smooth the data using a window with requested size.
+    
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal 
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
+    
+    input:
+        x: the input signal 
+        window_len: the dimension of the smoothing window; should be an odd integer
+        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+
+    output:
+        the smoothed signal
+        
+    example:
+
+    t=linspace(-2,2,0.1)
+    x=sin(t)+randn(len(t))*0.1
+    y=smooth(x)
+    
+    see also: 
+    
+    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
+    scipy.signal.lfilter
+ 
+    TODO: the window parameter could be the window itself if an array instead of a string
+    NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
+    """
+
+    if x.ndim != 1:
+        raise ValueError, "SmoothSignal only accepts 1 dimension arrays."
+
+    if x.size < window_len:
+        raise ValueError, "Input vector needs to be bigger than window size."
+
+
+    if window_len<3:
+        return x
+
+
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+
+
+    s = np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+    #print(len(s))
+    if window == 'flat': #moving average
+        w = np.ones(window_len,'d')
+    else:
+        w = eval('np.'+ window +'(window_len)')
+
+    y = np.convolve(w/w.sum(), s , mode='valid')
+    y = y[(window_len/2-1):-(window_len/2)]
+    return y[:x.shape[0]]
+
+def SmoothSignalWithPeriod(x, sampling_rate=None, ms_bin=None, window='flat'):
+    "Given a signal and sampling period, will smooth to the nearest ms bin."
+    # Convert ms to seconds
+    seconds = ms_bin/1000.
+
+    num_bins = int(seconds * sampling_rate)
+    if num_bins // 2 == 0:
+        num_bins += 1
+
+    return SmoothSignal(x, window_len=num_bins, window=window)
+
 def NormalizeSignal(signal=None, reference=None, **kwargs):
     """The current method for correcting a signal. These are the steps:
     1) Lowpass filter signal and reference
