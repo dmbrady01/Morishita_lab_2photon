@@ -116,7 +116,7 @@ except IOError:
         # timestamp in chronological order, with the trial number and trial outcome
         # appended to each event/timestamp.
         PrintNoNewLine('\nProcessing trials...')
-        trials = ProcessTrials(seg=segment, name=processed_event_ch_name, 
+        trials = ProcessTrials(seg=segment, name='Events', 
             startoftrial=start, epochs=epochs, typedf=typeframe, 
             appendmultiple=False)
         print('Done!')

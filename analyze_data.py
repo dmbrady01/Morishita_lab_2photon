@@ -62,7 +62,7 @@ sem = True #plot standard error of the mean. if false, plots standard deviation
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173'
+    dpath = '/Users/DB/Development/Monkey_frog/data/wk9_variable_ITI_data'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:
