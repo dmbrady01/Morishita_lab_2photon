@@ -27,11 +27,11 @@ truncate_end = 0 # how many seconds to remove from the end of the recording
 lowpass_filter = 40.0 # Will remove frequencies above this number
 signal_channel = 'LMag 1' # Name of our signal channel
 reference_channel = 'LMag 2' # Name of our reference channel
-deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
+#deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
 deltaf_options = {} # Any parameters you want to pass when calculating deltaf/f
 # For calculating events and event labels
 tolerance = .1 # Tolerance window (in seconds) for finding coincident events
-processed_event_ch_name = 'Events'
+#processed_event_ch_name = 'Events'
 # How is a trial considered over? The 'last' event in a trial or the first event
 # in the 'next' trial?
 how_trial_ends = 'last'
@@ -94,7 +94,7 @@ except IOError:
         # and not run the savgol_filter, set deltaf_options = {'mode': 'mean', 'detrend': False}
         PrintNoNewLine('\nCalculating delta_f/f...')
         ProcessSignalData(seg=segment, sig_ch=signal_channel, ref_ch=reference_channel,
-                        name=deltaf_ch_name, fs=sampling_rate, highcut=lowpass_filter, **deltaf_options)
+                        name='DeltaF_F', fs=sampling_rate, highcut=lowpass_filter, **deltaf_options)
         # Appends an Event object that has all event timestamps and the proper label
         # (determined by the evtframe loaded earlier). Uses a tolerance (in seconds)
         # to determine if events co-occur. For example, if tolerance is 1 second
@@ -104,7 +104,7 @@ except IOError:
         print('Done!')
         PrintNoNewLine('\nProcessing event times and labels...')
         ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
-            name=processed_event_ch_name)
+            name='Events')
         print('Done!')
         # Takes processed events and segments them by trial number. Trial start
         # is determined by events in the list 'start' from LoadEventParams. This

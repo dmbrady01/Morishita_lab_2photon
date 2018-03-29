@@ -24,15 +24,15 @@ load_pickle_object = False
 epoch_name = 'correct'
 # what is the name of the analog channel to analyze? make sure it is the same
 # as in process_data
-analog_ch_name = 'DeltaF_F'
+# analog_ch_name = 'DeltaF_F'
 # what is the name of the event channel to analyze? make sure it is the same as
 # in process_data
-event_ch_name = 'Events'
+#event_ch_name = 'Events'
 # what is the event to align the trials by?
 event = 'iti_start'
 # is event above a specific event like 'tray_activated'? if so event_type = 'label'
 # or is it a class of events like 'start'? if so event_type = 'type'
-event_type = 'type'
+#event_type = 'type'
 # what is the pre window (in seconds)
 prewindow = 2
 # what is the post window (in seconds)
@@ -77,8 +77,8 @@ if load_pickle_object:
 
 for segment in seglist:
     PrintNoNewLine('Centering trials and analyzing...')
-    AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=analog_ch_name, 
-        event_ch_name=event_ch_name, event=event, event_type=event_type, 
+    AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name='DeltaF_F', 
+        event_ch_name='Events', event=event, event_type='label', 
         prewindow=prewindow, postwindow=postwindow, window_type=window_type, 
         clip=clip, name=name, to_csv=to_csv, dpath=dpath)
     print('Done!')
