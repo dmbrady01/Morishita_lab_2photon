@@ -29,14 +29,14 @@ epoch_name = 'correct'
 # in process_data
 #event_ch_name = 'Events'
 # what is the event to align the trials by?
-event = 'iti_start'
+event = 'correct'
 # is event above a specific event like 'tray_activated'? if so event_type = 'label'
 # or is it a class of events like 'start'? if so event_type = 'type'
 #event_type = 'type'
 # what is the pre window (in seconds)
 prewindow = 2
 # what is the post window (in seconds)
-postwindow = 8
+postwindow = 2
 # what type of window do you want? just around the event? ('event') or around the
 # entire trial ('trial')? Around the trial is probably used for plotting
 window_type = 'event'
@@ -58,6 +58,12 @@ color = 'b'
 alpha = 0.1
 plot_events = [0, 5] # times when you want a vertical line in the plot (trial start, stimulus on, etc.)
 sem = True #plot standard error of the mean. if false, plots standard deviation
+
+# Set these to numbers if you want to control axis size
+xmin = None
+xmax = None
+ymin = None 
+ymax = None
 
 try:
     dpath = sys.argv[1]
@@ -86,5 +92,6 @@ for segment in seglist:
     traces = segment.analyzed[name]['all_traces']
     PrintNoNewLine('Plotting data...')
     PlotAverageSignal(traces, mode='raw', events=plot_events, sem=sem, save=save_plot, 
-        title=plot_title, color=color, alpha=alpha, dpath=dpath)
+        title=plot_title, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
+        ymin=ymin, ymax=ymax)
     print('Done!')

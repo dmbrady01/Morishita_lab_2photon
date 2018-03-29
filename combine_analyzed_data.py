@@ -41,6 +41,12 @@ plot_title = 'Three animals combined'
 color = 'b'
 alpha = 0.1
 
+# Set these to numbers if you want to control axis size
+xmin = None
+xmax = None 
+ymin = None 
+ymax = None
+
 combined_list = []
 for csv in csvs:
     data1 = pd.read_csv(csv, index_col=0)
@@ -70,6 +76,7 @@ pe_df.to_csv(csv_dpath + '_point_estimate.csv')
 
 PrintNoNewLine('Plotting data...')
 PlotAverageSignal(combined, mode='raw', events=plot_events, sem=sem, save=save_plot, 
-    title=plot_title, color=color, alpha=alpha, dpath=dpath)
+    title=plot_title, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
+    ymin=ymin, ymax=ymax)
 print('Done!')
 

@@ -15,7 +15,8 @@ import seaborn as sns
 import os
 
 def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True, 
-        title=None, color='b', alpha=0.1, dpath=''):
+        title=None, color='b', alpha=0.1, dpath='', xmin=None, xmax=None, 
+        ymin=None, ymax=None):
     """Given a dataframe of traces (mode='raw') or an average trace (mode='avg'). 
     It will draw the average trace +/- the sem (if sem=True) or the sd (sem=False).
     events is a list of times when there should be vertical lines (trial start, 
@@ -40,6 +41,15 @@ def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True,
     if len(events) > 0:
         [plt.axvline(event, color='k', linestyle='--') for event in events]
     
+    if xmin:
+        plt.xlim(xmin=xmin)
+    if xmax:
+        plt.xlim(xmax=xmax)
+    if ymin:
+        plt.ylim(ymin=ymin)
+    if ymax:
+        plt.ylim(ymax=ymax)
+
     if title is not None:
         plt.title(title)
 
