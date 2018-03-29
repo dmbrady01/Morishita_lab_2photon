@@ -47,6 +47,9 @@ xmax = None
 ymin = None 
 ymax = None
 
+# smoothing window in msecs (None if you don't want to use it.)
+smoothing_window = None
+
 combined_list = []
 for csv in csvs:
     data1 = pd.read_csv(csv, index_col=0)
@@ -56,6 +59,9 @@ for csv in csvs:
 
 combined = pd.concat(combined_list, axis=1)
 combined = combined.bfill().ffill()
+
+# calculate sampling_rate
+sampling_rate = 1./(combined.index[-1] - combined.index[-2])
 # Calculate average signal
 # Calculate average signal
 avg_df = pd.DataFrame(index=combined.index)
@@ -77,6 +83,6 @@ pe_df.to_csv(csv_dpath + '_point_estimate.csv')
 PrintNoNewLine('Plotting data...')
 PlotAverageSignal(combined, mode='raw', events=plot_events, sem=sem, save=save_plot, 
     title=plot_title, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
-    ymin=ymin, ymax=ymax)
+    ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, sampling_frequency=sampling_rate)
 print('Done!')
 

@@ -189,15 +189,27 @@ def SmoothSignal(x, window_len=11, window='flat'):
         raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
 
 
-    s = numpy.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+    s = np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
     #print(len(s))
     if window == 'flat': #moving average
-        w = numpy.ones(window_len,'d')
+        w = np.ones(window_len,'d')
     else:
-        w = eval('numpy.'+ window +'(window_len)')
+        w = eval('np.'+ window +'(window_len)')
 
-    y = numpy.convolve(w/w.sum(), s , mode='valid')
-    return y
+    y = np.convolve(w/w.sum(), s , mode='valid')
+    y = y[(window_len/2-1):-(window_len/2)]
+    return y[:x.shape[0]]
+
+def SmoothSignalWithPeriod(x, sampling_rate=None, ms_bin=None, window='flat'):
+    "Given a signal and sampling period, will smooth to the nearest ms bin."
+    # Convert ms to seconds
+    seconds = ms_bin/1000.
+
+    num_bins = int(seconds * sampling_rate)
+    if num_bins // 2 == 0:
+        num_bins += 1
+
+    return SmoothSignal(x, window_len=num_bins, window=window)
 
 def NormalizeSignal(signal=None, reference=None, **kwargs):
     """The current method for correcting a signal. These are the steps:
