@@ -59,6 +59,7 @@ def AppendDataframesToSegment(segment, dataframe, names):
     # Checks segment and dataframe types
     if not isinstance(segment, neo.core.Segment):
         raise TypeError('%s must be a segment object' % segment)
+    # Check dataframe is dataframe or list of dataframes
     if isinstance(dataframe, pd.core.frame.DataFrame):
         dataframe = [dataframe]
     elif isinstance(dataframe, list) and \
@@ -66,6 +67,13 @@ def AppendDataframesToSegment(segment, dataframe, names):
         dataframe = dataframe 
     else:
         raise TypeError('%s must be a dataframe or list of dataframes object' % dataframe)
+    # Check names is string or list of strings
+    if isinstance(names, str):
+        names = [names]
+    elif isinstance(names, list) and all(isinstance(x, str) for x in names):
+        names = names
+    else:
+        raise TypeError('%s must be a string or list' % names)
     # checks if attribute exists, if not creates it
     if not hasattr(segment, 'dataframes'):
         segment.dataframes = {}

@@ -533,7 +533,7 @@ class TestProcessTrials(unittest.TestCase):
         df = ProcessTrials(seg=self.segment, name=self.name, 
             startoftrial=self.startoftrial, epochs=self.epochs, 
             typedf=self.typeframe, firsttrial=False, returndf=True)
-        pd.testing.assert_frame_equal(df, self.segment.dataframes[0])
+        pd.testing.assert_frame_equal(df, self.segment.dataframes['trials'])
 
 
 
@@ -654,8 +654,8 @@ class TestGroupTrialsByEpoch(unittest.TestCase):
         self.startoftrial = ['start']
         self.endoftrial = ['end']
         self.segment = Segment()
-        self.segment.dataframes = []
-        self.segment.dataframes.append(self.trials)
+        self.segment.dataframes = {}
+        self.segment.dataframes.update({'trials': self.trials})
 
     def tearDown(self):
         del self.trials 
