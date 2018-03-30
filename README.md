@@ -8,7 +8,7 @@ Code for analyzing 2-photon imaging data with TTL event data
 To setup your virtual environment, have `miniconda` installed for `python2.7x`, then run
 
 ```
-$ conda env create -f 2photon.yml
+$ conda env create -f monkey_frog.yml
 ```
 
 Before running any code, make sure to enter your virtual environment
