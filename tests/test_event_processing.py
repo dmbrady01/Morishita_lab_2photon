@@ -533,7 +533,7 @@ class TestProcessTrials(unittest.TestCase):
         df = ProcessTrials(seg=self.segment, name=self.name, 
             startoftrial=self.startoftrial, epochs=self.epochs, 
             typedf=self.typeframe, firsttrial=False, returndf=True)
-        pd.testing.assert_frame_equal(df, self.segment.dataframes[0])
+        pd.testing.assert_frame_equal(df, self.segment.dataframes['trials'])
 
 
 
