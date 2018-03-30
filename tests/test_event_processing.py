@@ -654,8 +654,8 @@ class TestGroupTrialsByEpoch(unittest.TestCase):
         self.startoftrial = ['start']
         self.endoftrial = ['end']
         self.segment = Segment()
-        self.segment.dataframes = []
-        self.segment.dataframes.append(self.trials)
+        self.segment.dataframes = {}
+        self.segment.dataframes.update({'trials': self.trials})
 
     def tearDown(self):
         del self.trials 
