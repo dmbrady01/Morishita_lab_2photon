@@ -29,7 +29,7 @@ epoch_name = 'correct'
 # in process_data
 #event_ch_name = 'Events'
 # what is the event to align the trials by?
-event = 'correct'
+event = 'iti_start'
 # is event above a specific event like 'tray_activated'? if so event_type = 'label'
 # or is it a class of events like 'start'? if so event_type = 'type'
 #event_type = 'type'
@@ -71,7 +71,7 @@ smoothing_window = 500
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/wk9_variable_ITI_data'
+    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT1_0125185'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:
