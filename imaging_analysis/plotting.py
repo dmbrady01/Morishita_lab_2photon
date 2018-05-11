@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from imaging_analysis.signal_processing import SmoothSignalWithPeriod
+import pandas as pd
 
 def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True, 
         title=None, color='b', alpha=0.1, dpath='', xmin=None, xmax=None, 
@@ -72,3 +73,42 @@ def PlotRaster():
     t = test.groupby('grouping').mean()
     t = t.set_index('index')
     sns.heatmap(t.T)
+
+def PlotDeltaFOverF(analogsignal, save=True, title=None, color='b', alpha=0.1, 
+    dpath='', xmin=None, xmax=None, ymin=None, ymax=None, smoothing_window=None, 
+    sampling_frequency=None, save_csv=True):
+    plt.figure()
+
+    mag = analogsignal.magnitude[:, 0]
+    times = analogsignal.times
+
+    if smoothing_window is not None:
+        mag = SmoothSignalWithPeriod(x=mag, sampling_rate=sampling_frequency, 
+            ms_bin=smoothing_window, window='flat')
+
+
+    plt.plot(times, mag, color=color)
+    
+    if xmin:
+        plt.xlim(xmin=xmin)
+    if xmax:
+        plt.xlim(xmax=xmax)
+    if ymin:
+        plt.ylim(ymin=ymin)
+    if ymax:
+        plt.ylim(ymax=ymax)
+
+    if title is not None:
+        plt.title(title)
+
+    if save:
+        if len(dpath) == 0:
+            dpath = os.getcwd()
+        dpath = dpath + os.sep + title
+        plt.savefig(dpath + '.pdf')
+    plt.close()
+
+    if save_csv:
+        to_csv = pd.DataFrame(data=mag, index=times, columns=['DeltaF_F'])
+        to_csv.index.name = 'Time'
+        to_csv.to_csv(dpath + '.csv')
