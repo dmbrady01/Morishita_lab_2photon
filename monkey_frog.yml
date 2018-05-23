@@ -1,6 +1,7 @@
 name: monkey_frog
 channels:
   - conda-forge
+  - soumith
   - defaults
 dependencies:
   - certifi=2018.1.18
