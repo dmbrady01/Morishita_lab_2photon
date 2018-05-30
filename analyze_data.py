@@ -21,7 +21,7 @@ from imaging_analysis.plotting import PlotAverageSignal
 pickle_name = 'processed.pkl'
 load_pickle_object = False
 # what epoch do you want to analyze? 'correct', 'correct_correct', etc.
-epoch_name = 'correct'
+epoch_name = 'exposure'
 # what is the name of the analog channel to analyze? make sure it is the same
 # as in process_data
 # analog_ch_name = 'DeltaF_F'
@@ -29,14 +29,14 @@ epoch_name = 'correct'
 # in process_data
 #event_ch_name = 'Events'
 # what is the event to align the trials by?
-event = 'iti_start'
+event = 'exposure'
 # is event above a specific event like 'tray_activated'? if so event_type = 'label'
 # or is it a class of events like 'start'? if so event_type = 'type'
 #event_type = 'type'
 # what is the pre window (in seconds)
-prewindow = 2
+prewindow = 30
 # what is the post window (in seconds)
-postwindow = 2
+postwindow = 30
 # what type of window do you want? just around the event? ('event') or around the
 # entire trial ('trial')? Around the trial is probably used for plotting
 window_type = 'event'
@@ -56,7 +56,7 @@ save_plot = True
 plot_title = 'Correct Trials'
 color = 'b'
 alpha = 0.1
-plot_events = [0, 5] # times when you want a vertical line in the plot (trial start, stimulus on, etc.)
+plot_events = [0] # times when you want a vertical line in the plot (trial start, stimulus on, etc.)
 sem = True #plot standard error of the mean. if false, plots standard deviation
 
 # Set these to numbers if you want to control axis size
@@ -71,7 +71,7 @@ smoothing_window = 500
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT1_0125185'
+    dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:
