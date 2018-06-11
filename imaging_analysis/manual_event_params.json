@@ -1,0 +1,1 @@
+{"epochs": ["start"], "startoftrial": ["start"], "endoftrial": ["end"], "events": {"Approach": {"plot": "-k", "type": "start"}, "Investigate": {"plot": "-k", "type": "start"}, "end": {"plot": "-b", "type": "end"}, "Orient ": {"plot": "-k", "type": "start"}}}
