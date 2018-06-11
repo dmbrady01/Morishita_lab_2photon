@@ -12,7 +12,7 @@ __datewritten__ = "07 Mar 2018"
 __lastmodified__ = "23 Mar 2018"
 
 import sys
-from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch
+from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
 from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
 from imaging_analysis.signal_processing import ProcessSignalData
@@ -22,8 +22,6 @@ import quantities as pq
 import pandas as pd
 #######################################################################
 # VARIABLES TO ALTER
-# Loading event labeling/combo parameters
-path_to_event_params = 'imaging_analysis/event_params.json'
 # For truncating the recordings/events
 truncate_begin = 10 # how many seconds to remove from the beginning of the recording
 truncate_end = 0 # how many seconds to remove from the end of the recording
@@ -48,7 +46,7 @@ pickle_name = 'processed.pkl'
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
 mode = 'manual'
-
+path_to_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
 ##########################################################################
 
 # Checks if a directory path to the data is provided, if not, will
@@ -106,49 +104,58 @@ except IOError:
         # match the label in evtframe (e.g. 'omission')
         print('Done!')
         if mode == 'TTL':
-            # This loads our event params json
-            start, end, epochs, evtframe, plotframe, typeframe = LoadEventParams(dpath=path_to_event_params)
-            # Appends processed event_param.json info to segment object
-            AppendDataframesToSegment(segment, [evtframe, plotframe, typeframe], 
-                ['eventframe', 'plotframe', 'resultsframe'])
-            # Processing events
-            PrintNoNewLine('\nProcessing event times and labels...')
-            ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
-                name='Events')
-            print('Done!')
-            # Takes processed events and segments them by trial number. Trial start
-            # is determined by events in the list 'start' from LoadEventParams. This
-            # can be set in the event_params.json. Additionally, the result of the 
-            # trial is set by matching the epoch type to the typeframe dataframe 
-            # (also from LoadEventParams). Example of epochs are 'correct', 'omission',
-            # etc. 
-            # The result of this process is a dataframe with each event and their
-            # timestamp in chronological order, with the trial number and trial outcome
-            # appended to each event/timestamp.
-            PrintNoNewLine('\nProcessing trials...')
-            trials = ProcessTrials(seg=segment, name='Events', 
-                startoftrial=start, epochs=epochs, typedf=typeframe, 
-                appendmultiple=False)
-            print('Done!')
-            # With processed trials, we comb through each epoch ('correct', 'omission'
-            # etc.) and find start/end times for each trial. Start time is determined
-            # by the earliest 'start' event in a trial. Stop time is determined by
-            # 1) the earliest 'end' event in a trial, 2) or the 'last' event in a trial
-            # or the 3) 'next' event in the following trial.
-            PrintNoNewLine('\nCalculating epoch times and durations...')
-            GroupTrialsByEpoch(seg=segment, startoftrial=start, endoftrial=end, 
-                endeventmissing=how_trial_ends)
-            print('Done!')
+            # Loading event labeling/combo parameters
+            path_to_event_params = 'imaging_analysis/ttl_event_params.json'
         elif mode == 'manual':
-            trials = pd.DataFrame({'time': 90.0, 'event': 'exposure', 
-                'results': 'exposure', 'with_previous_results': np.nan, 
-                'event_type': 'start', 'trial_idx': 1}, index=range(1))
-            AppendDataframesToSegment(segment, [trials], ['trials'])
-            segment.epochs.append(Epoch(times=np.array([90.0]) * pq.s, 
-                durations=np.array([0]) * pq.s, name='exposure'))
-            segment.events.append(Event(times=np.array([90.0]) * pq.s, 
-                labels=np.array(['exposure'], dtype='S'), name='Events'))
-        # add processed flag to segment
+            # Generates a json for reading excel file events
+            GenerateManualEventParamsJson(path_to_excel, event_col='Bout type', 
+                name='imaging_analysis/manual_event_params.json')
+            path_to_event_params = 'imaging_analysis/manual_event_params.json'
+        
+        # This loads our event params json
+        start, end, epochs, evtframe, typeframe = LoadEventParams(dpath=path_to_event_params, 
+            mode=mode)
+        # Appends processed event_param.json info to segment object
+        AppendDataframesToSegment(segment, [evtframe, typeframe], 
+            ['eventframe', 'resultsframe'])
+        # Processing events
+        PrintNoNewLine('\nProcessing event times and labels...')
+        ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
+            name='Events', mode=mode, excelframe=path_to_excel)
+        print('Done!')
+        # Takes processed events and segments them by trial number. Trial start
+        # is determined by events in the list 'start' from LoadEventParams. This
+        # can be set in the event_params.json. Additionally, the result of the 
+        # trial is set by matching the epoch type to the typeframe dataframe 
+        # (also from LoadEventParams). Example of epochs are 'correct', 'omission',
+        # etc. 
+        # The result of this process is a dataframe with each event and their
+        # timestamp in chronological order, with the trial number and trial outcome
+        # appended to each event/timestamp.
+        PrintNoNewLine('\nProcessing trials...')
+        trials = ProcessTrials(seg=segment, name='Events', 
+            startoftrial=start, epochs=epochs, typedf=typeframe, 
+            appendmultiple=False)
+        print('Done!')
+        # With processed trials, we comb through each epoch ('correct', 'omission'
+        # etc.) and find start/end times for each trial. Start time is determined
+        # by the earliest 'start' event in a trial. Stop time is determined by
+        # 1) the earliest 'end' event in a trial, 2) or the 'last' event in a trial
+        # or the 3) 'next' event in the following trial.
+        PrintNoNewLine('\nCalculating epoch times and durations...')
+        GroupTrialsByEpoch(seg=segment, startoftrial=start, endoftrial=end, 
+            endeventmissing=how_trial_ends)
+        print('Done!')
+        # elif mode == 'manual':
+        #     trials = pd.DataFrame({'time': 90.0, 'event': 'exposure', 
+        #         'results': 'exposure', 'with_previous_results': np.nan, 
+        #         'event_type': 'start', 'trial_idx': 1}, index=range(1))
+        #     AppendDataframesToSegment(segment, [trials], ['trials'])
+        #     segment.epochs.append(Epoch(times=np.array([90.0]) * pq.s, 
+        #         durations=np.array([0]) * pq.s, name='exposure'))
+        #     segment.events.append(Event(times=np.array([90.0]) * pq.s, 
+        #         labels=np.array(['exposure'], dtype='S'), name='Events'))
+        # # add processed flag to segment
         segment.processed = True
     # Option to save pickle object
     if save_pickle:
