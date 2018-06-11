@@ -20,8 +20,9 @@ import pandas as pd
 import numpy as np
 import os
 import json
+import itertools
 
-def LoadEventParams(dpath=None, evtdict=None):
+def LoadEventParams(dpath=None, evtdict=None, mode='TTL'):
     """Checks that loaded event parameters (either through a directory path or
     from direct input (dpath vs evtdict)). Returns three dataframes and three lists
     in this order: startoftrial, endoftrial, epochs, event_type, plot, results
@@ -50,22 +51,51 @@ def LoadEventParams(dpath=None, evtdict=None):
     # Constructs epoch list
     epochs = evtdict['epochs']
     # Constructs code dataframe
-    code_event_pairs = [(x, y['code']) for x, y in evtdict['events'].items()]
-    channels = evtdict['channels']
-    events, codes = zip(*code_event_pairs)
-    event_type = pd.DataFrame(data=list(codes), index=list(events), columns=channels)
-    event_type.index.name = 'event'
-    event_type.name = 'eventframe'
-    # Constructs plotting dataframe
-    plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
-    plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
-    plot.name = 'plotframe'
+    if mode == 'TTL':
+        code_event_pairs = [(x, y['code']) for x, y in evtdict['events'].items()]
+        channels = evtdict['channels']
+        events, codes = zip(*code_event_pairs)
+        event_type = pd.DataFrame(data=list(codes), index=list(events), columns=channels)
+        event_type.index.name = 'event'
+        event_type.name = 'eventframe'
+    elif mode == 'manual':
+        event_type = pd.DataFrame()
+    # # Constructs plotting dataframe
+    # plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
+    # plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
+    # plot.name = 'plotframe'
     # Constructs results dataframe
     results_event_pairs = [(x, y['type']) for x, y in evtdict['events'].items()]
     results = pd.DataFrame(results_event_pairs, columns=['event', 'type']).set_index('event')
     results.name = 'resultsframe'
     # returns dataframe
-    return startoftrial, endoftrial, epochs, event_type, plot, results
+    return startoftrial, endoftrial, epochs, event_type, results
+
+def ReadManualExcelFile(excel_file):
+    if isinstance(excel_file, pd.core.frame.DataFrame):
+        return excel_file
+    else:
+        if 'csv' in excel_file:
+            df = pd.read_csv(excel_file)
+        else:
+            df = pd.read_excel(excel_file)
+        return df
+
+def GenerateManualEventParamsJson(dataframe, event_col='Bout type', 
+        name='imaging_analysis/manual_event_params.json'):
+    """From an excel file, generates a param file similar to TTL one""" 
+    dataframe = ReadManualExcelFile(dataframe)
+    to_json = dict()
+    to_json["endoftrial"] = ["end"]
+    to_json["startoftrial"] = ["start"]
+    to_json["epochs"] = ["start"]
+    to_json['events'] = dict()
+    to_json['events']['end'] = {'type': 'end', 'plot': '-b'}
+    for event in dataframe[event_col].unique():
+        to_json['events'][event] = {'type': 'start', 'plot': '-k'}
+    with open(name, 'w') as fp:
+        json.dump(to_json, fp)
+
 
 def TruncateEvent(event, start=None, end=None):
     """Given an Event object, will remove events before 'start' and after 
@@ -213,7 +243,24 @@ def ProcessEventList(eventlist=None, tolerance=None, evtframe=None,
         eventlist = evtlist_non_empty
     return event_times, event_labels
 
-def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events'):
+def InterleaveEvents(list1, list2):
+    return np.array(list(itertools.chain(*zip(list1, list2))))
+
+def SpoofEvents(dataframe, event_col='Bout type', start_col='Bout start', end_col='Bout end'):
+    """Given a dataframe of events to spoof, adds event labels with times"""
+    # Read file
+    dataframe = ReadManualExcelFile(dataframe)
+    # Create start events
+    start_events = dataframe[event_col].values
+    start_times = dataframe[start_col].values
+    end_times = dataframe[end_col].values
+    end_events = np.repeat('end', dataframe[end_col].shape[0])
+    eventtimes = InterleaveEvents(start_times, end_times)
+    eventlabels = InterleaveEvents(start_events, end_events)
+    return eventtimes, eventlabels
+
+def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events', mode='TTL', 
+        excelframe=None):
     """Takes a segment object, tolerance, and event dataframe"""
     # Makes sure that seg is a segment object
     if not isinstance(seg, neo.core.segment.Segment):
@@ -222,10 +269,14 @@ def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events'):
     if name in [event.name for event in seg.events]:
         print("Events array has already been processed")
     else:
-        # Iterates through the event object in seg and pulls out the relevent ones
-        eventlist = ExtractEventsToList(seg=seg, evtframe=evtframe)
-        eventtimes, eventlabels = ProcessEventList(eventlist=eventlist, 
-            tolerance=tolerance, evtframe=evtframe, time_name='times', ch_name='ch')
+        if mode == 'TTL':
+            # Iterates through the event object in seg and pulls out the relevent ones
+            eventlist = ExtractEventsToList(seg=seg, evtframe=evtframe)
+            eventtimes, eventlabels = ProcessEventList(eventlist=eventlist, 
+                tolerance=tolerance, evtframe=evtframe, time_name='times', ch_name='ch')
+        elif mode == 'manual':
+            eventtimes, eventlabels = SpoofEvents(excelframe, event_col='Bout type', 
+                start_col='Bout start', end_col='Bout end')
         # Creates an Event object
         results = Event(times=np.array(eventtimes) * pq.s,
             labels=np.array(eventlabels, dtype='S'), name=name)
