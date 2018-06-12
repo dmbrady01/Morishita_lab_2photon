@@ -7,7 +7,7 @@ test_event_processing.py: Python script that contains tests for event_processing
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "17 Mar 2018"
+__lastmodified__ = "11 Jun 2018"
 
 # Import unittest modules and event_processing
 import unittest
@@ -32,7 +32,7 @@ class TestLoadEventParams(unittest.TestCase):
     "Code tests for LoadEventParams function"
     
     def setUp(self):
-        self.dpath = 'imaging_analysis/event_params.json'
+        self.dpath = 'imaging_analysis/ttl_event_params.json'
         self.evtdict = OrderedDict({
             'channels': ['ch1'], 
             'events': {
@@ -70,7 +70,7 @@ class TestLoadEventParams(unittest.TestCase):
 
     def test_returns_a_dataframe(self):
         "Makes sure function returns a dataframe and checks dpath works"
-        start, end, epochs, code, plot, typedf = LoadEventParams(dpath=self.dpath)
+        start, end, epochs, code, typedf = LoadEventParams(dpath=self.dpath)
         self.assertIsInstance(code, pd.core.frame.DataFrame)
 
     def test_makes_sure_dpath_is_correct(self):
@@ -83,36 +83,36 @@ class TestLoadEventParams(unittest.TestCase):
 
     def test_makes_sure_startoftrial_is_returned(self):
         "Makes sure start of trials is returned"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         self.assertEqual(start, self.evtdict['startoftrial'])
 
     def test_makes_sure_endoftrial_is_returned(self):
         "Makes sure end of trials is returned"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         self.assertEqual(end, self.evtdict['endoftrial'])
 
     def test_makes_sure_epochs_is_returned(self):
         "Makes sure epochs is returned"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         self.assertEqual(epochs, self.evtdict['epochs'])
 
     def test_makes_sure_code_dataframe_has_right_structure(self):
         "Checks code dataframe has right structure"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         code.sort_index(inplace=True)
         self.codedf.sort_index(inplace=True)
         pd.testing.assert_frame_equal(self.codedf, code)
 
-    def test_makes_sure_plot_dataframe_has_right_structure(self):
-        "Checks plot dataframe has right structure"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
-        plot.sort_index(inplace=True)
-        self.plotdf.sort_index(inplace=True)
-        pd.testing.assert_frame_equal(self.plotdf, plot)
+    # def test_makes_sure_plot_dataframe_has_right_structure(self):
+    #     "Checks plot dataframe has right structure"
+    #     start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
+    #     plot.sort_index(inplace=True)
+    #     self.plotdf.sort_index(inplace=True)
+    #     pd.testing.assert_frame_equal(self.plotdf, plot)
 
     def test_makes_sure_results_dataframe_has_right_structure(self):
         "Checks results dataframe has right structure"
-        start, end, epochs, code, plot, typedf = LoadEventParams(evtdict=self.evtdict)
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         typedf.sort_index(inplace=True)
         self.typedf.sort_index(inplace=True)
         pd.testing.assert_frame_equal(self.typedf, typedf)
