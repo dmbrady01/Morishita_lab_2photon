@@ -9,7 +9,7 @@ the signal, filters it, labels events, processes trials, and groups trials by ep
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "23 Mar 2018"
+__lastmodified__ = "11 Jun 2018"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
@@ -46,7 +46,7 @@ pickle_name = 'processed.pkl'
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
 mode = 'manual'
-path_to_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
+path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
 ##########################################################################
 
 # Checks if a directory path to the data is provided, if not, will
@@ -108,10 +108,9 @@ except IOError:
             path_to_event_params = 'imaging_analysis/ttl_event_params.json'
         elif mode == 'manual':
             # Generates a json for reading excel file events
-            GenerateManualEventParamsJson(path_to_excel, event_col='Bout type', 
-                name='imaging_analysis/manual_event_params.json')
             path_to_event_params = 'imaging_analysis/manual_event_params.json'
-        
+            GenerateManualEventParamsJson(path_to_social_excel, event_col='Bout type', 
+                name=path_to_event_params)
         # This loads our event params json
         start, end, epochs, evtframe, typeframe = LoadEventParams(dpath=path_to_event_params, 
             mode=mode)
@@ -121,7 +120,8 @@ except IOError:
         # Processing events
         PrintNoNewLine('\nProcessing event times and labels...')
         ProcessEvents(seg=segment, tolerance=tolerance, evtframe=evtframe, 
-            name='Events', mode=mode, excelframe=path_to_excel)
+            name='Events', mode=mode, manualframe=path_to_social_excel, 
+            event_col='Bout type', start_col='Bout start', end_col='Bout end')
         print('Done!')
         # Takes processed events and segments them by trial number. Trial start
         # is determined by events in the list 'start' from LoadEventParams. This

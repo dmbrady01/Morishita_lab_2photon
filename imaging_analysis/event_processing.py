@@ -260,7 +260,7 @@ def SpoofEvents(dataframe, event_col='Bout type', start_col='Bout start', end_co
     return eventtimes, eventlabels
 
 def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events', mode='TTL', 
-        excelframe=None):
+        manualframe=None, event_col='Bout type', start_col='Bout start', end_col='Bout end'):
     """Takes a segment object, tolerance, and event dataframe"""
     # Makes sure that seg is a segment object
     if not isinstance(seg, neo.core.segment.Segment):
@@ -275,8 +275,8 @@ def ProcessEvents(seg=None, tolerance=None, evtframe=None, name='Events', mode='
             eventtimes, eventlabels = ProcessEventList(eventlist=eventlist, 
                 tolerance=tolerance, evtframe=evtframe, time_name='times', ch_name='ch')
         elif mode == 'manual':
-            eventtimes, eventlabels = SpoofEvents(excelframe, event_col='Bout type', 
-                start_col='Bout start', end_col='Bout end')
+            eventtimes, eventlabels = SpoofEvents(manualframe, event_col=event_col, 
+                start_col=start_col, end_col=end_col)
         # Creates an Event object
         results = Event(times=np.array(eventtimes) * pq.s,
             labels=np.array(eventlabels, dtype='S'), name=name)
