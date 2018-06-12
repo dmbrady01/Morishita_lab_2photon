@@ -60,6 +60,8 @@ def LoadEventParams(dpath=None, evtdict=None, mode='TTL'):
         event_type.name = 'eventframe'
     elif mode == 'manual':
         event_type = pd.DataFrame()
+    else:
+        raise ValueError('mode must be "TTL" or "manual"')
     # # Constructs plotting dataframe
     # plot_event_pairs = [(x, y['plot']) for x, y in evtdict['events'].items()]
     # plot = pd.DataFrame(plot_event_pairs, columns=['event', 'plot']).set_index('event')
@@ -95,7 +97,6 @@ def GenerateManualEventParamsJson(dataframe, event_col='Bout type',
         to_json['events'][event] = {'type': 'start', 'plot': '-k'}
     with open(name, 'w') as fp:
         json.dump(to_json, fp)
-
 
 def TruncateEvent(event, start=None, end=None):
     """Given an Event object, will remove events before 'start' and after 

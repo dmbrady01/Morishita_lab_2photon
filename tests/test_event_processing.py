@@ -60,6 +60,9 @@ class TestLoadEventParams(unittest.TestCase):
         self.typedf = pd.DataFrame(data=[['results'], ['start']], index=['one', 'two'],
             columns=['type'])
         self.typedf.index.name = 'event'
+        self.mode1 = 'TTL'
+        self.mode2 = 'manual'
+        self.badmode = 'not a mode'
 
     def tearDown(self):
         del self.dpath
@@ -67,6 +70,9 @@ class TestLoadEventParams(unittest.TestCase):
         del self.codedf
         del self.plotdf
         del self.typedf
+        del self.mode1 
+        del self.mode2 
+        del self.badmode
 
     def test_returns_a_dataframe(self):
         "Makes sure function returns a dataframe and checks dpath works"
@@ -80,6 +86,11 @@ class TestLoadEventParams(unittest.TestCase):
     def test_makes_sure_evtdict_is_correct(self):
         "Makes sure evtdict is correct is supplied"
         self.assertRaises(TypeError, LoadEventParams, evtdict='not a dict')
+
+    def test_makes_sure_mode_is_correct(self):
+        "Makes sure mode is correct is supplied"
+        self.assertRaises(ValueError, LoadEventParams, evtdict=self.evtdict,
+            mode=self.badmode)
 
     def test_makes_sure_startoftrial_is_returned(self):
         "Makes sure start of trials is returned"
@@ -96,12 +107,19 @@ class TestLoadEventParams(unittest.TestCase):
         start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
         self.assertEqual(epochs, self.evtdict['epochs'])
 
-    def test_makes_sure_code_dataframe_has_right_structure(self):
-        "Checks code dataframe has right structure"
-        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict)
+    def test_makes_sure_code_dataframe_has_right_structure_TTL(self):
+        "Checks code dataframe has right structure for TTL mode"
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict, 
+            mode=self.mode1)
         code.sort_index(inplace=True)
         self.codedf.sort_index(inplace=True)
         pd.testing.assert_frame_equal(self.codedf, code)
+
+    def test_makes_sure_code_dataframe_has_right_structure_manual(self):
+        "Checks code dataframe has right structure for manual mode (empty df)"
+        start, end, epochs, code, typedf = LoadEventParams(evtdict=self.evtdict, 
+            mode=self.mode2)
+        pd.testing.assert_frame_equal(pd.DataFrame(), code)
 
     # def test_makes_sure_plot_dataframe_has_right_structure(self):
     #     "Checks plot dataframe has right structure"
