@@ -23,9 +23,9 @@ load_pickle_object = False
 
 analysis_blocks = [
     {
-        'epoch_name': 'Investigate',
-        'event': 'Investigate',
-        'save_file_as': 'Investigate Examples',
+        'epoch_name': 'correct',
+        'event': 'iti_start',
+        'save_file_as': 'Correct_trials',
         'prewindow': 10,
         'postwindow': 30,
         'window_type': 'event',
@@ -45,9 +45,9 @@ analysis_blocks = [
         }
     },
     {
-        'epoch_name': 'Orient ',
-        'event': 'Orient ',
-        'save_file_as': 'Orient_example_name',
+        'epoch_name': 'omission',
+        'event': 'omission',
+        'save_file_as': 'Omission_trials',
         'prewindow': 5,
         'postwindow': 2,
         'window_type': 'event',
@@ -106,7 +106,8 @@ smoothing_window: smoothing window in msecs (None if you don't want to use it.)
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
+    #dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
+    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:

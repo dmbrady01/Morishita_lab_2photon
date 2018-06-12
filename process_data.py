@@ -45,7 +45,8 @@ pickle_name = 'processed.pkl'
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
-mode = 'manual'
+mode = 'TTL'
+print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
 ##########################################################################
 
@@ -54,7 +55,8 @@ path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
+    #dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
+    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/'
 
 # Tries to load a processed pickle object, othewise reads the Tdt folder,
 # processes the data and writes a pickle object
