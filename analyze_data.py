@@ -21,7 +21,7 @@ from imaging_analysis.plotting import PlotAverageSignal
 pickle_name = 'processed.pkl'
 load_pickle_object = False
 # what epoch do you want to analyze? 'correct', 'correct_correct', etc.
-epoch_name = 'exposure'
+epoch_name = 'Investigate'
 # what is the name of the analog channel to analyze? make sure it is the same
 # as in process_data
 # analog_ch_name = 'DeltaF_F'
@@ -29,12 +29,12 @@ epoch_name = 'exposure'
 # in process_data
 #event_ch_name = 'Events'
 # what is the event to align the trials by?
-event = 'exposure'
+event = 'Investigate'
 # is event above a specific event like 'tray_activated'? if so event_type = 'label'
 # or is it a class of events like 'start'? if so event_type = 'type'
 #event_type = 'type'
 # what is the pre window (in seconds)
-prewindow = 30
+prewindow = 10
 # what is the post window (in seconds)
 postwindow = 30
 # what type of window do you want? just around the event? ('event') or around the
@@ -47,13 +47,13 @@ window_type = 'event'
 # pre and post windows around the trial. You want clip=False for plotting
 clip = False
 # What do you want to call this analysis? i.e. 2seconds_iti_start_8seconds, etc.
-name = 'correct_stimulus'
+name = 'Investigate'
 # Do you want to save to csv? All data is saved in each segments 'analyzed'
 # attribute
 to_csv = True
 # PLOTTING parameters
 save_plot = True 
-plot_title = 'Correct Trials'
+plot_title = 'Investigate Trials'
 color = 'b'
 alpha = 0.1
 plot_events = [0] # times when you want a vertical line in the plot (trial start, stimulus on, etc.)

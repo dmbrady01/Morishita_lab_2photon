@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "06 Mar 2018"
-__lastmodified__ = "22 Mar 2018"
+__lastmodified__ = "11 Jun 2018"
 
 
 import quantities as pq
@@ -17,6 +17,7 @@ import neo
 import pandas as pd
 import os
 import numpy as np
+from warnings import warn
 
 def TruncateSegment(segment, start=0, end=0, clip_same=True, evt_start=None, evt_end=None):
     """Given a Segment object, will remove the first 'start' seconds and the 
@@ -255,38 +256,53 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     # creates analog signal and event dataframes
     signal_df = pd.DataFrame(np.nan, index=index, columns=trial_names)
     event_df = pd.DataFrame(np.nan, index=index, columns=trial_names)
-
+    # list of bad trials
+    bad_trials = []
     # Goes through each trial to get relevant time stamps and resets them
     for trial in range(trial_indices.shape[0]):
         # Get the timestamp of the aligning event in that trial
         centering_event = event_time[trial]
         # Get the start/end of the window
         window_start, window_end = windows[trial]
-        # get analog signal for that time frame
-        sig_values = signal.time_slice(window_start, window_end).magnitude 
-        # get corresponding time stamps for the time signal
-        sig_times = signal.time_slice(window_start, window_end).times - centering_event
-        # because the sampling frequency might not exactly align with the event
-        # windows (event happens at 2 seconds, but sampling is at 1.997 and 2.001 
-        # seconds) we have to align them
-        # make a dataframe with signal magnitude and signal timestamps
-        sig_df = pd.DataFrame(sig_values, index=sig_times)
-        # do a fuzzy merge that aligns event time index with sampling freq index
-        aligned_sig = pd.merge_asof(signal_df, sig_df, left_index=True, 
-            right_index=True).iloc[:, -1]
-        # Assign signal to signal dataframe
-        signal_df.iloc[:, trial] = aligned_sig 
-        # get event times
-        evt_times = events.time_slice(window_start, window_end).times
-        if len(evt_times) > 0:
-            # get labels for those events
-            evt_labels = events.labels[np.isin(events.times, evt_times)]
-            # Find the closest sampled index to event (since sampling frequency
-            # might not match when event occurs)
-            evt_indices = [(np.abs(index - x.magnitude)).argmin() for x in 
-                (evt_times - centering_event)]
-            event_df.iloc[evt_indices, trial] = evt_labels
-
+        # check if window_start/end times are in data
+        if window_start < signal.times[0]:
+            warn("""\nYour prewindow is too long. There is not enough signal data 
+                in your first trial. Throwing first trial out. If you want to keep 
+                first trial data, choose a shorter prewindow and run again.""")
+            bad_trials.append(trial)
+        elif window_end > signal.times[-1]:
+            warn("""\nYour postwindow is too long. There is not enough signal data 
+                in your last trial. Throwing last trial out. If you want to keep 
+                last trial data, choose a shorter postwindow and run again.""")
+            bad_trials.append(trial)           
+        else:
+            sig_values = signal.time_slice(window_start, window_end).magnitude 
+            # get corresponding time stamps for the time signal
+            sig_times = signal.time_slice(window_start, window_end).times - centering_event
+            # because the sampling frequency might not exactly align with the event
+            # windows (event happens at 2 seconds, but sampling is at 1.997 and 2.001 
+            # seconds) we have to align them
+            # make a dataframe with signal magnitude and signal timestamps
+            sig_df = pd.DataFrame(sig_values, index=sig_times)
+            # do a fuzzy merge that aligns event time index with sampling freq index
+            aligned_sig = pd.merge_asof(signal_df, sig_df, left_index=True, 
+                right_index=True).iloc[:, -1]
+            # Assign signal to signal dataframe
+            signal_df.iloc[:, trial] = aligned_sig 
+            # get event times
+            evt_times = events.time_slice(window_start, window_end).times
+            if len(evt_times) > 0:
+                # get labels for those events
+                evt_labels = events.labels[np.isin(events.times, evt_times)]
+                # Find the closest sampled index to event (since sampling frequency
+                # might not match when event occurs)
+                evt_indices = [(np.abs(index - x.magnitude)).argmin() for x in 
+                    (evt_times - centering_event)]
+                event_df.iloc[evt_indices, trial] = evt_labels
+    # Get rid of bad trials
+    bad_trial_mask = ~pd.Index(range(signal_df.columns.shape[0])).isin(bad_trials)
+    signal_df = signal_df.iloc[:, bad_trial_mask]
+    event_df = event_df.iloc[:, bad_trial_mask]
     # Do forward fill and backward fill for stray NaN values if clip=False
     # These values come from the events not being totally inline with the
     # sampling frequency
