@@ -9,7 +9,7 @@ to be centered around specified events. Outputs csvs and appends them to segment
 
 __author__ = "DM Brady"
 __datewritten__ = "23 Mar 2018"
-__lastmodified__ = "11 Jun 2018"
+__lastmodified__ = "13 Jun 2018"
 
 import sys
 from imaging_analysis.utils import ReadNeoPickledObj, WriteNeoPickledObj, PrintNoNewLine
@@ -23,9 +23,9 @@ load_pickle_object = False
 
 analysis_blocks = [
     {
-        'epoch_name': 'correct',
-        'event': 'iti_start',
-        'save_file_as': 'Correct_trials',
+        'epoch_name': 'orient',
+        'event': 'end',
+        'save_file_as': 'orient',
         'prewindow': 10,
         'postwindow': 30,
         'window_type': 'event',
@@ -45,9 +45,9 @@ analysis_blocks = [
         }
     },
     {
-        'epoch_name': 'omission',
-        'event': 'omission',
-        'save_file_as': 'Omission_trials',
+        'epoch_name': 'investigated_by_stim_nose_to_nose',
+        'event': 'nose_to_nose',
+        'save_file_as': 'investigated_by_stim_nose_to_nose',
         'prewindow': 5,
         'postwindow': 2,
         'window_type': 'event',

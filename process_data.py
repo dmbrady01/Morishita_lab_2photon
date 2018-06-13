@@ -9,7 +9,7 @@ the signal, filters it, labels events, processes trials, and groups trials by ep
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "11 Jun 2018"
+__lastmodified__ = "13 Jun 2018"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
@@ -45,9 +45,9 @@ pickle_name = 'processed.pkl'
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
-mode = 'TTL'
+mode = 'manual'
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
-path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
+path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_2_social.csv'
 ##########################################################################
 
 # Checks if a directory path to the data is provided, if not, will
