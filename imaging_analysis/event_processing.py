@@ -17,10 +17,12 @@ import numbers
 import neo
 from neo.core import Event, Epoch
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 import numpy as np
 import os
 import json
 import itertools
+import re
 
 def LoadEventParams(dpath=None, evtdict=None, mode='TTL'):
     """Checks that loaded event parameters (either through a directory path or
@@ -83,10 +85,44 @@ def ReadManualExcelFile(excel_file):
             df = pd.read_excel(excel_file)
         return df
 
+def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout start', 
+    end_col='Bout end'):
+    """Given a manual excel file, it string formats Bout types to be consistent."""
+    # Read excel file
+    df = ReadManualExcelFile(excel_file)
+
+    # Check proper columns in excel file
+    if event_col not in df.columns:
+        raise ValueError('%s is not a column in your manual excel file. Check spelling!' 
+            % event_col)
+
+    if start_col not in df.columns:
+        raise ValueError('%s is not a column in your manual excel file. Check spelling!' 
+            % start_col)
+
+    if end_col not in df.columns:
+        raise ValueError('%s is not a column in your manual excel file. Check spelling!' 
+            % end_col)
+
+    # Check start and end col are filled out
+    if (not is_numeric_dtype(df[start_col])) or (df[start_col].isnull().sum() > 0):
+        raise ValueError('Your %s contains non-numerical or missing data. Please check it!' 
+            % start_col)
+
+    if (not is_numeric_dtype(df[end_col])) or (df[end_col].isnull().sum() > 0):
+        raise ValueError('Your %s contains non-numerical or missing data. Please check it!' 
+            % end_col)
+    # Convert event col to be standard
+    df[event_col] = df[event_col].str.strip().str.lower().apply(
+        lambda x: re.sub(r"\s+", "_", x))
+    return df
+
+
+
 def GenerateManualEventParamsJson(dataframe, event_col='Bout type', 
         name='imaging_analysis/manual_event_params.json'):
     """From an excel file, generates a param file similar to TTL one""" 
-    dataframe = ReadManualExcelFile(dataframe)
+    dataframe = FormatManualExcelFile(dataframe)
     to_json = dict()
     to_json["endoftrial"] = ["end"]
     to_json["startoftrial"] = ["start"]
@@ -250,7 +286,7 @@ def InterleaveEvents(list1, list2):
 def SpoofEvents(dataframe, event_col='Bout type', start_col='Bout start', end_col='Bout end'):
     """Given a dataframe of events to spoof, adds event labels with times"""
     # Read file
-    dataframe = ReadManualExcelFile(dataframe)
+    dataframe = FormatManualExcelFile(dataframe)
     # Create start events
     start_events = dataframe[event_col].values
     start_times = dataframe[start_col].values
