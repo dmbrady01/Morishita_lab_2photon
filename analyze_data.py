@@ -23,9 +23,9 @@ load_pickle_object = False
 
 analysis_blocks = [
     {
-        'epoch_name': 'orient',
-        'event': 'end',
-        'save_file_as': 'orient',
+        'epoch_name': 'ag',
+        'event': 'ag',
+        'save_file_as': 'ag',
         'prewindow': 10,
         'postwindow': 30,
         'window_type': 'event',
@@ -45,9 +45,9 @@ analysis_blocks = [
         }
     },
     {
-        'epoch_name': 'investigated_by_stim_nose_to_nose',
+        'epoch_name': 'nose_to_nose',
         'event': 'nose_to_nose',
-        'save_file_as': 'investigated_by_stim_nose_to_nose',
+        'save_file_as': 'nose_to_nose',
         'prewindow': 5,
         'postwindow': 2,
         'window_type': 'event',

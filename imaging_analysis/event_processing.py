@@ -115,6 +115,12 @@ def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout sta
     # Convert event col to be standard
     df[event_col] = df[event_col].str.strip().str.lower().apply(
         lambda x: re.sub(r"\s+", "_", x))
+
+    df[end_col] = df[end_col] - 1e-9
+
+    if any(np.diff(InterleaveEvents(df[start_col], df[end_col])) <= 0):
+        raise ValueError('Some of your bouts overlap in time in your manual excel file. Please fix bout start/ends!')
+
     return df
 
 
