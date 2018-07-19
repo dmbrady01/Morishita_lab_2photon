@@ -14,6 +14,7 @@ __lastmodified__ = "19 Jul 2018"
 # Required modules
 import pandas as pd
 import numpy as np
+import os
 from imaging_analysis.event_processing import FormatManualExcelFile
 
 def ReadStateCsv(state_csv='markov/states.csv'):
@@ -104,9 +105,9 @@ if __name__ == '__main__':
     transistion_matrix = RightStochasticMatrix(total_count_matrix)
 
     # TO SAVE csv
-    path_to_save = '/Users/DB/Development/Monkey_frog/data/'
-    np.savetxt(path_to_save + "count_matrix.csv", total_count_matrix, delimiter=",")
-    np.savetxt(path_to_save + "transistion_matrix.csv", transistion_matrix, delimiter=",")
+    path_to_save = '/Users/DB/Development/Monkey_frog/data/social/'
+    np.savetxt(path_to_save + os.sep + "count_matrix.csv", total_count_matrix, delimiter=",")
+    np.savetxt(path_to_save + os.sep + "transistion_matrix.csv", transistion_matrix, delimiter=",")
 
 
 
