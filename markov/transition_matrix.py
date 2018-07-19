@@ -103,6 +103,11 @@ if __name__ == '__main__':
     total_count_matrix = AddingCountMatrices(count_matrices)
     transistion_matrix = RightStochasticMatrix(total_count_matrix)
 
+    # TO SAVE csv
+    path_to_save = '/Users/DB/Development/Monkey_frog/data/'
+    np.savetxt(path_to_save + "count_matrix.csv", total_count_matrix, delimiter=",")
+    np.savetxt(path_to_save + "transistion_matrix.csv", transistion_matrix, delimiter=",")
+
 
 
 
