@@ -45,7 +45,7 @@ pickle_name = 'processed.pkl'
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
-mode = 'manual'
+mode = 'TTL'
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_2_social.csv'
 ##########################################################################
