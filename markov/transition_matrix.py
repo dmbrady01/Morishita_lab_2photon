@@ -58,13 +58,17 @@ def CountMatrix(transitions):
 
     return np.array(matrix)
 
-def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv'):
+def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', 
+    return_transitions=False):
     "Reads an excel file and states csv, updates states csv, outputs count matrix"
     df = GetTransitionsFromExcel(excel_file=excel_file, column=column)
     code = StateMapping(df, state_csv=state_csv)
     transitions = EncodeStates(df, code)
-    count_matrix = CountMatrix(transitions)
-    return count_matrix
+    if return_transitions:
+        return transitions
+    else:
+        count_matrix = CountMatrix(transitions)
+        return count_matrix
 
 def RightStochasticMatrix(count_matrix):
     "Takes a count matrix and generates a stochastic matrix"
@@ -95,19 +99,27 @@ if __name__ == '__main__':
         '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv',
         '/Users/DB/Development/Monkey_frog/data/social/FP_example_social.csv'
     ]
+    just_transitions = False
+    path_to_save = '/Users/DB/Development/Monkey_frog/data/social/'
     # Build up your count matrices
     count_matrices = []
     for csv in paths:
-        count_matrix = ProcessExcelToCountMatrix(csv, column='Bout type', state_csv='markov/states.csv')
+        count_matrix = ProcessExcelToCountMatrix(csv, column='Bout type', state_csv='markov/states.csv', 
+            return_transitions=just_transitions)
         count_matrices.append(count_matrix)
-    # Add all count matrices and get transistion matric
-    total_count_matrix = AddingCountMatrices(count_matrices)
-    transistion_matrix = RightStochasticMatrix(total_count_matrix)
 
-    # TO SAVE csv
-    path_to_save = '/Users/DB/Development/Monkey_frog/data/social/'
-    np.savetxt(path_to_save + os.sep + "count_matrix.csv", total_count_matrix, delimiter=",")
-    np.savetxt(path_to_save + os.sep + "transistion_matrix.csv", transistion_matrix, delimiter=",")
+    if just_transitions:
+        transitions = [list(x) for x in count_matrices]
+        with open(path_to_save + os.sep + "transistions.txt", 'w') as fp:
+            for transition in transitions:
+                fp.write(str(transition) + "\n")
+    else:
+        # Add all count matrices and get transistion matric
+        total_count_matrix = AddingCountMatrices(count_matrices)
+        transistion_matrix = RightStochasticMatrix(total_count_matrix)
+        # TO SAVE csv
+        np.savetxt(path_to_save + os.sep + "count_matrix.csv", total_count_matrix, delimiter=",")
+        np.savetxt(path_to_save + os.sep + "transistion_matrix.csv", transistion_matrix, delimiter=",")
 
 
 
