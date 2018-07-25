@@ -8,7 +8,7 @@ markov.py: Python script that contains functions for making markov models.
 
 __author__ = "DM Brady"
 __datewritten__ = "19 Jul 2018"
-__lastmodified__ = "19 Jul 2018"
+__lastmodified__ = "25 Jul 2018"
 
 
 # Required modules
@@ -58,17 +58,13 @@ def CountMatrix(transitions):
 
     return np.array(matrix)
 
-def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', 
-    return_transitions=False):
+def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv'):
     "Reads an excel file and states csv, updates states csv, outputs count matrix"
     df = GetTransitionsFromExcel(excel_file=excel_file, column=column)
     code = StateMapping(df, state_csv=state_csv)
     transitions = EncodeStates(df, code)
-    if return_transitions:
-        return transitions
-    else:
-        count_matrix = CountMatrix(transitions)
-        return count_matrix
+    count_matrix = CountMatrix(transitions)
+    return count_matrix, transitions
 
 def RightStochasticMatrix(count_matrix):
     "Takes a count matrix and generates a stochastic matrix"
