@@ -38,7 +38,7 @@ cohorts = [
             ]
     }
 ]
-all_cohort_states = False
+all_cohort_states = True
 all_cohort_states_path = 'markov/states.csv'
 all_column = 'Bout type'
 # paths = [
