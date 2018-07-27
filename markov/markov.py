@@ -8,7 +8,7 @@ markov.py: Python script that contains functions for making markov models.
 
 __author__ = "DM Brady"
 __datewritten__ = "19 Jul 2018"
-__lastmodified__ = "25 Jul 2018"
+__lastmodified__ = "27 Jul 2018"
 
 
 # Required modules
@@ -19,7 +19,12 @@ from imaging_analysis.event_processing import FormatManualExcelFile
 
 def ReadStateCsv(state_csv='markov/states.csv'):
     "Reads the possible state csv"
-    return pd.read_csv(state_csv)
+    if os.path.isfile(state_csv): 
+        return pd.read_csv(state_csv)
+    else:
+        df = pd.DataFrame(columns=['states'])
+        df.to_csv(state_csv, index=False)
+        return df
 
 def GetTransitionsFromExcel(excel_file=None, column='Bout type'):
     "Reads the excel file to be processed and returns the Series we care about"
@@ -29,27 +34,37 @@ def GetTransitionsFromExcel(excel_file=None, column='Bout type'):
 #     "Adds starts and ends to Series with transitions"
 #     return pd.concat([pd.Series(['start']), df, pd.Series(['end'])]).reset_index(drop=True)
 
-def StateMapping(df, state_csv='markov/states.csv'):
+def StateMapping(df, state_csv='markov/states.csv', fixed_states_csv=False):
     "Reads the current transition sequence to be analyzed and updates states_csv. Returns numerical codes."
     set_df = set(df.unique())
     # Read state csv
     state_code = ReadStateCsv(state_csv=state_csv)
     set_state = set(state_code['states'].unique())
     # See if states in set_df are not in set_state
-    not_mapped = set_df.difference(set_state)
-    if len(not_mapped) > 0:
-        state_code = state_code.append(pd.DataFrame(list(not_mapped), columns=['states']), ignore_index=True)
-        state_code.to_csv('markov/states.csv', index=False)
+    if not fixed_states_csv:
+        not_mapped = set_df.difference(set_state)
+        if len(not_mapped) > 0:
+            state_code = state_code.append(pd.DataFrame(list(not_mapped), columns=['states']), ignore_index=True)
+            state_code.to_csv(state_csv, index=False)
 
     return {y:x for x, y in state_code['states'].to_dict().iteritems()}
 
+def ExcelToStateMapping(excel_file, column='Bout type', state_csv='markov/states.csv', fixed_states_csv=False):
+    "Reads an excel file and states csv and updates states csv. Outputs dataframe and code."
+    df = GetTransitionsFromExcel(excel_file=excel_file, column=column)
+    code = StateMapping(df, state_csv=state_csv, fixed_states_csv=fixed_states_csv)
+    return df, code
+
 def EncodeStates(df, code):
     "Given a dataframe and a state_code, creates a list of transitions"
-    return df.map(code).values
+    transitions = df.map(code).values
+    # remove nan transitions (not in code)
+    transitions = transitions[[~np.isnan(x) for x in transitions]]
+    return transitions.astype(int)
 
 def CountMatrix(transitions):
     "Given a list of transitions and the code, creates a count matrix"
-    num_states = 1 + max(transitions)
+    num_states = int(1 + max(transitions))
 
     matrix = [[0]*num_states for _ in range(num_states)]
 
@@ -58,10 +73,9 @@ def CountMatrix(transitions):
 
     return np.array(matrix)
 
-def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv'):
+def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', fixed_states_csv=False):
     "Reads an excel file and states csv, updates states csv, outputs count matrix"
-    df = GetTransitionsFromExcel(excel_file=excel_file, column=column)
-    code = StateMapping(df, state_csv=state_csv)
+    df, code = ExcelToStateMapping(excel_file=excel_file, column=column, state_csv=state_csv, fixed_states_csv=fixed_states_csv)
     transitions = EncodeStates(df, code)
     count_matrix = CountMatrix(transitions)
     return count_matrix, transitions
