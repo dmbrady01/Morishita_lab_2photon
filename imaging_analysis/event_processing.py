@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01 Mar 2018"
-__lastmodified__ = "13 Jun 2018"
+__lastmodified__ = "31 Jul 2018"
 
 import quantities as pq
 from collections import OrderedDict
@@ -79,7 +79,7 @@ def ReadManualExcelFile(excel_file):
     if isinstance(excel_file, pd.core.frame.DataFrame):
         return excel_file
     else:
-        if 'csv' in excel_file:
+        if '.csv' in excel_file:
             df = pd.read_csv(excel_file)
         else:
             df = pd.read_excel(excel_file)
