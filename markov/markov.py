@@ -8,19 +8,19 @@ markov.py: Python script that contains functions for making markov models.
 
 __author__ = "DM Brady"
 __datewritten__ = "19 Jul 2018"
-__lastmodified__ = "27 Jul 2018"
+__lastmodified__ = "31 Jul 2018"
 
 
 # Required modules
 import pandas as pd
 import numpy as np
 import os
-from imaging_analysis.event_processing import FormatManualExcelFile
+from imaging_analysis.event_processing import FormatManualExcelFile, ReadManualExcelFile
 
 def ReadStateCsv(state_csv='markov/states.csv'):
     "Reads the possible state csv"
     if os.path.isfile(state_csv): 
-        return pd.read_csv(state_csv)
+        return ReadManualExcelFile(state_csv)
     else:
         df = pd.DataFrame(columns=['states'])
         df.to_csv(state_csv, index=False)
