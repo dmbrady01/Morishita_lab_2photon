@@ -88,10 +88,13 @@ def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/
     count_matrix = CountMatrix(transitions)
     return count_matrix, transitions
 
-def RightStochasticMatrix(count_matrix, replace_nan=True):
+def StochasticMatrix(count_matrix, replace_nan=True, calc='right'):
     "Takes a count matrix and generates a stochastic matrix"
-    tm = np.array([np.divide(count_matrix[:,x], count_matrix.sum(axis=1)) 
-        for x in range(count_matrix.shape[0])]).T
+    if calc == 'right':
+        tm = np.array([np.divide(count_matrix[:,x], count_matrix.sum(axis=1)) 
+            for x in range(count_matrix.shape[0])]).T
+    elif calc == 'probability':
+        tm = np.array(np.divide(count_matrix, count_matrix.sum()))
     if replace_nan:
         tm[np.isnan(tm)] = 0
     return tm
@@ -124,14 +127,14 @@ def AddingCountMatrices(list_of_count_matrices):
         sum_of_matrices = np.add(sum_of_matrices, matrix)
     return sum_of_matrices
 
-def MarkovToTransitionMatrix(list_of_data, mode='transitions', num_states=None, replace_nan=True):
+def MarkovToTransitionMatrix(list_of_data, mode='transitions', num_states=None, replace_nan=True, calc='right'):
     if mode == 'transitions':
-        return RightStochasticMatrix(AddingCountMatrices([
+        return StochasticMatrix(AddingCountMatrices([
             CountMatrix(data, num_states=num_states) for data in list_of_data]), 
-            replace_nan=replace_nan)
+            replace_nan=replace_nan, calc=calc)
     elif mode == 'counts':
-        return RightStochasticMatrix(AddingCountMatrices(list_of_data), 
-            replace_nan=replace_nan)
+        return StochasticMatrix(AddingCountMatrices(list_of_data), 
+            replace_nan=replace_nan, calc=calc)
 
 def ReadTransitionsTextFile(text_file):
     "Reads transitions.txt file and returns list of transitions (list of lists)"

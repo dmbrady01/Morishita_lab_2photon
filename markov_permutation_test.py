@@ -20,6 +20,10 @@ from markov.markov import ReadTransitionsTextFile, MaxStates, MarkovToTransition
 group1 = '/Users/DB/Development/Monkey_frog/data/social/csvs/group_housed_transistions.txt'
 group2 = '/Users/DB/Development/Monkey_frog/data/social/csvs/isolates_transistions.txt'
 
+# if stationary = True, then the stationary distribution is calculated, else it is the
+# joint probability matrix
+stationary = True
+
 # Number of permutations to run
 num_permutations = 10000
 np.random.seed(1234) # sets the random seed generator to get the same distro each time
@@ -32,8 +36,16 @@ group2_data = ReadTransitionsTextFile(group2)
 num_states = MaxStates(group1_data, group2_data)
 
 # Real differences (finds the stationary distro for each)
-group1_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_data, num_states=num_states, replace_nan=True))
-group2_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_data, num_states=num_states, replace_nan=True))
+if stationary:
+    group1_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_data, 
+        num_states=num_states, replace_nan=True, calc='right'))
+    group2_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_data, 
+        num_states=num_states, replace_nan=True, calc='right'))
+else:
+    group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
+        replace_nan=True, calc='probability')
+    group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
+        replace_nan=True, calc='probability')
 true_distance = DistanceBewtweenMatrices(group1_sd, group2_sd)
 
 # Preparing for permutation test
@@ -54,8 +66,16 @@ while len(null_distribution) < num_permutations:
     group2_perm = combined_data[group2_idx]
 
     # Calcualte stationary distributions
-    group1_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_perm, num_states=num_states, replace_nan=True))
-    group2_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_perm, num_states=num_states, replace_nan=True))
+    if stationary:
+        group1_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_perm, 
+            num_states=num_states, replace_nan=True, calc='right'))
+        group2_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_perm, 
+            num_states=num_states, replace_nan=True, calc='right'))
+    else:
+        group1_perm_sd = MarkovToTransitionMatrix(group1_perm, num_states=num_states, 
+            replace_nan=True, calc='probability')
+        group2_perm_sd = MarkovToTransitionMatrix(group2_perm, num_states=num_states, 
+            replace_nan=True, calc='probability')     
     perm_distance = DistanceBewtweenMatrices(group1_perm_sd, group2_perm_sd)
     null_distribution.append(perm_distance) 
 

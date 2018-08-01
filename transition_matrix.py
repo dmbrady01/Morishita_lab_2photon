@@ -14,7 +14,7 @@ __lastmodified__ = "27 Jul 2018"
 import numpy as np
 import pandas as pd
 import os
-from markov.markov import ProcessExcelToCountMatrix, AddingCountMatrices, RightStochasticMatrix, ExcelToStateMapping, ReadStateCsv
+from markov.markov import ProcessExcelToCountMatrix, AddingCountMatrices, StochasticMatrix, ExcelToStateMapping, ReadStateCsv
 
 cohorts = [
     {
@@ -104,7 +104,7 @@ for cohort in cohorts:
 
     # Add all count matrices and get transistion matric
     total_count_matrix = AddingCountMatrices(count_matrices)
-    transistion_matrix = RightStochasticMatrix(total_count_matrix)
+    transistion_matrix = StochasticMatrix(total_count_matrix)
     # TO SAVE csv
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_count_matrix.csv", total_count_matrix, delimiter=",")
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_transistion_matrix.csv", transistion_matrix, delimiter=",")
