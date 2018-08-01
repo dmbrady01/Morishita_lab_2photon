@@ -15,6 +15,9 @@ __lastmodified__ = "31 Jul 2018"
 import pandas as pd
 import numpy as np
 import os
+import json
+import scipy.sparse.linalg as sla
+from scipy.stats import wasserstein_distance
 from imaging_analysis.event_processing import FormatManualExcelFile, ReadManualExcelFile
 
 def ReadStateCsv(state_csv='markov/states.csv'):
@@ -44,7 +47,8 @@ def StateMapping(df, state_csv='markov/states.csv', fixed_states_csv=False):
     if not fixed_states_csv:
         not_mapped = set_df.difference(set_state)
         if len(not_mapped) > 0:
-            state_code = state_code.append(pd.DataFrame(list(not_mapped), columns=['states']), ignore_index=True)
+            state_code = state_code.append(pd.DataFrame(list(not_mapped), 
+                columns=['states']), ignore_index=True)
             state_code.to_csv(state_csv, index=False)
 
     return {y:x for x, y in state_code['states'].to_dict().iteritems()}
@@ -62,9 +66,12 @@ def EncodeStates(df, code):
     transitions = transitions[[~np.isnan(x) for x in transitions]]
     return transitions.astype(int)
 
-def CountMatrix(transitions):
+def CountMatrix(transitions, num_states=None):
     "Given a list of transitions and the code, creates a count matrix"
-    num_states = int(1 + max(transitions))
+    if not num_states:
+        num_states = int(1 + max(transitions))
+    else:
+        num_states = int(1 + num_states)
 
     matrix = [[0]*num_states for _ in range(num_states)]
 
@@ -75,15 +82,28 @@ def CountMatrix(transitions):
 
 def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', fixed_states_csv=False):
     "Reads an excel file and states csv, updates states csv, outputs count matrix"
-    df, code = ExcelToStateMapping(excel_file=excel_file, column=column, state_csv=state_csv, fixed_states_csv=fixed_states_csv)
+    df, code = ExcelToStateMapping(excel_file=excel_file, column=column, state_csv=state_csv, 
+        fixed_states_csv=fixed_states_csv)
     transitions = EncodeStates(df, code)
     count_matrix = CountMatrix(transitions)
     return count_matrix, transitions
 
-def RightStochasticMatrix(count_matrix):
+def RightStochasticMatrix(count_matrix, replace_nan=True):
     "Takes a count matrix and generates a stochastic matrix"
-    return np.array([np.divide(count_matrix[:,x], count_matrix.sum(axis=1)) 
+    tm = np.array([np.divide(count_matrix[:,x], count_matrix.sum(axis=1)) 
         for x in range(count_matrix.shape[0])]).T
+    if replace_nan:
+        tm[np.isnan(tm)] = 0
+    return tm
+
+def StationaryDistribution(tm):
+    "Assumes a right stochastic matrix (if not pass it as mymatrix.T). Returns stationary distro"
+    first_eval, first_evec = sla.eigs(tm.T, k=1, which='LM')
+    return (first_evec/first_evec.sum()).real
+
+def DistanceBewtweenMatrices(matrix1, matrix2, method=wasserstein_distance):
+    "Finds distance between two matrices using method (must pass a function)"
+    return method(matrix1.flat, matrix2.flat)
 
 def AddEmptyRowAndColumn(matrix, goal_shape=10):
     shape = matrix.shape[0]
@@ -103,3 +123,24 @@ def AddingCountMatrices(list_of_count_matrices):
     for matrix in reshaped[1:]:
         sum_of_matrices = np.add(sum_of_matrices, matrix)
     return sum_of_matrices
+
+def MarkovToTransitionMatrix(list_of_data, mode='transitions', num_states=None, replace_nan=True):
+    if mode == 'transitions':
+        return RightStochasticMatrix(AddingCountMatrices([
+            CountMatrix(data, num_states=num_states) for data in list_of_data]), 
+            replace_nan=replace_nan)
+    elif mode == 'counts':
+        return RightStochasticMatrix(AddingCountMatrices(list_of_data), 
+            replace_nan=replace_nan)
+
+def ReadTransitionsTextFile(text_file):
+    "Reads transitions.txt file and returns list of transitions (list of lists)"
+    with open(text_file) as fp:
+        contents = fp.read()
+    contents = contents.split('\n')
+    contents = [json.loads(x) for x in contents if len(x) > 0]
+    return contents
+
+def MaxStates(*args):
+    "Given a set of transitions, finds out how many states there are."
+    return max(max(max(x) for x in args))

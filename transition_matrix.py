@@ -19,22 +19,37 @@ from markov.markov import ProcessExcelToCountMatrix, AddingCountMatrices, RightS
 cohorts = [
     {
         'name': 'group_housed',
-        'savepath': '/Users/DB/Development/Monkey_frog/data/social/',
+        'savepath': '/Users/DB/Development/Monkey_frog/data/social/csvs',
         'statespath': 'markov/group_housed_states.csv',
         'column': 'Bout type',
         'fixed_states_csv': False,
         'csvs': [
-            '/Users/DB/Development/Monkey_frog/data/social/FP_example_object.csv'
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/PVFP_1024_362_social.xlsx',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9949_3_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9924_2_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_1024_372_social.xlsx',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_1024_371_social.xlsx',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9919_2_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9949_1_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_3949_2_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_1024_373_social.xlsx'
             ]
     },
     {
         'name': 'isolates',
-        'savepath': '/Users/DB/Development/Monkey_frog/data/social/',
+        'savepath': '/Users/DB/Development/Monkey_frog/data/social/csvs',
         'statespath': 'markov/isolates_states.csv',
         'column': 'Bout type',
         'fixed_states_csv': False,
         'csvs': [
-            '/Users/DB/Development/Monkey_frog/data/social/FP_example_social.csv'
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9919_4_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_1024_363_social.xlsx',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9949_2_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_3949_1_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9919_1_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9924_1_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9919_3_social.csv',
+            '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_3949_3_social.csv'
             ]
     }
 ]
