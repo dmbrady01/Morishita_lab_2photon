@@ -7,8 +7,8 @@ transition_matrix.py: Python script that contains functions for making markov mo
 
 
 __author__ = "DM Brady"
-__datewritten__ = "19 Jul 2018"
-__lastmodified__ = "27 Jul 2018"
+__datewritten__ = "19Aug2018"
+__lastmodified__ = "08Aug2018"
 
 
 import numpy as np
@@ -105,9 +105,14 @@ for cohort in cohorts:
     # Add all count matrices and get transistion matric
     total_count_matrix = AddingCountMatrices(count_matrices)
     transistion_matrix = StochasticMatrix(total_count_matrix)
+    joint_distribution_matrix = StochasticMatrix(total_count_matrix, calc='probability')
     # TO SAVE csv
-    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_count_matrix.csv", total_count_matrix, delimiter=",")
-    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_transistion_matrix.csv", transistion_matrix, delimiter=",")
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_count_matrix.csv", 
+        total_count_matrix, delimiter=",")
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_transistion_matrix.csv", 
+        transistion_matrix, delimiter=",")
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_joint_distribution_matrix.csv", 
+        transistion_matrix, delimiter=",")
 
 
 
