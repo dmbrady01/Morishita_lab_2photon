@@ -47,16 +47,16 @@ if analysis_type == 'stationary':
     group2_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_data, 
         num_states=num_states, replace_nan=True, calc='right'))
     true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
-    null_distribution = [[]] * 1
+    null_distribution = [[] for i in range(1)]
 elif analysis_type == 'joint':
     group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
         replace_nan=True, calc='probability')
     group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
         replace_nan=True, calc='probability')
     true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
-    null_distribution = [[]] * 1
+    null_distribution = [[] for i in range(1)]
 elif analysis_type == 'transition':
-    null_distribution = [[]] * num_states
+    null_distribution = [[] for i in range(num_states)]
     for i in range(num_states):
         group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
             replace_nan=True, calc='right')[i,:]
