@@ -146,4 +146,4 @@ def ReadTransitionsTextFile(text_file):
 
 def MaxStates(*args):
     "Given a set of transitions, finds out how many states there are."
-    return max(max(max(x) for x in args))
+    return max(max(max(x) for x in args)) + 1
