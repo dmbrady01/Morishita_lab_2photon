@@ -8,8 +8,8 @@ processing.
 
 
 __author__ = "DM Brady"
-__datewritten__ = "01 Mar 2018"
-__lastmodified__ = "31 Jul 2018"
+__datewritten__ = "01Mar2018"
+__lastmodified__ = "08Aug2018"
 
 import quantities as pq
 from collections import OrderedDict
@@ -114,7 +114,7 @@ def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout sta
             % end_col)
     # Convert event col to be standard
     df[event_col] = df[event_col].str.strip().str.lower().apply(
-        lambda x: re.sub(r"\s+", "_", x))
+        lambda x: re.sub(r"\s+", "_", x)).apply(lambda x: re.sub(r"/", "_", x))
 
     df[end_col] = df[end_col] - 1e-9
 
