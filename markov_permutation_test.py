@@ -24,7 +24,7 @@ state_csv = '/Users/DB/Development/Monkey_frog/markov/states.csv'
 savepath = '/Users/DB/Development/Monkey_frog/'
 
 # can be 'stationary', 'joint', or 'transition'. last will correct for multiple comparisons
-analysis_type = 'joint'
+analysis_type = 'transition'
 
 # Number of permutations to run
 num_permutations = 10000

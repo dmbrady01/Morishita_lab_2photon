@@ -8,7 +8,7 @@ transition_matrix.py: Python script that contains functions for making markov mo
 
 __author__ = "DM Brady"
 __datewritten__ = "19Aug2018"
-__lastmodified__ = "08Aug2018"
+__lastmodified__ = "09Aug2018"
 
 
 import numpy as np
@@ -23,6 +23,8 @@ cohorts = [
         'statespath': 'markov/group_housed_states.csv',
         'column': 'Bout type',
         'fixed_states_csv': False,
+        'resample': True,
+        'resample_window': 2,
         'csvs': [
             '/Users/DB/Development/Monkey_frog/data/social/csvs/PVFP_1024_362_social.xlsx',
             '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9949_3_social.csv',
@@ -41,6 +43,8 @@ cohorts = [
         'statespath': 'markov/isolates_states.csv',
         'column': 'Bout type',
         'fixed_states_csv': False,
+        'resample': True,
+        'resample_window': 2,
         'csvs': [
             '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_41718_PVGHjSI_9919_4_social.csv',
             '/Users/DB/Development/Monkey_frog/data/social/csvs/FP_1024_363_social.xlsx',
@@ -93,7 +97,8 @@ for cohort in cohorts:
     transitions_list = []
     for csv in cohort['csvs']:
         count_matrix, transitions = ProcessExcelToCountMatrix(csv, column=cohort['column'], 
-            state_csv=cohort['statespath'], fixed_states_csv=cohort['fixed_states_csv'])
+            state_csv=cohort['statespath'], fixed_states_csv=cohort['fixed_states_csv'],
+            resample=cohort['resample'], resample_window=cohort['resample_window'])
         count_matrices.append(count_matrix)
         transitions_list.append(list(transitions))
 
