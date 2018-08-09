@@ -7,8 +7,8 @@ markov_permutation_test.py: Python script for performing permutation test on two
 
 
 __author__ = "DM Brady"
-__datewritten__ = "31 Jul 2018"
-__lastmodified__ = "31 Jul 2018"
+__datewritten__ = "31Jul2018"
+__lastmodified__ = "08Aug2018"
 
 import numpy as np
 import seaborn as sns
