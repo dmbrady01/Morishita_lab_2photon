@@ -8,7 +8,7 @@ markov_permutation_test.py: Python script for performing permutation test on two
 
 __author__ = "DM Brady"
 __datewritten__ = "31Jul2018"
-__lastmodified__ = "08Aug2018"
+__lastmodified__ = "09Aug2018"
 
 import numpy as np
 import seaborn as sns
@@ -47,16 +47,16 @@ if analysis_type == 'stationary':
     group2_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_data, 
         num_states=num_states, replace_nan=True, calc='right'))
     true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
-    null_distribution = [list()]
+    null_distribution = [[]] * 1
 elif analysis_type == 'joint':
     group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
         replace_nan=True, calc='probability')
     group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
         replace_nan=True, calc='probability')
     true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
-    null_distribution = [list()]
+    null_distribution = [[]] * 1
 elif analysis_type == 'transition':
-    null_distribution = [list()] * num_states
+    null_distribution = [[]] * num_states
     for i in range(num_states):
         group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
             replace_nan=True, calc='right')[i,:]
