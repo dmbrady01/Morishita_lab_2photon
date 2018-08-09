@@ -29,9 +29,10 @@ def ReadStateCsv(state_csv='markov/states.csv'):
         df.to_csv(state_csv, index=False)
         return df
 
-def GetTransitionsFromExcel(excel_file=None, column='Bout type'):
+def GetTransitionsFromExcel(excel_file=None, column='Bout type', resample=False, resample_window=1):
     "Reads the excel file to be processed and returns the Series we care about"
-    return FormatManualExcelFile(excel_file=excel_file, event_col=column)[column]
+    return FormatManualExcelFile(excel_file=excel_file, event_col=column, 
+        resample=resample, resample_window=resample_window)[column]
 
 # def AddStartAndEnds(df):
 #     "Adds starts and ends to Series with transitions"
@@ -53,9 +54,11 @@ def StateMapping(df, state_csv='markov/states.csv', fixed_states_csv=False):
 
     return {y:x for x, y in state_code['states'].to_dict().iteritems()}
 
-def ExcelToStateMapping(excel_file, column='Bout type', state_csv='markov/states.csv', fixed_states_csv=False):
+def ExcelToStateMapping(excel_file, column='Bout type', state_csv='markov/states.csv', 
+        fixed_states_csv=False, resample=False, resample_window=1):
     "Reads an excel file and states csv and updates states csv. Outputs dataframe and code."
-    df = GetTransitionsFromExcel(excel_file=excel_file, column=column)
+    df = GetTransitionsFromExcel(excel_file=excel_file, column=column, resample=resample, 
+        resample_window=resample_window)
     code = StateMapping(df, state_csv=state_csv, fixed_states_csv=fixed_states_csv)
     return df, code
 
@@ -80,10 +83,11 @@ def CountMatrix(transitions, num_states=None):
 
     return np.array(matrix)
 
-def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', fixed_states_csv=False):
+def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', 
+        fixed_states_csv=False, resample=False, resample_window=1):
     "Reads an excel file and states csv, updates states csv, outputs count matrix"
     df, code = ExcelToStateMapping(excel_file=excel_file, column=column, state_csv=state_csv, 
-        fixed_states_csv=fixed_states_csv)
+        fixed_states_csv=fixed_states_csv, resample=resample, resample_window=resample_window)
     transitions = EncodeStates(df, code)
     count_matrix = CountMatrix(transitions)
     return count_matrix, transitions

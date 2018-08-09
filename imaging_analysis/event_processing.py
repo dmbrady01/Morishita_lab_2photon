@@ -9,7 +9,7 @@ processing.
 
 __author__ = "DM Brady"
 __datewritten__ = "01Mar2018"
-__lastmodified__ = "08Aug2018"
+__lastmodified__ = "09Aug2018"
 
 import quantities as pq
 from collections import OrderedDict
@@ -86,7 +86,7 @@ def ReadManualExcelFile(excel_file):
         return df
 
 def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout start', 
-    end_col='Bout end'):
+    end_col='Bout end', resample=False, resample_window=1):
     """Given a manual excel file, it string formats Bout types to be consistent."""
     # Read excel file
     df = ReadManualExcelFile(excel_file)
@@ -120,6 +120,11 @@ def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout sta
 
     if any(np.diff(InterleaveEvents(df[start_col], df[end_col])) <= 0):
         raise ValueError('Some of your bouts overlap in time in your manual excel file. Please fix bout start/ends!')
+
+    if resample:
+        start = np.floor(df[start_col].iloc[0])
+        end = np.ceil(df[end_col].iloc[-1])
+        df = df.set_index(start_col).reindex(np.arange(start, end, resample_window)).ffill()
 
     return df
 
