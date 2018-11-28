@@ -84,7 +84,10 @@ except IOError:
     # Iterates through each segment in seglist. Right now, there is only one segment
     for segment in seglist:
         # Extracts the sampling rate from the signal channel
-        sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
+        try:
+            sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
+        except IndexError:
+            raise ValueError('Could not find your channels. Make sure you have the right names!')
         # Appends an analog signal object that is delta F/F. The name of the channel is
         # specified by deltaf_ch_name above. It is calculated using the function
         # NormalizeSignal in signal_processing.py. As of right now it:

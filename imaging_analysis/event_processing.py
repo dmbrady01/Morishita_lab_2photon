@@ -86,7 +86,7 @@ def ReadManualExcelFile(excel_file):
         return df
 
 def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout start', 
-    end_col='Bout end', resample=False, resample_window=1):
+    end_col='Bout end', resample=False, resample_window=1, tolerance=0.00001):
     """Given a manual excel file, it string formats Bout types to be consistent."""
     # Read excel file
     df = ReadManualExcelFile(excel_file)
@@ -118,7 +118,7 @@ def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout sta
 
     df[end_col] = df[end_col] - 1e-9
 
-    if any(np.diff(InterleaveEvents(df[start_col], df[end_col])) <= 0):
+    if any(np.diff(InterleaveEvents(df[start_col], df[end_col])) <= -1*tolerance):
         raise ValueError('Some of your bouts overlap in time in your manual excel file. Please fix bout start/ends!')
 
     if resample:
