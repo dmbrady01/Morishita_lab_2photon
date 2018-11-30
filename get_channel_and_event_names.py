@@ -15,7 +15,7 @@ import sys
 from imaging_analysis.utils import ReadNeoTdt, PrintNoNewLine
 
 if len(sys.argv) < 2:
-    dpath=dpath
+    dpath="data/KN_newRigData/RS/12/FirstFibPho-180817-160254/"
 else:
     dpath = sys.argv[1]
 

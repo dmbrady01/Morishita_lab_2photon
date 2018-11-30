@@ -282,12 +282,15 @@ def ProcessEventList(eventlist=None, tolerance=None, evtframe=None,
         # Finds the correct label by matching current_event_list (which
         # could look like [0, 1, 1] for example) with the corresponding
         # dataframe row
-        label = evtframe.index[evtframe.apply(lambda x: 
-            all(x == current_event_list), axis=1)][0]
-        event_labels.append(label)
-        # Adds the timestamp to event_times
-        event_times.append(current_earliest)
-        # Resets eventlist to reflect event deletion
+        try:
+            label = evtframe.index[evtframe.apply(lambda x: 
+                all(x == current_event_list), axis=1)][0]
+            event_labels.append(label)
+            # Adds the timestamp to event_times
+            event_times.append(current_earliest)
+            # Resets eventlist to reflect event deletion
+        except IndexError:
+            pass
         eventlist = evtlist_non_empty
     return event_times, event_labels
 

@@ -27,8 +27,8 @@ truncate_begin = 10 # how many seconds to remove from the beginning of the recor
 truncate_end = 0 # how many seconds to remove from the end of the recording
 # For filtering and calculating deltaf/f
 lowpass_filter = 40.0 # Will remove frequencies above this number
-signal_channel = 'LMag 1' # Name of our signal channel
-reference_channel = 'LMag 2' # Name of our reference channel
+signal_channel = '405A 1' # Name of our signal channel
+reference_channel = '465A 1' # Name of our reference channel
 #deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
 deltaf_options = {} # Any parameters you want to pass when calculating deltaf/f
 # For calculating events and event labels
@@ -46,6 +46,7 @@ pickle_name = 'processed.pkl'
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
 mode = 'TTL'
+path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_2_social.csv'
 ##########################################################################
@@ -56,7 +57,7 @@ try:
     dpath = sys.argv[1]
 except IndexError:
     #dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/'
+    dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 
 # Tries to load a processed pickle object, othewise reads the Tdt folder,
 # processes the data and writes a pickle object
@@ -110,7 +111,7 @@ except IOError:
         print('Done!')
         if mode == 'TTL':
             # Loading event labeling/combo parameters
-            path_to_event_params = 'imaging_analysis/ttl_event_params.json'
+            path_to_event_params = path_to_ttl_event_params
         elif mode == 'manual':
             # Generates a json for reading excel file events
             path_to_event_params = 'imaging_analysis/manual_event_params.json'
