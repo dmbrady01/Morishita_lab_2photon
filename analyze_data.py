@@ -28,6 +28,7 @@ analysis_blocks = [
         'save_file_as': 'correct',
         'prewindow': 10,
         'postwindow': 30,
+        'z_score_window': [],
         'window_type': 'event',
         'clip': False,
         'to_csv': True,
@@ -48,8 +49,9 @@ analysis_blocks = [
         'epoch_name': 'omission',
         'event': 'omission',
         'save_file_as': 'omission',
-        'prewindow': 5,
-        'postwindow': 2,
+        'prewindow': 10,
+        'postwindow': 30,
+        'z_score_window': [],
         'window_type': 'event',
         'clip': False,
         'to_csv': True,
@@ -107,7 +109,7 @@ try:
     dpath = sys.argv[1]
 except IndexError:
     #dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
-    dpath = '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT4_1024173/'
+    dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 
 # Tries to load a processed pickle object, othewise tells you ro run process_data first
 if load_pickle_object:
@@ -131,6 +133,7 @@ for segment in seglist:
         clip = block['clip']
         save_file_as = block['save_file_as']
         to_csv = block['to_csv']
+        z_score_window = block['z_score_window']
 
         print('\nAnalyzing "%s" trials \n' % epoch_name)
 
@@ -138,7 +141,7 @@ for segment in seglist:
         AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name='DeltaF_F', 
             event_ch_name='Events', event=event, event_type='label', 
             prewindow=prewindow, postwindow=postwindow, window_type=window_type, 
-            clip=clip, name=save_file_as, to_csv=to_csv, dpath=dpath)
+            clip=clip, name=save_file_as, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
         print('Done!')
 
         traces = segment.analyzed[save_file_as]['all_traces']
