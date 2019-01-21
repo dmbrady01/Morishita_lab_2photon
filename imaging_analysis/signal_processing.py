@@ -18,6 +18,7 @@ import neo
 import quantities as pq
 import copy as cp
 import types
+import pandas as pd
 from neo.core import AnalogSignal
 
 def TruncateSignal(signal, start=0, end=0):
@@ -138,9 +139,24 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
     elif mode == 'period_median':
         reference = signal[period[0]:period[1]]
         return (signal - np.median(reference))/np.median(reference) * 100.0
+    elif mode == 'z_score_rolling':
+        shape = signal.shape
+        series_signal = pd.Series(signal.flatten().copy())
+        moving_mean = series_signal.rolling(period).mean()
+        moving_std = series_signal.rolling(period).std()
+        z_score = (series_signal - moving_mean).divide(moving_std)
+        return z_score.values.reshape(shape)
+    elif mode == 'z_score':
+        return signal
     else:
         raise ValueError('%s is not an accepted mode for calculating deltaf' 
             % mode)
+
+def ZScoreCalculator(signal, baseline_start=None, baseline_end=None):
+    mean_baseline = np.mean(signal[baseline_start:baseline_end])
+    std_baseline = np.std(signal[baseline_start:baseline_end])
+    z_score = (signal - mean_baseline) / std_baseline
+    return z_score
 
 def SmoothSignal(x, window_len=11, window='flat'):
     """smooth the data using a window with requested size.
@@ -211,6 +227,34 @@ def SmoothSignalWithPeriod(x, sampling_rate=None, ms_bin=None, window='flat'):
 
     return SmoothSignal(x, window_len=num_bins, window=window)
 
+def PolyfitWindow(reference, signal, window_length=3001, return_projection=False):
+    """
+    Applies a polynomial fit in a sliding window to an input signal. This has the same functionality as a 
+    Savitzky-Golay filter. 
+    """
+    x = reference
+    y = signal
+
+    shape = x.shape
+    num_samples = len(x)
+    idx = np.arange(window_length)
+    x_out = np.zeros(num_samples)
+    steps = np.arange(0, num_samples, window_length)
+
+    x = x.flatten()
+    y = y.flatten()
+
+    for step in steps:
+        x_frame = x[step:step+window_length]
+        y_frame = y[step:step+window_length]
+        p = np.polyfit(x_frame, y_frame, deg=1)
+        x_out[step:step+window_length] = np.polyval(p, x_frame)
+
+    if return_projection:
+        return x_out.reshape(shape)
+    else:
+        return (y - x_out).reshape(shape)
+
 def NormalizeSignal(signal=None, reference=None, **kwargs):
     """The current method for correcting a signal. These are the steps:
     1) Lowpass filter signal and reference
@@ -230,14 +274,16 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'fs': 381,
         'window_length': 3001,
         'savgol_order': 1,
-        'detrend': True,
+        'detrend': 'linear',
+        'subtract': True,
         'mode': 'median',
-        'period': None,
-        'return_all_signals': False,
+        'period': 3001,
         'offset': 0
         }
     # Update based on kwargs
     options.update(kwargs)
+
+    ##### Filter the signals
     # Pass signal and reference through filters
     filt_signal = FilterSignal(signal, lowcut=options['lowcut'], 
         highcut=options['highcut'], fs=options['fs'], order=options['order'], 
@@ -247,42 +293,76 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         filt_ref = FilterSignal(reference, lowcut=options['lowcut'], 
             highcut=options['highcut'], fs=options['fs'], order=options['order'], 
             btype=options['btype'], axis=options['axis'])
-        deltaf_ref = DeltaFOverF(filt_ref, reference=filt_ref, 
-            mode=options['mode'], period=options['period'], offset=options['offset'])
-        # Calculate deltaf/f
-        deltaf_sig = DeltaFOverF(filt_signal, reference=filt_ref, 
-            mode=options['mode'], period=options['period'], offset=options['offset'])
-    else:
-        # Calculate deltaf/f
-        deltaf_sig = DeltaFOverF(filt_signal, reference=None, 
-            mode=options['mode'], period=options['period'], offset=options['offset']) 
-        deltaf_ref = 0 
 
-    # Detrend data if detrend is true
-    if options['detrend']:
-        # for signal
-        trend_sig = FilterSignal(deltaf_sig, fs=options['fs'], btype='savgol', 
-            axis=options['axis'], window_length=options['window_length'], 
-            savgol_order=options['savgol_order'])
-        deltaf_sig = deltaf_sig - trend_sig
-        # for reference
-        if not isinstance(reference, types.NoneType):
-            trend_ref = FilterSignal(deltaf_ref, fs=options['fs'], btype='savgol', 
+    ##### Calculate deltaf/f
+    if 'z_score' in options['mode']:
+        # If doing z-score, first detrend, then filter
+        ##### Detrend the signal
+        if options['detrend'] == 'savgol':
+            # for signal
+            trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
                 axis=options['axis'], window_length=options['window_length'], 
                 savgol_order=options['savgol_order'])
-            deltaf_ref = deltaf_ref - trend_ref
-    # Subtract reference out
-    subtracted_signal = deltaf_sig - deltaf_ref
-    # Return signal with reference subtracted out
-    if not options['return_all_signals']:
-        return subtracted_signal
-    else:
-        # returns all processing steps (but will jump from filt to deltaf detrended)
-        # if detrend = True
+            filt_signal = filt_signal - trend_sig
+            # for reference
+            if not isinstance(reference, types.NoneType):
+                trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
+                    axis=options['axis'], window_length=options['window_length'], 
+                    savgol_order=options['savgol_order'])
+                filt_ref = filt_ref - trend_ref
+        elif options['detrend'] == 'linear':
+            filt_signal = PolyfitWindow(filt_ref, filt_signal, 
+                window_length=options['window_length'], return_projection=False)
+            filt_ref = PolyfitWindow(filt_ref, filt_ref, 
+                window_length=options['window_length'], return_projection=False)
+        # Calculate z-score
+        filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
+            mode=options['mode'], period=options['period'], offset=options['offset'])
         if not isinstance(reference, types.NoneType):
-            return subtracted_signal, deltaf_sig, deltaf_ref, filt_signal, filt_ref  
+            filt_ref = DeltaFOverF(filt_ref, reference=filt_ref, 
+                mode=options['mode'], period=options['period'], offset=options['offset'])
         else:
-            return subtracted_signal, deltaf_sig, filt_signal
+            filt_ref = 0
+    else:
+        # Calculate z-score
+        filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
+            mode=options['mode'], period=options['period'], offset=options['offset'])
+        if not isinstance(reference, types.NoneType):
+            filt_ref = DeltaFOverF(filt_ref, reference=filt_ref, 
+                mode=options['mode'], period=options['period'], offset=options['offset'])
+        else:
+            filt_ref = 0
+        ##### Detrend the signal
+        if options['detrend'] == 'savgol':
+            # for signal
+            trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
+                axis=options['axis'], window_length=options['window_length'], 
+                savgol_order=options['savgol_order'])
+            filt_signal = filt_signal - trend_sig
+            # for reference
+            if not isinstance(reference, types.NoneType):
+                trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
+                    axis=options['axis'], window_length=options['window_length'], 
+                    savgol_order=options['savgol_order'])
+                filt_ref = filt_ref - trend_ref
+        elif options['detrend'] == 'linear':
+            filt_signal = PolyfitWindow(filt_ref, filt_signal, 
+                window_length=options['window_length'], return_projection=False)
+            filt_ref = PolyfitWindow(filt_ref, filt_ref, 
+                window_length=options['window_length'], return_projection=False)
+            # trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
+            #     axis=options['axis'], window_length=options['window_length'], 
+            #     savgol_order=options['savgol_order'])
+            # filt_ref = filt_ref - trend_ref
+
+    ## Subtract signals
+    if options['subtract']:
+        subtracted_signal = filt_signal - filt_ref
+    else:
+        subtracted_signal = filt_signal
+
+    # Return signal with reference subtracted out
+    return subtracted_signal
 
 def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', 
     name='deltaf_f', **kwargs):

@@ -18,6 +18,7 @@ import pandas as pd
 import os
 import numpy as np
 from warnings import warn
+from imaging_analysis.signal_processing import ZScoreCalculator
 
 def TruncateSegment(segment, start=0, end=0, clip_same=True, evt_start=None, evt_end=None):
     """Given a Segment object, will remove the first 'start' seconds and the 
@@ -105,7 +106,7 @@ def AppendDictToSegment(segment, dicts):
 def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None, 
         event_ch_name=None, event=None, event_type='type', prewindow=0, 
         postwindow=0, window_type='event', clip=False, name=None, to_csv=False,
-        dpath=''):
+        dpath='', z_score_window=None):
     """Takes a segment object and spits out four dataframes:
     1) 'all_traces' - all analog traces for a specified epoch and window 
     centered at an event
@@ -308,6 +309,10 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     # sampling frequency
     if clip is False:
         signal_df = signal_df.ffill().bfill()
+
+    # Calculate z-scores here if there are z_score windows
+    if len(z_score_window) == 2:
+        signal_df = signal_df.apply(lambda x: ZScoreCalculator(x, z_score_window[0], z_score_window[1])).copy()
 
     # Calculate average signal
     avg_df = pd.DataFrame()
