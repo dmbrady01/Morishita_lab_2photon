@@ -28,7 +28,7 @@ analysis_blocks = [
         'save_file_as': 'correct',
         'prewindow': 10,
         'postwindow': 30,
-        'z_score_window': [],
+        'z_score_window': [-10, -5],
         'window_type': 'event',
         'clip': False,
         'to_csv': True,
@@ -42,7 +42,8 @@ analysis_blocks = [
             'xmax': None,
             'ymin': None,
             'ymax': None,
-            'smoothing_window': 500
+            'smoothing_window': 500,
+            'plot_reference': True
         }
     },
     {
@@ -51,7 +52,7 @@ analysis_blocks = [
         'save_file_as': 'omission',
         'prewindow': 10,
         'postwindow': 30,
-        'z_score_window': [],
+        'z_score_window': [-10, -5],
         'window_type': 'event',
         'clip': False,
         'to_csv': True,
@@ -65,7 +66,8 @@ analysis_blocks = [
             'xmax': None,
             'ymin': None,
             'ymax': None,
-            'smoothing_window': 500
+            'smoothing_window': 500,
+            'plot_reference': True
         }
     }
 ]
@@ -144,7 +146,18 @@ for segment in seglist:
             clip=clip, name=save_file_as, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
         print('Done!')
 
+        print('\nAnalyzing "%s" trials for the reference channel \n' % epoch_name)
+
+        PrintNoNewLine('Centering trials and analyzing the reference channel...')
+        save_file_as_reference = save_file_as + '_reference'
+        AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name='DeltaF_F_reference', 
+            event_ch_name='Events', event=event, event_type='label', 
+            prewindow=prewindow, postwindow=postwindow, window_type=window_type, 
+            clip=clip, name=save_file_as_reference, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
+        print('Done!')
+
         traces = segment.analyzed[save_file_as]['all_traces']
+        reference = segment.analyzed[save_file_as_reference]['all_traces']
         sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
 
         # Extract analysis block plotting params
@@ -159,9 +172,10 @@ for segment in seglist:
         ymin = plot_params['ymin']
         ymax = plot_params['ymax']
         smoothing_window = plot_params['smoothing_window']
+        plot_ref = plot_params['plot_reference']
         PrintNoNewLine('Plotting data...')
-        PlotAverageSignal(traces, mode='raw', events=plot_events, sem=sem, save=save_plot, 
+        PlotAverageSignal(traces, reference=reference, mode='raw', events=plot_events, sem=sem, save=save_plot, 
             title=save_file_as, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
-            ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, 
+            ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, plot_ref= plot_ref,
             sampling_frequency=sampling_rate)
         print('Done!')

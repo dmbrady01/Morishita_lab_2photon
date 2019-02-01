@@ -15,9 +15,10 @@ import seaborn as sns
 import os
 from imaging_analysis.signal_processing import SmoothSignalWithPeriod
 import pandas as pd
+import types
 
-def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True, 
-        title=None, color='b', alpha=0.1, dpath='', xmin=None, xmax=None, 
+def PlotAverageSignal(traces, reference=None, mode='raw', events=[0, 5], sem=True, save=True, 
+        title=None, color='b', alpha=0.1, dpath='', xmin=None, xmax=None, plot_ref=True,
         ymin=None, ymax=None, smoothing_window=None, sampling_frequency=None):
     """Given a dataframe of traces (mode='raw') or an average trace (mode='avg'). 
     It will draw the average trace +/- the sem (if sem=True) or the sd (sem=False).
@@ -37,14 +38,32 @@ def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True,
         else:
             error = traces['sd']
 
+    if not isinstance(reference, types.NoneType):
+        if mode == 'raw':
+            avg_ref = reference.mean(axis=1)
+            if sem:
+                error_ref = reference.sem(axis=1)
+            else:
+                error_ref = reference.sd(axis=1)
+        elif mode == 'avg':
+            avg_ref = reference['avg']
+            if sem:
+                error_ref = reference['se']
+            else:
+                error_ref = reference['sd']      
+
     if smoothing_window is not None:
         avg = SmoothSignalWithPeriod(x=avg.values, sampling_rate=sampling_frequency, 
             ms_bin=smoothing_window, window='flat')
         error = SmoothSignalWithPeriod(x=error.values, sampling_rate=sampling_frequency, 
             ms_bin=smoothing_window, window='flat')
 
-    plt.plot(traces.index, avg, color=color)
+    plt.plot(traces.index, avg, color=color, label='Signal')
     plt.fill_between(traces.index, avg-error, avg+error, color=color, alpha=alpha)
+
+    if plot_ref:
+        plt.plot(reference.index, avg_ref, color='r', label='Signal')
+        plt.fill_between(reference.index, avg_ref-error_ref, avg_ref+error_ref, color='r', alpha=alpha)
     
     if len(events) > 0:
         [plt.axvline(event, color='k', linestyle='--') for event in events]
@@ -60,6 +79,8 @@ def PlotAverageSignal(traces, mode='raw', events=[0, 5], sem=True, save=True,
 
     if title is not None:
         plt.title(title)
+
+    plt.legend(['signal', 'reference'])
 
     if save:
         if len(dpath) == 0:

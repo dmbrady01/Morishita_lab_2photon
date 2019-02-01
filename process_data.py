@@ -30,7 +30,7 @@ lowpass_filter = 40.0 # Will remove frequencies above this number
 signal_channel = '405A 1' # Name of our signal channel
 reference_channel = '465A 1' # Name of our reference channel
 #deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
-deltaf_options = {'mode': 'median', 'subtract': True} # Any parameters you want to pass when calculating deltaf/f
+deltaf_options = {'mode': 'median', 'subtract': False, 'detrend': 'no_detrend'} # Any parameters you want to pass when calculating deltaf/f
 #deltaf_options = {'mode': 'z_score', 'subtract': False} # Any parameters you want to pass when calculating deltaf/f
 # For calculating events and event labels
 tolerance = .1 # Tolerance window (in seconds) for finding coincident events

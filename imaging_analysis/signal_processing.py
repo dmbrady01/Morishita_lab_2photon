@@ -227,15 +227,19 @@ def SmoothSignalWithPeriod(x, sampling_rate=None, ms_bin=None, window='flat'):
 
     return SmoothSignal(x, window_len=num_bins, window=window)
 
-def PolyfitWindow(reference, signal, window_length=3001, return_projection=False):
+def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=False):
     """
     Applies a polynomial fit in a sliding window to an input signal. This has the same functionality as a 
     Savitzky-Golay filter. 
     """
-    x = reference
-    y = signal
+    if not isinstance(signal, types.NoneType):
+        x = reference
+        y = signal
+    else:
+        x = np.arange(reference.shape[0])
+        y = reference
 
-    shape = x.shape
+    shape = y.shape
     num_samples = len(x)
     idx = np.arange(window_length)
     x_out = np.zeros(num_samples)
@@ -266,33 +270,39 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     up with a better strategy."""
     # Default options
     options = {
-        'btype': 'lowpass', 
-        'highcut': 40.0, 
-        'lowcut': None,
-        'order': 5,
-        'axis': 0,
-        'fs': 381,
-        'window_length': 3001,
-        'savgol_order': 1,
+        'signal_btype': 'lowpass', 
+        'signal_highcut': 40.0, 
+        'signal_lowcut': None,
+        'signal_order': 5,
+        'signal_window_length': 3001,
+        'signal_savgol_order': 1,
+        'reference_btype': 'lowpass', 
+        'reference_highcut': 40.0, 
+        'reference_lowcut': None,
+        'reference_order': 5,
+        'reference_window_length': 3001,
+        'reference_savgol_order': 1,
         'detrend': 'linear',
         'subtract': True,
         'mode': 'median',
         'period': 3001,
-        'offset': 0
+        'offset': 0,
+        'axis': 0,
+        'fs': 381
         }
     # Update based on kwargs
     options.update(kwargs)
 
     ##### Filter the signals
     # Pass signal and reference through filters
-    filt_signal = FilterSignal(signal, lowcut=options['lowcut'], 
-        highcut=options['highcut'], fs=options['fs'], order=options['order'], 
-        btype=options['btype'], axis=options['axis'])
+    filt_signal = FilterSignal(signal, lowcut=options['signal_lowcut'], 
+        highcut=options['signal_highcut'], fs=options['fs'], order=options['signal_order'], 
+        btype=options['signal_btype'], axis=options['axis'])
     # for reference
     if not isinstance(reference, types.NoneType):
-        filt_ref = FilterSignal(reference, lowcut=options['lowcut'], 
-            highcut=options['highcut'], fs=options['fs'], order=options['order'], 
-            btype=options['btype'], axis=options['axis'])
+        filt_ref = FilterSignal(reference, lowcut=options['reference_lowcut'], 
+            highcut=options['reference_highcut'], fs=options['fs'], order=options['reference_order'], 
+            btype=options['reference_btype'], axis=options['axis'])
 
     ##### Calculate deltaf/f
     if 'z_score' in options['mode']:
@@ -301,20 +311,22 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         if options['detrend'] == 'savgol':
             # for signal
             trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
-                axis=options['axis'], window_length=options['window_length'], 
-                savgol_order=options['savgol_order'])
+                axis=options['axis'], window_length=options['signal_window_length'], 
+                savgol_order=options['signal_savgol_order'])
             filt_signal = filt_signal - trend_sig
             # for reference
             if not isinstance(reference, types.NoneType):
                 trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
-                    axis=options['axis'], window_length=options['window_length'], 
-                    savgol_order=options['savgol_order'])
+                    axis=options['axis'], window_length=options['reference_window_length'], 
+                    savgol_order=options['reference_savgol_order'])
                 filt_ref = filt_ref - trend_ref
         elif options['detrend'] == 'linear':
-            filt_signal = PolyfitWindow(filt_ref, filt_signal, 
-                window_length=options['window_length'], return_projection=False)
-            filt_ref = PolyfitWindow(filt_ref, filt_ref, 
-                window_length=options['window_length'], return_projection=False)
+            filt_signal = PolyfitWindow(filt_ref, signal=filt_signal, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = PolyfitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
         # Calculate z-score
         filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
             mode=options['mode'], period=options['period'], offset=options['offset'])
@@ -336,20 +348,22 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         if options['detrend'] == 'savgol':
             # for signal
             trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
-                axis=options['axis'], window_length=options['window_length'], 
-                savgol_order=options['savgol_order'])
+                axis=options['axis'], window_length=options['signal_window_length'], 
+                savgol_order=options['signal_savgol_order'])
             filt_signal = filt_signal - trend_sig
             # for reference
             if not isinstance(reference, types.NoneType):
                 trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
-                    axis=options['axis'], window_length=options['window_length'], 
-                    savgol_order=options['savgol_order'])
+                    axis=options['axis'], window_length=options['reference_window_length'], 
+                    savgol_order=options['reference_savgol_order'])
                 filt_ref = filt_ref - trend_ref
         elif options['detrend'] == 'linear':
-            filt_signal = PolyfitWindow(filt_ref, filt_signal, 
-                window_length=options['window_length'], return_projection=False)
-            filt_ref = PolyfitWindow(filt_ref, filt_ref, 
-                window_length=options['window_length'], return_projection=False)
+            filt_signal = PolyfitWindow(filt_ref, signal=filt_signal, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = PolyfitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
             # trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
             #     axis=options['axis'], window_length=options['window_length'], 
             #     savgol_order=options['savgol_order'])
@@ -362,7 +376,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         subtracted_signal = filt_signal
 
     # Return signal with reference subtracted out
-    return subtracted_signal
+    return subtracted_signal, filt_ref
 
 def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', 
     name='deltaf_f', **kwargs):
@@ -389,11 +403,13 @@ def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2',
     else:
         reference = None
     # Build a new AnalogSignal based on the other ones
-    new_signal = NormalizeSignal(signal=signal, reference=reference, **options)
+    new_signal, ref_signal = NormalizeSignal(signal=signal, reference=reference, **options)
     units = pq.percent # new units are in %
     t_start = signal.t_start # has the same start time as all other analog signal objects in segment
     fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
     # Creates new AnalogSignal object
-    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs,                     name=name)
+    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs, name=name)
+    deltaf_f_ref = AnalogSignal(ref_signal, units=units, t_start=t_start, sampling_rate=fs, name=name + '_reference')
     # Adds processed signal back to segment
     seg.analogsignals.append(deltaf_f)
+    seg.analogsignals.append(deltaf_f_ref)
