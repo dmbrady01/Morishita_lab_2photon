@@ -148,6 +148,8 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
         return z_score.values.reshape(shape)
     elif mode == 'z_score':
         return signal
+    elif mode == 'no_deltaf_or_zscore':
+        return signal
     else:
         raise ValueError('%s is not an accepted mode for calculating deltaf' 
             % mode)
@@ -282,9 +284,9 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'reference_order': 5,
         'reference_window_length': 3001,
         'reference_savgol_order': 1,
-        'detrend': 'linear',
-        'subtract': True,
-        'mode': 'median',
+        'detrend': 'no_detrend',
+        'subtract': False,
+        'mode': 'no_deltaf_or_zscore',
         'period': 3001,
         'offset': 0,
         'axis': 0,
