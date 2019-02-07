@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-process_data.py: Python script that processes fiber photometry data. It truncates
+preprocess_data.py: Python script that processes fiber photometry data. It truncates
 the signal, filters it, labels events, processes trials, and groups trials by epoch.
 """
 
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "13 Jun 2018"
+__lastmodified__ = "06 Feb 2019"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson

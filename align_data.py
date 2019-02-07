@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-analyze_data.py: Python script that analyzes fiber photometry data. Clips traces
+align_data.py: Python script that analyzes fiber photometry data. Clips traces
 to be centered around specified events. Outputs csvs and appends them to segment objects.
 """
 
 
 __author__ = "DM Brady"
 __datewritten__ = "23 Mar 2018"
-__lastmodified__ = "13 Jun 2018"
+__lastmodified__ = "06 Feb 2019"
 
 import sys
 from imaging_analysis.utils import ReadNeoPickledObj, WriteNeoPickledObj, PrintNoNewLine
@@ -21,7 +21,7 @@ from imaging_analysis.plotting import PlotAverageSignal
 pickle_name = 'processed.pkl'
 load_pickle_object = False
 ignore_z_score_window = True # Adding this boolean so we just pass raw signal
-no_plot = False # Added this to prevent plotting
+no_plot = True # Added this to prevent plotting
 
 analysis_blocks = [
     {
@@ -50,8 +50,8 @@ analysis_blocks = [
     },
     {
         'epoch_name': 'correct',
-        'event': 'stimulus_appears',
-        'save_file_as': 'stimulus_appears',
+        'event': 'iti_start',
+        'save_file_as': 'iti_start',
         'prewindow': 10,
         'postwindow': 30,
         'z_score_window': [-10, -5],
@@ -142,7 +142,7 @@ for segment in seglist:
         else:
             z_score_window = block['z_score_window']
 
-        print('\nAnalyzing "%s" trials \n' % epoch_name)
+        print('\nAnalyzing "%s" trials centered around "%s" \n' % (epoch_name, event))
 
         PrintNoNewLine('Centering trials and analyzing...')
         AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name='DeltaF_F', 
@@ -151,7 +151,7 @@ for segment in seglist:
             clip=clip, name=save_file_as, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
         print('Done!')
 
-        print('\nAnalyzing "%s" trials for the reference channel \n' % epoch_name)
+        print('\nAnalyzing "%s" trials centered around "%s" for the reference channel \n' % (epoch_name, event))
 
         PrintNoNewLine('Centering trials and analyzing the reference channel...')
         save_file_as_reference = save_file_as + '_reference'
