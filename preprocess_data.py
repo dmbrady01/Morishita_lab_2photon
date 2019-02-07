@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-process_data.py: Python script that processes fiber photometry data. It truncates
+preprocess_data.py: Python script that processes fiber photometry data. It truncates
 the signal, filters it, labels events, processes trials, and groups trials by epoch.
 """
 
 
 __author__ = "DM Brady"
 __datewritten__ = "07 Mar 2018"
-__lastmodified__ = "13 Jun 2018"
+__lastmodified__ = "06 Feb 2019"
 
 import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
@@ -27,10 +27,10 @@ truncate_begin = 10 # how many seconds to remove from the beginning of the recor
 truncate_end = 0 # how many seconds to remove from the end of the recording
 # For filtering and calculating deltaf/f
 lowpass_filter = 40.0 # Will remove frequencies above this number
-signal_channel = '405A 1' # Name of our signal channel
-reference_channel = '465A 1' # Name of our reference channel
+signal_channel = '465A 1' # Name of our signal channel
+reference_channel = '405A 1' # Name of our reference channel
 #deltaf_ch_name = 'DeltaF_F' # New name for our processed signal channel
-deltaf_options = {'mode': 'median', 'subtract': False, 'detrend': 'no_detrend'} # Any parameters you want to pass when calculating deltaf/f
+deltaf_options = {} # Any parameters you want to pass when calculating deltaf/f
 #deltaf_options = {'mode': 'z_score', 'subtract': False} # Any parameters you want to pass when calculating deltaf/f
 # For calculating events and event labels
 tolerance = .1 # Tolerance window (in seconds) for finding coincident events

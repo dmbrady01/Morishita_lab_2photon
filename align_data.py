@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-analyze_data.py: Python script that analyzes fiber photometry data. Clips traces
+align_data.py: Python script that analyzes fiber photometry data. Clips traces
 to be centered around specified events. Outputs csvs and appends them to segment objects.
 """
 
 
 __author__ = "DM Brady"
 __datewritten__ = "23 Mar 2018"
-__lastmodified__ = "13 Jun 2018"
+__lastmodified__ = "06 Feb 2019"
 
 import sys
 from imaging_analysis.utils import ReadNeoPickledObj, WriteNeoPickledObj, PrintNoNewLine
@@ -20,6 +20,8 @@ from imaging_analysis.plotting import PlotAverageSignal
 # for loading your processed data
 pickle_name = 'processed.pkl'
 load_pickle_object = False
+ignore_z_score_window = True # Adding this boolean so we just pass raw signal
+no_plot = True # Added this to prevent plotting
 
 analysis_blocks = [
     {
@@ -47,9 +49,9 @@ analysis_blocks = [
         }
     },
     {
-        'epoch_name': 'omission',
-        'event': 'omission',
-        'save_file_as': 'omission',
+        'epoch_name': 'correct',
+        'event': 'iti_start',
+        'save_file_as': 'iti_start',
         'prewindow': 10,
         'postwindow': 30,
         'z_score_window': [-10, -5],
@@ -135,9 +137,12 @@ for segment in seglist:
         clip = block['clip']
         save_file_as = block['save_file_as']
         to_csv = block['to_csv']
-        z_score_window = block['z_score_window']
+        if ignore_z_score_window:
+            z_score_window = []
+        else:
+            z_score_window = block['z_score_window']
 
-        print('\nAnalyzing "%s" trials \n' % epoch_name)
+        print('\nAnalyzing "%s" trials centered around "%s" \n' % (epoch_name, event))
 
         PrintNoNewLine('Centering trials and analyzing...')
         AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name='DeltaF_F', 
@@ -146,7 +151,7 @@ for segment in seglist:
             clip=clip, name=save_file_as, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
         print('Done!')
 
-        print('\nAnalyzing "%s" trials for the reference channel \n' % epoch_name)
+        print('\nAnalyzing "%s" trials centered around "%s" for the reference channel \n' % (epoch_name, event))
 
         PrintNoNewLine('Centering trials and analyzing the reference channel...')
         save_file_as_reference = save_file_as + '_reference'
@@ -156,26 +161,29 @@ for segment in seglist:
             clip=clip, name=save_file_as_reference, to_csv=to_csv, dpath=dpath, z_score_window=z_score_window)
         print('Done!')
 
-        traces = segment.analyzed[save_file_as]['all_traces']
-        reference = segment.analyzed[save_file_as_reference]['all_traces']
-        sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
+        if no_plot:
+            pass
+        else:
+            traces = segment.analyzed[save_file_as]['all_traces']
+            reference = segment.analyzed[save_file_as_reference]['all_traces']
+            sampling_rate = filter(lambda x: x.name == signal_channel, segment.analogsignals)[0].sampling_rate
 
-        # Extract analysis block plotting params
-        plot_params = block['plot_parameters']
-        plot_events = plot_params['plot_events']
-        sem = plot_params['sem']
-        save_plot = plot_params['save_plot']
-        color = plot_params['color']
-        alpha = plot_params['alpha']
-        xmin = plot_params['xmin']
-        xmax = plot_params['xmax']
-        ymin = plot_params['ymin']
-        ymax = plot_params['ymax']
-        smoothing_window = plot_params['smoothing_window']
-        plot_ref = plot_params['plot_reference']
-        PrintNoNewLine('Plotting data...')
-        PlotAverageSignal(traces, reference=reference, mode='raw', events=plot_events, sem=sem, save=save_plot, 
-            title=save_file_as, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
-            ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, plot_ref= plot_ref,
-            sampling_frequency=sampling_rate)
-        print('Done!')
+            # Extract analysis block plotting params
+            plot_params = block['plot_parameters']
+            plot_events = plot_params['plot_events']
+            sem = plot_params['sem']
+            save_plot = plot_params['save_plot']
+            color = plot_params['color']
+            alpha = plot_params['alpha']
+            xmin = plot_params['xmin']
+            xmax = plot_params['xmax']
+            ymin = plot_params['ymin']
+            ymax = plot_params['ymax']
+            smoothing_window = plot_params['smoothing_window']
+            plot_ref = plot_params['plot_reference']
+            PrintNoNewLine('Plotting data...')
+            PlotAverageSignal(traces, reference=reference, mode='raw', events=plot_events, sem=sem, save=save_plot, 
+                title=save_file_as, color=color, alpha=alpha, dpath=dpath, xmin=xmin, xmax=xmax,
+                ymin=ymin, ymax=ymax, smoothing_window=smoothing_window, plot_ref= plot_ref,
+                sampling_frequency=sampling_rate)
+            print('Done!')
