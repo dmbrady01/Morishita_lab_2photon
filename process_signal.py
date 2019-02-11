@@ -179,8 +179,11 @@ for block in analysis_blocks:
     for_hm = zscores.T.copy()
     for_hm.index = for_hm.index + 1
     for_hm.columns = np.round(for_hm.columns, 1)
-    sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
-        xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
+    try:
+        sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
+            xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
+    except:
+        sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr')
     curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
     curr_ax.set_ylabel('Trial');
     curr_ax.set_xlabel('Time (s)');
