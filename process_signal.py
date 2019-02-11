@@ -183,7 +183,7 @@ for block in analysis_blocks:
         sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
             xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
     except:
-        sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr')
+        sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', xticklabels=int(for_hm.shape[1]*.15))
     curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
     curr_ax.set_ylabel('Trial');
     curr_ax.set_xlabel('Time (s)');
