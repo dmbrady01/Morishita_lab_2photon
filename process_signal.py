@@ -28,33 +28,33 @@ threshold_to_scale = 1.
 
 analysis_blocks = [
     {
-        'load_file': '99493_social_active_2_19_defaultpreprocess',
-        'save_file_as': '99493_social_active_2_19_defaultpreprocess_processed',
-        'z_score_window': [-3, -1],
+        'load_file': 'correct',
+        'save_file_as': 'correct_processed',
+        'z_score_window': [-8, -3],
         'to_csv': True,
         'downsample': 10,
         'quantification': 'mean', # options are AUC, median, and mean
-        'baseline_window': [-3,-2],
-        'response_window': [-1, 0]
+        'baseline_window': [-5, -2],
+        'response_window': [1, 4]
+    },
+    {
+        'load_file': 'iti_start',
+        'save_file_as': 'iti_start_processed',
+        'z_score_window': [-10, -5],
+        'to_csv': True,
+        'downsample': 10,
+        'quantification': 'AUC', # options are AUC, median, and mean
+        'baseline_window': [-6, -3],
+        'response_window': [0, 3]
     }
-    # {
-    #     'load_file': 'iti_start',
-    #     'save_file_as': 'iti_start_processed',
-    #     'z_score_window': [-10, -5],
-    #     'to_csv': True,
-    #     'downsample': 10,
-    #     'quantification': 'AUC', # options are AUC, median, and mean
-    #     'baseline_window': [-6, -3],
-    #     'response_window': [0, 3]
-    # }
 ]
 # Checks if a directory path to the data is provided, if not, will
 # use what is specified in except
 try:
     dpath = sys.argv[1]
 except IndexError:
-    dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
-    # dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
+    # dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
+    dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 
 for block in analysis_blocks:
     # Extract analysis block params
