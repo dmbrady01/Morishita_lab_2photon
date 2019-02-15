@@ -24,36 +24,37 @@ from scipy import stats
 sns.set_style('darkgrid')
 #######################################################################
 # VARIABLES TO ALTER
+threshold_to_scale = 1.
 
 analysis_blocks = [
     {
-        'load_file': 'correct',
-        'save_file_as': 'correct_processed',
-        'z_score_window': [-8, -3],
+        'load_file': '99493_social_active_2_19_defaultpreprocess',
+        'save_file_as': '99493_social_active_2_19_defaultpreprocess_processed',
+        'z_score_window': [-3, -1],
         'to_csv': True,
         'downsample': 10,
         'quantification': 'mean', # options are AUC, median, and mean
-        'baseline_window': [-5, -2],
-        'response_window': [1, 4]
-    },
-    {
-        'load_file': 'iti_start',
-        'save_file_as': 'iti_start_processed',
-        'z_score_window': [-10, -5],
-        'to_csv': True,
-        'downsample': 10,
-        'quantification': 'AUC', # options are AUC, median, and mean
-        'baseline_window': [-6, -3],
-        'response_window': [0, 3]
+        'baseline_window': [-3,-2],
+        'response_window': [-1, 0]
     }
+    # {
+    #     'load_file': 'iti_start',
+    #     'save_file_as': 'iti_start_processed',
+    #     'z_score_window': [-10, -5],
+    #     'to_csv': True,
+    #     'downsample': 10,
+    #     'quantification': 'AUC', # options are AUC, median, and mean
+    #     'baseline_window': [-6, -3],
+    #     'response_window': [0, 3]
+    # }
 ]
 # Checks if a directory path to the data is provided, if not, will
 # use what is specified in except
 try:
     dpath = sys.argv[1]
 except IndexError:
-    #dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_041718'
-    dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
+    dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
+    # dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 
 for block in analysis_blocks:
     # Extract analysis block params
@@ -80,7 +81,14 @@ for block in analysis_blocks:
         signal = signal.groupby(sample).mean()
         reference = reference.groupby(sample).mean()
         signal = signal.set_index('index')
-        reference = reference.set_index('index')
+        reference = reference.set_index('index') 
+
+    # Scale signal if it is too weak (want std to be at least 1)
+    if (np.abs(signal.mean().std()) < threshold_to_scale) or (np.abs(reference.mean().std()) < threshold_to_scale):
+        scale_factor = 10**(np.ceil(np.log10(1/(signal.mean().std()))))
+
+        signal = signal * scale_factor
+        reference = reference * scale_factor
 
     # Get plotting read
     figure = plt.figure(figsize=(12, 12))
@@ -107,6 +115,15 @@ for block in analysis_blocks:
     signal_avg_response = signal_mean - signal_dc 
     reference_avg_response = reference_mean - reference_dc
 
+    # Scale signal if it is too weak (want std to be at least 1)
+    if (np.abs(signal_avg_response.std()) < threshold_to_scale) or (np.abs(reference_avg_response.std()) < threshold_to_scale):
+        scale_factor = 10**(np.ceil(np.log10(1/(signal_avg_response).std())))
+
+        signal_avg_response = signal_avg_response * scale_factor
+        signal_se = signal_se * scale_factor
+        reference_avg_response = reference_avg_response * scale_factor
+        reference_se = reference_se * scale_factor
+
     # Plotting signal
     # current axis
     #curr_ax = axs[0, 0]
@@ -122,8 +139,8 @@ for block in analysis_blocks:
 
     # Plot event onset
     curr_ax.axvline(0, color='black', linestyle='--')
-    curr_ax.set_ylabel('Voltage')
-    curr_ax.set_xlabel('')
+    curr_ax.set_ylabel('Voltage (V)')
+    curr_ax.set_xlabel('Time (s)')
     curr_ax.legend(['465 nm', '405 nm', load_file])
     curr_ax.set_title('Average Lowpass Signal $\pm$ SEM: {} Trials'.format(signal.shape[1]))
     print('Done!')
@@ -158,8 +175,8 @@ for block in analysis_blocks:
     # Plot event onset
     curr_ax.legend(['z-score window'])
     curr_ax.axvline(0, color='black', linestyle='--')
-    curr_ax.set_ylabel('Voltage')
-    curr_ax.set_xlabel('')
+    curr_ax.set_ylabel('Voltage (V)')
+    curr_ax.set_xlabel('Time (s)')
     curr_ax.set_title('465 nm Average Detrended Signal $\pm$ SEM')
 
     print('Done!')
@@ -175,7 +192,9 @@ for block in analysis_blocks:
     # curr_ax = axs[0, 1]
     curr_ax = ax4
     # curr_ax = plt.axes()
-    zero = np.where(zscores.index == np.abs(zscores.index).min())[0][0]
+    # Plot nearest point to time zero
+    zero = np.concatenate([np.where(zscores.index == np.abs(zscores.index).min())[0], 
+        np.where(zscores.index == -1*np.abs(zscores.index).min())[0]]).min()
     for_hm = zscores.T.copy()
     for_hm.index = for_hm.index + 1
     for_hm.columns = np.round(for_hm.columns, 1)
@@ -242,13 +261,18 @@ for block in analysis_blocks:
     base_sem = np.mean(base)/np.sqrt(base.shape[0])
     resp_sem = np.mean(resp)/np.sqrt(resp.shape[0])
 
-    # Testing for normality (D'Agostino's K-Squared Test)
-    normal_alpha = 0.05
-    base_normal = stats.normaltest(base)
-    resp_normal = stats.normaltest(resp)
+    # Testing for normality (D'Agostino's K-Squared Test) (N>8)
+    if base.shape[0] > 8:
+        normal_alpha = 0.05
+        base_normal = stats.normaltest(base)
+        resp_normal = stats.normaltest(resp)
+    else:
+        normal_alpha = 0.05
+        base_normal = [1, 1]
+        resp_normal = [1, 1]
 
     difference_alpha = 0.05
-    if (base_normal[1] <= normal_alpha) or (resp_normal[1] <= normal_alpha):
+    if (base_normal[1] >= normal_alpha) or (resp_normal[1] >= normal_alpha):
         test = 'Wilcoxon Signed-Rank Test'
         stats_results = stats.wilcoxon(base, resp)
     else:
@@ -269,7 +293,9 @@ for block in analysis_blocks:
     curr_ax.bar(ind, [base.mean(), resp.mean()], tick_label=labels, **bar_kwargs)
     curr_ax.errorbar(ind, [base.mean(), resp.mean()], yerr=[base_sem, resp_sem],capsize=5, **err_kwargs)
     x1, x2 = 0, 1
-    y, h, col = np.max([base.mean(), resp.mean()]) + np.max([base_sem, resp_sem])*1.3, 10, 'k'
+    y = np.max([base.mean(), resp.mean()]) + np.max([base_sem, resp_sem])*1.3
+    h = y * 1.5
+    col = 'k'
     curr_ax.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
     curr_ax.text((x1+x2)*.5, y+h, sig, ha='center', va='bottom', color=col)
     curr_ax.set_ylabel(ylabel)
