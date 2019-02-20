@@ -13,6 +13,7 @@ __lastmodified__ = "09 Mar 2018"
 
 
 import scipy.signal as ssp
+import scipy.optimize as op
 import numpy as np
 import neo
 import quantities as pq
@@ -255,6 +256,43 @@ def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=
         y_frame = y[step:step+window_length]
         p = np.polyfit(x_frame, y_frame, deg=1)
         x_out[step:step+window_length] = np.polyval(p, x_frame)
+
+    if return_projection:
+        return x_out.reshape(shape)
+    else:
+        return (y - x_out).reshape(shape)
+
+def ExponentialfitWindow(reference, signal=None, window_length=3001, return_projection=False):
+    """Tries to fit an exponential decay across the window_length"""
+    if not isinstance(signal, types.NoneType):
+        x = reference
+        y = signal
+    else:
+        x = np.arange(reference.shape[0])
+        y = reference
+
+    shape = y.shape
+    num_samples = len(x)
+    idx = np.arange(window_length)
+    x_out = np.zeros(num_samples)
+    steps = np.arange(0, num_samples, window_length)
+
+    x = x.flatten()
+    y = y.flatten()
+
+    def model_func(t, A, K, C):
+        return A * np.exp(K * t) + C
+
+    def fit_exp_nonlinear(t, y):
+        opt_parms, parm_cov = op.optimize.curve_fit(model_func, t, y, maxfev=1000)
+        A, K, C = opt_parms
+        return A, K, C
+
+    for step in steps:
+        x_frame = x[step:step+window_length]
+        y_frame = y[step:step+window_length]
+        A, K, C = fit_exp_nonlinear(x_frame, y_frame)
+        x_out[step:step+window_length] = model_func(x_frame, A, K, C)
 
     if return_projection:
         return x_out.reshape(shape)
