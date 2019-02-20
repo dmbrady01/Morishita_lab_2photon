@@ -262,7 +262,7 @@ def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=
     else:
         return (y - x_out).reshape(shape)
 
-def ExponentialfitWindow(reference, signal=None, window_length=3001, return_projection=False):
+def ExponentialFitWindow(reference, signal=None, window_length=3001, return_projection=False):
     """Tries to fit an exponential decay across the window_length"""
     if not isinstance(signal, types.NoneType):
         x = reference
@@ -367,6 +367,13 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     window_length=options['signal_window_length'], return_projection=False)
             filt_ref = PolyfitWindow(filt_ref, signal=None,
                 window_length=options['reference_window_length'], return_projection=False)
+        elif options['detrend'] == 'decay':
+            filt_signal = ExponentialFitWindow(filt_ref, signal=filt_signal, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = ExponentialFitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
         # Calculate z-score
         filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
             mode=options['mode'], period=options['period'], offset=options['offset'])
@@ -408,6 +415,13 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     axis=options['axis'], window_length=options['window_length'], 
             #     savgol_order=options['savgol_order'])
             # filt_ref = filt_ref - trend_ref
+        elif options['detrend'] == 'decay':
+            filt_signal = ExponentialFitWindow(filt_ref, signal=filt_signal, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = ExponentialFitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
 
     ## Subtract signals
     if options['subtract']:
