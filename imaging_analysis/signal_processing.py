@@ -281,10 +281,10 @@ def ExponentialFitWindow(reference, signal=None, window_length=3001, return_proj
     y = y.flatten()
 
     def model_func(t, A, K, C):
-        return A * np.exp(K * t) + C
+        return A * np.exp(-K * t) + C
 
     def fit_exp_nonlinear(t, y):
-        opt_parms, parm_cov = op.optimize.curve_fit(model_func, t, y, maxfev=1000)
+        opt_parms, parm_cov = op.curve_fit(model_func, t, y, maxfev=1000)
         A, K, C = opt_parms
         return A, K, C
 
