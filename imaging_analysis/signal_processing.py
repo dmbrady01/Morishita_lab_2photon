@@ -140,6 +140,9 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
     elif mode == 'period_median':
         reference = signal[period[0]:period[1]]
         return (signal - np.median(reference))/np.median(reference) * 100.0
+    elif mode == 'z_score_period':
+        signal = ZScoreCalculator(signal, baseline_start=period[0], baseline_end=period[1])
+        return signal
     elif mode == 'z_score_rolling':
         shape = signal.shape
         series_signal = pd.Series(signal.flatten().copy())
@@ -284,7 +287,7 @@ def ExponentialFitWindow(reference, signal=None, window_length=3001, return_proj
         return A * np.exp(-K * t) + C
 
     def fit_exp_nonlinear(t, y):
-        opt_parms, parm_cov = op.curve_fit(model_func, t, y, maxfev=1000)
+        opt_parms, parm_cov = op.curve_fit(model_func, t, y, maxfev=100000)
         A, K, C = opt_parms
         return A, K, C
 
@@ -333,21 +336,24 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     # Update based on kwargs
     options.update(kwargs)
 
+    all_signals = {}
     ##### Filter the signals
     # Pass signal and reference through filters
     filt_signal = FilterSignal(signal, lowcut=options['signal_lowcut'], 
         highcut=options['signal_highcut'], fs=options['fs'], order=options['signal_order'], 
         btype=options['signal_btype'], axis=options['axis'])
+    all_signals['filtered_signal'] = filt_signal
     # for reference
     if not isinstance(reference, types.NoneType):
         filt_ref = FilterSignal(reference, lowcut=options['reference_lowcut'], 
             highcut=options['reference_highcut'], fs=options['fs'], order=options['reference_order'], 
             btype=options['reference_btype'], axis=options['axis'])
-
+        all_signals['filtered_reference'] = filt_ref
     ##### Calculate deltaf/f
     if 'z_score' in options['mode']:
         # If doing z-score, first detrend, then filter
-        ##### Detrend the signal
+        
+        ####### Detrend the signal
         if options['detrend'] == 'savgol':
             # for signal
             trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
@@ -374,7 +380,17 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     window_length=options['signal_window_length'], return_projection=False)
             filt_ref = ExponentialFitWindow(filt_ref, signal=None,
                 window_length=options['reference_window_length'], return_projection=False)
-        # Calculate z-score
+        all_signals['detrended_signal'] = filt_signal 
+        all_signals['detrended_reference'] = filt_ref
+
+        ################ Subtract signals
+        if options['subtract']:
+            filt_signal = filt_signal - filt_ref
+        else:
+            filt_signal = filt_signal
+        all_signals['subtracted_signal'] = filt_signal
+        
+        ############## Calculate z-score
         filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
             mode=options['mode'], period=options['period'], offset=options['offset'])
         if not isinstance(reference, types.NoneType):
@@ -382,8 +398,14 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
                 mode=options['mode'], period=options['period'], offset=options['offset'])
         else:
             filt_ref = 0
+        all_signals['zscore_signal'] = filt_signal
+        all_signals['zscore_reference'] = filt_ref
+
+        final_signal = filt_signal
+        final_reference = filt_ref
+    
     else:
-        # Calculate z-score
+        ################ Calculate deltaf/f
         filt_signal = DeltaFOverF(filt_signal, reference=filt_ref, 
             mode=options['mode'], period=options['period'], offset=options['offset'])
         if not isinstance(reference, types.NoneType):
@@ -391,7 +413,10 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
                 mode=options['mode'], period=options['period'], offset=options['offset'])
         else:
             filt_ref = 0
-        ##### Detrend the signal
+        all_signals['deltaf_signal'] = filt_signal
+        all_signals['deltaf_reference'] = filt_ref
+        
+        ####### Detrend the signal
         if options['detrend'] == 'savgol':
             # for signal
             trend_sig = FilterSignal(filt_signal, fs=options['fs'], btype='savgol', 
@@ -422,18 +447,24 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     window_length=options['signal_window_length'], return_projection=False)
             filt_ref = ExponentialFitWindow(filt_ref, signal=None,
                 window_length=options['reference_window_length'], return_projection=False)
+        all_signals['detrended_signal'] = filt_signal 
+        all_signals['detrended_reference'] = filt_ref
 
-    ## Subtract signals
-    if options['subtract']:
-        subtracted_signal = filt_signal - filt_ref
-    else:
-        subtracted_signal = filt_signal
+        ## Subtract signals
+        if options['subtract']:
+            filt_signal = filt_signal - filt_ref
+        else:
+            filt_signal = filt_signal
+        all_signals['subtracted_signal'] = filt_signal
+
+        final_signal = filt_signal
+        final_reference = filt_ref
 
     # Return signal with reference subtracted out
-    return subtracted_signal, filt_ref
+    return final_signal, final_reference, all_signals
 
 def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2', 
-    name='deltaf_f', **kwargs):
+    name='DeltaF_F_or_Z_score', **kwargs):
     """Given a segment object, it will extract the analog signal channels specified as
     signal (sig_ch) and reference (ref_ch), and will perform NormalizeSignal on them.
     Will append the new signal to the segment object as 'name'."""
@@ -457,13 +488,34 @@ def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2',
     else:
         reference = None
     # Build a new AnalogSignal based on the other ones
-    new_signal, ref_signal = NormalizeSignal(signal=signal, reference=reference, **options)
+    new_signal, ref_signal, all_signals = NormalizeSignal(signal=signal, reference=reference, **options)
     units = pq.percent # new units are in %
     t_start = signal.t_start # has the same start time as all other analog signal objects in segment
     fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
+    
+    ###### Add deltaf_f channel ##################
     # Creates new AnalogSignal object
-    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs, name=name)
-    deltaf_f_ref = AnalogSignal(ref_signal, units=units, t_start=t_start, sampling_rate=fs, name=name + '_reference')
+    deltaf_f = AnalogSignal(new_signal, units=units, t_start=t_start, sampling_rate=fs, name='DeltaF_F_or_Z_score')
+    deltaf_f_ref = AnalogSignal(ref_signal, units=units, t_start=t_start, sampling_rate=fs, name='DeltaF_F_or_Z_score_reference')
     # Adds processed signal back to segment
     seg.analogsignals.append(deltaf_f)
     seg.analogsignals.append(deltaf_f_ref)
+
+    ############ Add detrended signal #######################
+    # Creates new AnalogSignal object
+    detrended = AnalogSignal(all_signals['detrended_signal'], units=units, t_start=t_start, sampling_rate=fs, name='Detrended')
+    seg.analogsignals.append(detrended)
+    
+    ######### Add filtered signal ########################
+    # Creates new AnalogSignal object
+    filtered = AnalogSignal(all_signals['filtered_signal'], units=units, t_start=t_start, sampling_rate=fs, name='Filtered_signal')
+    filtered_ref = AnalogSignal(all_signals['filtered_reference'], units=units, t_start=t_start, sampling_rate=fs, name='Filtered_reference')
+    seg.analogsignals.append(filtered)
+    seg.analogsignals.append(filtered_ref)
+    
+    ############ Add subtracted signal #######################
+    # Creates new AnalogSignal object
+    subtracted = AnalogSignal(all_signals['subtracted_signal'], units=units, t_start=t_start, sampling_rate=fs, name='Subtracted')
+    seg.analogsignals.append(subtracted)
+
+    return all_signals
