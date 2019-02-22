@@ -326,6 +326,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'reference_window_length': 3001,
         'reference_savgol_order': 1,
         'detrend': 'no_detrend',
+        'detrend_subtract': True,
         'subtract': False,
         'mode': 'no_deltaf_or_zscore',
         'period': 3001,
@@ -342,13 +343,28 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     filt_signal = FilterSignal(signal, lowcut=options['signal_lowcut'], 
         highcut=options['signal_highcut'], fs=options['fs'], order=options['signal_order'], 
         btype=options['signal_btype'], axis=options['axis'])
-    all_signals['filtered_signal'] = filt_signal
+
     # for reference
     if not isinstance(reference, types.NoneType):
         filt_ref = FilterSignal(reference, lowcut=options['reference_lowcut'], 
             highcut=options['reference_highcut'], fs=options['fs'], order=options['reference_order'], 
             btype=options['reference_btype'], axis=options['axis'])
-        all_signals['filtered_reference'] = filt_ref
+        
+
+    # # Scale the signals to have std of 1
+    # if filt_signal.std() < 10.:
+    #     factor = 1. /filt_signal.std()
+    #     filt_signal = filt_signal * factor
+    #     filt_ref = filt_ref * factor
+    all_signals['filtered_signal'] = filt_signal
+    all_signals['filtered_reference'] = filt_ref
+    # Determine how to detrend
+    if not options['detrend_subtract']:
+        detrend_ref = filt_signal
+        detrend_sig = None
+    else:
+        detrend_ref = filt_ref
+        detrend_sig = filt_signal
     ##### Calculate deltaf/f
     if 'z_score' in options['mode']:
         # If doing z-score, first detrend, then filter
@@ -367,14 +383,14 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
                     savgol_order=options['reference_savgol_order'])
                 filt_ref = filt_ref - trend_ref
         elif options['detrend'] == 'linear':
-            filt_signal = PolyfitWindow(filt_ref, signal=filt_signal, 
+            filt_signal = PolyfitWindow(detrend_ref, signal=detrend_sig, 
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
             filt_ref = PolyfitWindow(filt_ref, signal=None,
                 window_length=options['reference_window_length'], return_projection=False)
         elif options['detrend'] == 'decay':
-            filt_signal = ExponentialFitWindow(filt_ref, signal=filt_signal, 
+            filt_signal = ExponentialFitWindow(detrend_ref, signal=detrend_sig, 
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
@@ -430,7 +446,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
                     savgol_order=options['reference_savgol_order'])
                 filt_ref = filt_ref - trend_ref
         elif options['detrend'] == 'linear':
-            filt_signal = PolyfitWindow(filt_ref, signal=filt_signal, 
+            filt_signal = PolyfitWindow(detrend_ref, signal=detrend_sig, 
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
@@ -441,7 +457,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     savgol_order=options['savgol_order'])
             # filt_ref = filt_ref - trend_ref
         elif options['detrend'] == 'decay':
-            filt_signal = ExponentialFitWindow(filt_ref, signal=filt_signal, 
+            filt_signal = ExponentialFitWindow(detrend_ref, signal=detrend_sig, 
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
