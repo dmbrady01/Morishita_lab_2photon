@@ -1,155 +1,76 @@
 {
     "social" : 
         {
-            "preprocess_data.py":
+                
+            "mode": "manual",
+            "dpath": "/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819",
+            "path_to_social_excel": "/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv",
+            "signal_channel": "LMag 1",
+            "reference_channel": "LMag 2",
+            "z_score_before_alignment": true,
+            "deltaf_options": 
                 {
-                    "mode": "manual",
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819",
-                    "signal_channel": "LMag 1",
-                    "reference_channel": "LMag 2"
+                    "detrend": "decay",
+                    "signal_window_length": 3001,
+                    "mode": "z_score_period", 
+                    "detrend_from_reference": false,
+                    "period": [0, 30000]
                 },
-            "align_data.py":
-                {
-                    "analysis_blocks": 
-                        [    
-                            {
-                                "epoch_name": "active",
-                                "event": "active",
-                                "save_file_as": "99493_social_active_2_19_defaultpreprocess",
-                                "prewindow": 3,
-                                "postwindow": 3,
-                                "z_score_window": [],
-                                "window_type": "event",
-                                "clip": false,
-                                "to_csv": true,
-                                "plot_parameters": 
-                                    {
-                                        "save_plot": true,
-                                        "color": "b",
-                                        "alpha": 0.1,
-                                        "plot_events": [0],
-                                        "sem": true,
-                                        "xmin": null,
-                                        "xmax": null,
-                                        "ymin": null,
-                                        "ymax": null,
-                                        "smoothing_window": 500,
-                                        "plot_reference": true
-                                    }
-                            }
-                        ],
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819"
-                },
-            "process_signal.py":
-                {
-                    "analysis_blocks": 
-                        [
-                            {
-                                "load_file": "99493_social_active_2_19_defaultpreprocess",
-                                "save_file_as": "99493_social_active_2_19_defaultpreprocess_processed",
-                                "z_score_window": [-3, -1],
-                                "to_csv": true,
-                                "downsample": 10,
-                                "quantification": "mean", 
-                                "baseline_window": [-3,-2],
-                                "response_window": [-1, 0]
-                            }
-                        ],
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/"
-                }
+            "analysis_blocks": 
+                [    
+                    {
+                        "epoch_name": "active",
+                        "event": "active",
+                        "save_file_as": "99493_social_active_2_19_defaultpreprocess",
+                        "prewindow": 3,
+                        "postwindow": 3,
+                        "z_score_window": [-3, -1],
+                        "downsample": 10,
+                        "quantification": "mean", 
+                        "baseline_window": [-3,-2],
+                        "response_window": [-1, 0]
+                    }
+                ]
         },
     "ttl":
         {
-            "preprocess_data.py":
-                {
-                    "mode": "TTL",
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/",
-                    "signal_channel": "465A 1",
-                    "reference_channel": "405A 1"
-                },
-            "align_data.py":
-                {
-                    "analysis_blocks": 
-                        [    
-                            {
-                                "epoch_name": "correct",
-                                "event": "correct",
-                                "save_file_as": "correct",
-                                "prewindow": 10,
-                                "postwindow": 30,
-                                "z_score_window": [-10, -5],
-                                "window_type": "event",
-                                "clip": false,
-                                "to_csv": true,
-                                "plot_parameters": 
-                                    {
-                                        "save_plot": true,
-                                        "color": "b",
-                                        "alpha": 0.1,
-                                        "plot_events": [0],
-                                        "sem": true,
-                                        "xmin": null,
-                                        "xmax": null,
-                                        "ymin": null,
-                                        "ymax": null,
-                                        "smoothing_window": 500,
-                                        "plot_reference": true
-                                    }
-                            },
-                            {
-                                "epoch_name": "correct",
-                                "event": "iti_start",
-                                "save_file_as": "iti_start",
-                                "prewindow": 10,
-                                "postwindow": 30,
-                                "z_score_window": [-10, -5],
-                                "window_type": "event",
-                                "clip": false,
-                                "to_csv": true,
-                                "plot_parameters": 
-                                    {
-                                        "save_plot": true,
-                                        "color": "b",
-                                        "alpha": 0.1,
-                                        "plot_events": [0],
-                                        "sem": true,
-                                        "xmin": null,
-                                        "xmax": null,
-                                        "ymin": null,
-                                        "ymax": null,
-                                        "smoothing_window": 500,
-                                        "plot_reference": true
-                                    }
-                            }
-                        ],
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/"
-                },
-            "process_signal.py":
-                {
-                    "analysis_blocks": 
-                        [
-                            {
-                                "load_file": "correct",
-                                "save_file_as": "correct_processed",
-                                "z_score_window": [-8, -3],
-                                "to_csv": true,
-                                "downsample": 10,
-                                "quantification": "mean", 
-                                "baseline_window": [-5, -2],
-                                "response_window": [1, 4]
-                            },
-                            {
-                                "load_file": "iti_start",
-                                "save_file_as": "iti_start_processed",
-                                "z_score_window": [-10, -5],
-                                "to_csv": true,
-                                "downsample": 10,
-                                "quantification": "AUC", 
-                                "baseline_window": [-6, -3],
-                                "response_window": [0, 3]
-                            }
-                        ],
-                    "dpath": "/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/"
-                }
+            "mode": "TTL",
+            "dpath": "/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/",
+            "path_to_ttl_event_params": "imaging_analysis/ttl_event_params_new_rig.json",
+            "signal_channel": "465A 1",
+            "reference_channel": "405A 1",
+            "z_score_before_alignment": true,
+            "deltaf_options": {},
+            "analysis_blocks": 
+                [    
+                    {
+                        "epoch_name": "correct",
+                        "event": "correct",
+                        "save_file_as": "correct_processed",
+                        "prewindow": 10,
+                        "postwindow": 30,
+                        "z_score_window": [-8, -3],
+                        "to_csv": true,
+                        "downsample": 10,
+                        "quantification": "mean", 
+                        "baseline_window": [-5, -2],
+                        "response_window": [1, 4]
+                    },
+                    {
+                        "epoch_name": "correct",
+                        "event": "iti_start",
+                        "save_file_as": "iti_start_processed",
+                        "prewindow": 10,
+                        "postwindow": 30,
+                        "z_score_window": [-10, -5],
+                        "to_csv": true,
+                        "downsample": 10,
+                        "quantification": "AUC", 
+                        "baseline_window": [-6, -3],
+                        "response_window": [0, 3]
+                    }
+                ]
+            }
         }
+    }
 }
