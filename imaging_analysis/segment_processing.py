@@ -106,7 +106,7 @@ def AppendDictToSegment(segment, dicts):
 def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None, 
         event_ch_name=None, event=None, event_type='type', prewindow=0, 
         postwindow=0, window_type='event', clip=False, name=None, to_csv=False,
-        dpath='', z_score_window=None):
+        dpath=''):
     """Takes a segment object and spits out four dataframes:
     1) 'all_traces' - all analog traces for a specified epoch and window 
     centered at an event
@@ -310,33 +310,47 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
     if clip is False:
         signal_df = signal_df.ffill().bfill()
 
-    # Calculate z-scores here if there are z_score windows
-    if len(z_score_window) == 2:
-        signal_df = signal_df.apply(lambda x: ZScoreCalculator(x, z_score_window[0], z_score_window[1])).copy()
+    # # Calculate average signal
+    # avg_df = pd.DataFrame()
+    # avg_df['avg'] = signal_df.mean(axis=1)
+    # avg_df['sd'] = signal_df.std(axis=1)
+    # avg_df['se'] = signal_df.sem(axis=1)
 
-    # Calculate average signal
-    avg_df = pd.DataFrame()
-    avg_df['avg'] = signal_df.mean(axis=1)
-    avg_df['sd'] = signal_df.std(axis=1)
-    avg_df['se'] = signal_df.sem(axis=1)
-
-    # Calculate average of average (point estimate)
-    pe_df = pd.DataFrame(np.nan, columns=['avg', 'sd', 'se'], index=[0])
-    pe_df.loc[0, 'avg'] = avg_df.avg.mean()
-    pe_df.loc[0, 'sd'] = avg_df.sd.mean()
-    pe_df.loc[0, 'se'] = avg_df.se.sem()
+    # # Calculate average of average (point estimate)
+    # pe_df = pd.DataFrame(np.nan, columns=['avg', 'sd', 'se'], index=[0])
+    # pe_df.loc[0, 'avg'] = avg_df.avg.mean()
+    # pe_df.loc[0, 'sd'] = avg_df.sd.mean()
+    # pe_df.loc[0, 'se'] = avg_df.se.sem()
 
     # Creates a dictionary with name or constructes name
     if not name:
         name = '_'.join([analog_ch_name, event_ch_name, event, event_type, 
             epoch_name, str(prewindow), str(postwindow), window_type, str(clip)])
 
+
     final_dict = {name: {
         'all_traces': signal_df,
-        'all_events': event_df,
-        'average_trace': avg_df,
-        'point_estimate': pe_df
+        'all_events': event_df
     }}
+
+    # final_dict = {
+    #     epoch_name: 
+    #         {
+    #             analog_ch_name: 
+    #                 {
+    #                     'all_traces': signal_df,
+    #                     'all_events': event_df
+    #                 }
+    #         }
+
+    # }
+
+    # final_dict = {name: {
+    #     'all_traces': signal_df,
+    #     'all_events': event_df,
+    #     'average_trace': avg_df,
+    #     'point_estimate': pe_df
+    # }}
 
     AppendDictToSegment(seg, final_dict)
 
@@ -344,8 +358,8 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
         dpath = dpath + os.sep + name
         signal_df.to_csv(dpath + '_all_traces.csv')
         event_df.to_csv(dpath + '_all_events.csv')
-        avg_df.to_csv(dpath + '_average_trace.csv')
-        pe_df.to_csv(dpath + '_point_estimate.csv')
+        # avg_df.to_csv(dpath + '_average_trace.csv')
+        # pe_df.to_csv(dpath + '_point_estimate.csv')
 
 
 
