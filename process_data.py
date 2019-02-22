@@ -29,41 +29,42 @@ sns.set_style('darkgrid')
 
 #######################################################################
 ### For new rig/Kevin's data
-#deltaf_options = {}
-#z_score_before_alignment = False
-# signal_channel = '465A 1' # Name of our signal channel
-# reference_channel = '405A 1' # Name of our reference channel
+deltaf_options = {}
+z_score_before_alignment = False
+signal_channel = '465A 1' # Name of our signal channel
+reference_channel = '405A 1' # Name of our reference channel
 
 
 # For old rig/Lucy's data (top two are for detrending, bottom two for zscores)
 # True for Lucy
-z_score_before_alignment = True
-deltaf_options = {
-    'detrend': 'decay',
-    'signal_window_length': 3001,
-    'mode': 'z_score_period', 
-    'period': [0, 30000]
-} # Any parameters you want to pass when calculating deltaf/f
-signal_channel = 'LMag 1' # Name of our signal channel
-reference_channel = 'LMag 2' # Name of our reference channel
+# z_score_before_alignment = True
+# deltaf_options = {
+#     'detrend': 'decay',
+#     'signal_window_length': 3001,
+#     'mode': 'z_score_period', 
+#     'period': [1000, 30000],
+#     'detrend_from_reference': False
+# } # Any parameters you want to pass when calculating deltaf/f
+# signal_channel = 'LMag 1' # Name of our signal channel
+# reference_channel = 'LMag 2' # Name of our reference channel
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
-#mode = 'TTL'
-mode = 'manual'
+mode = 'TTL'
+#mode = 'manual'
 path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
 
-#dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
-dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
+dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
+#dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
 
 ##################### PART 2 Align Data ####################################
 
 analysis_blocks = [
     {
-        'epoch_name': 'active',
-        'event': 'active',
+        'epoch_name': 'correct',
+        'event': 'correct',
         'prewindow': 10,
         'postwindow': 30,
         'z_score_window': [-8, -3],
@@ -72,22 +73,37 @@ analysis_blocks = [
         'baseline_window': [-5, -2],
         'response_window': [1, 4],
         'save_file_as': 'active_proccessed'
-    }]
-#     {
-#         'epoch_name': 'correct',
-#         'event': 'iti_start',
-#         'prewindow': 10,
-#         'postwindow': 30,
-#         'z_score_window': [-10, -5],
-#         'downsample': 10,
-#         'quantification': 'AUC', # options are AUC, median, and mean
-#         'baseline_window': [-6, -3],
-#         'response_window': [0, 3],
-#         'save_file_as': 'iti_start_proccessed'
+    },
+    {
+        'epoch_name': 'correct',
+        'event': 'iti_start',
+        'prewindow': 10,
+        'postwindow': 30,
+        'z_score_window': [-10, -5],
+        'downsample': 10,
+        'quantification': 'AUC', # options are AUC, median, and mean
+        'baseline_window': [-6, -3],
+        'response_window': [0, 3],
+        'save_file_as': 'iti_start_proccessed'
 
+    }
+]
+
+# # Lucy
+# analysis_blocks = [
+#     {
+#         'epoch_name': 'active',
+#         'event': 'active',
+#         'prewindow': 30,
+#         'postwindow': 60,
+#         'z_score_window': [-8, -3],
+#         'downsample': 10,
+#         'quantification': 'mean', # options are AUC, median, and mean
+#         'baseline_window': [-5, -2],
+#         'response_window': [1, 4],
+#         'save_file_as': 'active_proccessed'
 #     }
 # ]
-
 ####################### PREPROCESSING DATA ###############################
 # Reads data from Tdt folder
 PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')
@@ -219,12 +235,12 @@ for segment in seglist:
             signal = signal.set_index('index')
             reference = reference.set_index('index') 
 
-        # Scale signal if it is too weak (want std to be at least 1)
-        if (np.abs(signal.mean().std()) < 1.) or (np.abs(reference.mean().std()) < 1.):
-            scale_factor = 10**(np.ceil(np.log10(1/(signal.mean().std()))))
+        # # Scale signal if it is too weak (want std to be at least 1)
+        # if (np.abs(signal.mean().std()) < 1.) or (np.abs(reference.mean().std()) < 1.):
+        #     scale_factor = 10**(np.ceil(np.log10(1/(signal.mean().std()))))
 
-            signal = signal * scale_factor
-            reference = reference * scale_factor
+        #     signal = signal * scale_factor
+        #     reference = reference * scale_factor
 
         # Get plotting read
         figure = plt.figure(figsize=(12, 12))
@@ -251,14 +267,14 @@ for segment in seglist:
         signal_avg_response = signal_mean - signal_dc 
         reference_avg_response = reference_mean - reference_dc
 
-        # Scale signal if it is too weak (want std to be at least 1)
-        if (np.abs(signal_avg_response.std()) < 1.) or (np.abs(reference_avg_response.std()) < 1.):
-            scale_factor = 10**(np.ceil(np.log10(1/(signal_avg_response).std())))
+        # # Scale signal if it is too weak (want std to be at least 1)
+        # if (np.abs(signal_avg_response.std()) < 1.) or (np.abs(reference_avg_response.std()) < 1.):
+        #     scale_factor = 10**(np.ceil(np.log10(1/(signal_avg_response).std())))
 
-            signal_avg_response = signal_avg_response * scale_factor
-            signal_se = signal_se * scale_factor
-            reference_avg_response = reference_avg_response * scale_factor
-            reference_se = reference_se * scale_factor
+        #     signal_avg_response = signal_avg_response * scale_factor
+        #     signal_se = signal_se * scale_factor
+        #     reference_avg_response = reference_avg_response * scale_factor
+        #     reference_se = reference_se * scale_factor
 
         # Plotting signal
         # current axis
@@ -455,3 +471,12 @@ for segment in seglist:
         figure.savefig(save_path + '.png')
         plt.close()
         print('Done!')
+
+        pd.DataFrame(all_signals['filtered_signal'], 
+            index=seglist[0].analogsignals[0].times, columns=['magnitude']).to_csv(save_path + '_signal.csv')
+        pd.DataFrame(all_signals['filtered_reference'], 
+            index=seglist[0].analogsignals[0].times, columns=['magnitude']).to_csv(save_path + '_reference.csv')
+        signal.to_csv(save_path + '_signal_aligned.csv')
+        reference.to_csv(save_path + '_reference_aligned.csv')
+        detrended_signal.to_csv(save_path + '_detrended_aligned.csv')
+        zscores.to_csv(save_path + '_zscores_aligned.csv')
