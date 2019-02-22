@@ -326,7 +326,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'reference_window_length': 3001,
         'reference_savgol_order': 1,
         'detrend': 'no_detrend',
-        'detrend_subtract': True,
+        'detrend_from_reference': True,
         'subtract': False,
         'mode': 'no_deltaf_or_zscore',
         'period': 3001,
@@ -359,7 +359,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
     all_signals['filtered_signal'] = filt_signal
     all_signals['filtered_reference'] = filt_ref
     # Determine how to detrend
-    if not options['detrend_subtract']:
+    if not options['detrend_from_reference']:
         detrend_ref = filt_signal
         detrend_sig = None
     else:
