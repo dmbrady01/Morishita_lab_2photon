@@ -24,7 +24,7 @@
                         "save_file_as": "99493_social_active_2_19_defaultpreprocess",
                         "prewindow": 3,
                         "postwindow": 3,
-                        "z_score_window": [-3, -1],
+                        "z_score_window": [],
                         "downsample": 10,
                         "quantification": "mean", 
                         "baseline_window": [-3,-2],

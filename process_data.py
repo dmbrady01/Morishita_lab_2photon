@@ -29,81 +29,81 @@ sns.set_style('darkgrid')
 
 #######################################################################
 ### For new rig/Kevin's data
-deltaf_options = {}
-z_score_before_alignment = False
-signal_channel = '465A 1' # Name of our signal channel
-reference_channel = '405A 1' # Name of our reference channel
+# deltaf_options = {}
+# z_score_before_alignment = False
+# signal_channel = '465A 1' # Name of our signal channel
+# reference_channel = '405A 1' # Name of our reference channel
 
 
 # For old rig/Lucy's data (top two are for detrending, bottom two for zscores)
 # True for Lucy
-# z_score_before_alignment = True
-# deltaf_options = {
-#     'detrend': 'decay',
-#     'signal_window_length': 3001,
-#     'mode': 'z_score_period', 
-#     'period': [1000, 30000],
-#     'detrend_from_reference': False
-# } # Any parameters you want to pass when calculating deltaf/f
-# signal_channel = 'LMag 1' # Name of our signal channel
-# reference_channel = 'LMag 2' # Name of our reference channel
+z_score_before_alignment = True
+deltaf_options = {
+    'detrend': 'decay',
+    'signal_window_length': 3001,
+    'mode': 'z_score_period', 
+    'period': [1000, 30000],
+    'detrend_from_reference': False
+} # Any parameters you want to pass when calculating deltaf/f
+signal_channel = 'LMag 1' # Name of our signal channel
+reference_channel = 'LMag 2' # Name of our reference channel
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
-mode = 'TTL'
-#mode = 'manual'
+#mode = 'TTL'
+mode = 'manual'
 path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
 
-dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
-#dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
+#dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
+dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
 
 ##################### PART 2 Align Data ####################################
-
-analysis_blocks = [
-    {
-        'epoch_name': 'correct',
-        'event': 'correct',
-        'prewindow': 10,
-        'postwindow': 30,
-        'z_score_window': [-8, -3],
-        'downsample': 10,
-        'quantification': 'mean', # options are AUC, median, and mean
-        'baseline_window': [-5, -2],
-        'response_window': [1, 4],
-        'save_file_as': 'active_proccessed'
-    },
-    {
-        'epoch_name': 'correct',
-        'event': 'iti_start',
-        'prewindow': 10,
-        'postwindow': 30,
-        'z_score_window': [-10, -5],
-        'downsample': 10,
-        'quantification': 'AUC', # options are AUC, median, and mean
-        'baseline_window': [-6, -3],
-        'response_window': [0, 3],
-        'save_file_as': 'iti_start_proccessed'
-
-    }
-]
-
-# # Lucy
+# # For Kevin
 # analysis_blocks = [
 #     {
-#         'epoch_name': 'active',
-#         'event': 'active',
-#         'prewindow': 30,
-#         'postwindow': 60,
+#         'epoch_name': 'correct',
+#         'event': 'correct',
+#         'prewindow': 10,
+#         'postwindow': 30,
 #         'z_score_window': [-8, -3],
 #         'downsample': 10,
 #         'quantification': 'mean', # options are AUC, median, and mean
 #         'baseline_window': [-5, -2],
 #         'response_window': [1, 4],
-#         'save_file_as': 'active_proccessed'
+#         'save_file_as': 'correct_proccessed'
+#     },
+#     {
+#         'epoch_name': 'correct',
+#         'event': 'iti_start',
+#         'prewindow': 10,
+#         'postwindow': 30,
+#         'z_score_window': [-10, -5],
+#         'downsample': 10,
+#         'quantification': 'AUC', # options are AUC, median, and mean
+#         'baseline_window': [-6, -3],
+#         'response_window': [0, 3],
+#         'save_file_as': 'iti_start_proccessed'
+
 #     }
 # ]
+
+# Lucy
+analysis_blocks = [
+    {
+        'epoch_name': 'active',
+        'event': 'active',
+        'prewindow': 30,
+        'postwindow': 60,
+        'z_score_window': [],
+        'downsample': 10,
+        'quantification': 'mean', # options are AUC, median, and mean
+        'baseline_window': [-5, -2],
+        'response_window': [1, 4],
+        'save_file_as': 'active_proccessed'
+    }
+]
 ####################### PREPROCESSING DATA ###############################
 # Reads data from Tdt folder
 PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')
@@ -318,11 +318,18 @@ for segment in seglist:
         curr_ax = ax2
         # # curr_ax = axs[1, 0]
         #curr_ax = plt.axes()
-        zscore_start = detrended_signal[z_score_window[0]:z_score_window[1]].index[0]
-        zscore_end = detrended_signal[z_score_window[0]:z_score_window[1]].index[-1]
-        zscore_height = detrended_signal[z_score_window[0]:z_score_window[1]].mean(axis=1).min() - 2
+        if z_score_before_alignment:
+            pass
+        else:
+            zscore_start = detrended_signal[z_score_window[0]:z_score_window[1]].index[0]
+            zscore_end = detrended_signal[z_score_window[0]:z_score_window[1]].index[-1]
+            zscore_height = detrended_signal[z_score_window[0]:z_score_window[1]].mean(axis=1).min()
+            if zscore_height < 0:
+                zscore_height = zscore_height * 1.3 
+            else:
+                zscore_height = zscore_height * 0.7
 
-        curr_ax.plot([zscore_start, zscore_end], [zscore_height, zscore_height], color='.1', linewidth=3)
+            curr_ax.plot([zscore_start, zscore_end], [zscore_height, zscore_height], color='.1', linewidth=3)
 
 
         curr_ax.plot(detrended_signal_mean.index, detrended_signal_mean.values, color='b', linewidth=2)
@@ -330,7 +337,10 @@ for segment in seglist:
             (detrended_signal_mean + detrended_signal_sem).values, color='b', alpha=0.05)
 
         # Plot event onset
-        curr_ax.legend(['z-score window'])
+        if z_score_before_alignment:
+            pass
+        else:
+            curr_ax.legend(['z-score window'])
         curr_ax.axvline(0, color='black', linestyle='--')
         curr_ax.set_ylabel('Voltage (V)')
         curr_ax.set_xlabel('Time (s)')
@@ -369,7 +379,11 @@ for segment in seglist:
         curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
         curr_ax.set_ylabel('Trial');
         curr_ax.set_xlabel('Time (s)');
-        curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(z_score_window[0], z_score_window[1]));
+        if z_score_before_alignment:
+            sampling_per = segment.analogsignals[0].sampling_period
+            curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(round(deltaf_options['period'][0]*sampling_per), round(deltaf_options['period'][1]*sampling_per)));
+        else:
+            curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(z_score_window[0], z_score_window[1]));
         print('Done!')
     ########################## Plot Z-score waveform ##########################
         PrintNoNewLine('Plotting Z-Score waveforms...')
