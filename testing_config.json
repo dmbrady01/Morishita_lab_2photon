@@ -10,7 +10,8 @@
             "z_score_before_alignment": true,
             "deltaf_options": 
                 {
-                    "detrend": "decay",
+                    "detrend": "savgol_from_reference",
+                    "second_detrend": "linear",
                     "signal_window_length": 3001,
                     "mode": "z_score_period", 
                     "detrend_from_reference": false,
