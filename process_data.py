@@ -39,11 +39,11 @@ sns.set_style('darkgrid')
 # True for Lucy
 z_score_before_alignment = True
 deltaf_options = {
-    'detrend': 'decay',
+    'detrend': 'savgol_from_reference',
+    'second_detrend': 'linear',
     'signal_window_length': 3001,
     'mode': 'z_score_period', 
     'period': [1000, 30000],
-    'detrend_from_reference': False
 } # Any parameters you want to pass when calculating deltaf/f
 signal_channel = 'LMag 1' # Name of our signal channel
 reference_channel = 'LMag 2' # Name of our reference channel
