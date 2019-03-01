@@ -326,6 +326,7 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         'reference_window_length': 3001,
         'reference_savgol_order': 1,
         'detrend': 'no_detrend',
+        'second_detrend': 'none',
         'detrend_from_reference': True,
         'subtract': False,
         'mode': 'no_deltaf_or_zscore',
@@ -396,6 +397,31 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
             #     window_length=options['signal_window_length'], return_projection=False)
             filt_ref = ExponentialFitWindow(filt_ref, signal=None,
                 window_length=options['reference_window_length'], return_projection=False)
+        elif options['detrend'] == 'savgol_from_reference':
+            filt_ref = filt_ref - np.median(filt_ref)
+            filt_signal = filt_signal - np.median(filt_signal)
+            trend_ref = FilterSignal(filt_ref, fs=options['fs'], btype='savgol', 
+                axis=options['axis'], window_length=options['reference_window_length'], 
+                savgol_order=options['reference_savgol_order'])
+            filt_signal = filt_signal - trend_ref
+            filt_ref = filt_ref - trend_ref
+
+        # Second detrending
+        if options['second_detrend'] == 'linear':
+            filt_signal = PolyfitWindow(filt_signal, signal=None, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = PolyfitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
+        elif options['second_detrend'] == 'decay':
+            filt_signal = ExponentialFitWindow(filt_signal, signal=None, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            filt_ref = ExponentialFitWindow(filt_ref, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
+        
         all_signals['detrended_signal'] = filt_signal 
         all_signals['detrended_reference'] = filt_ref
 
