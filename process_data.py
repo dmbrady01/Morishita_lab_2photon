@@ -35,8 +35,8 @@ signal_channel = '465A 1' # Name of our signal channel
 reference_channel = '405A 1' # Name of our reference channel
 
 
-# For old rig/Lucy's data (top two are for detrending, bottom two for zscores)
-# True for Lucy
+## For old rig/Lucy's data (top two are for detrending, bottom two for zscores)
+## True for Lucy
 # z_score_before_alignment = True
 # deltaf_options = {
 #     'detrend': 'savgol_from_reference',
@@ -50,19 +50,18 @@ reference_channel = '405A 1' # Name of our reference channel
 
 ####### What mode is the programming running? If TTL, then ProcessEvents is run
 # Otherwise you need to add your events manually
+## KEVIN
 mode = 'TTL'
-# mode = 'manual'
 path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
-print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
-path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
-
-# Lucy
-#dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
-
-# Kevin
-#dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
+dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 dpath = '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/'
+dpath = '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+## LUCY
+# mode = 'manual'
+# path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
+# dpath = '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
 
+print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 ##################### PART 2 Align Data ####################################
 # For Kevin
 analysis_blocks = [
@@ -163,8 +162,12 @@ for segment in seglist:
         ['eventframe', 'resultsframe'])
     # Processing events
     PrintNoNewLine('\nProcessing event times and labels...')
+    if mode == 'manual':
+        manualframe = path_to_social_excel
+    else:
+        manualframe = None
     ProcessEvents(seg=segment, tolerance=.1, evtframe=evtframe, 
-        name='Events', mode=mode, manualframe=path_to_social_excel, 
+        name='Events', mode=mode, manualframe=manualframe, 
         event_col='Bout type', start_col='Bout start', end_col='Bout end')
     print('Done!')
     # Takes processed events and segments them by trial number. Trial start
@@ -438,6 +441,10 @@ for segment in seglist:
             base = np.median(zscores[baseline_window[0]:baseline_window[1]], axis=0)
             resp = np.median(zscores[response_window[0]:response_window[1]], axis=0)
             ylabel = 'Z-Score'
+
+        if isinstance(base, pd.core.series.Series):
+            base = base.values
+            resp = resp.values
 
         base_sem = np.mean(base)/np.sqrt(base.shape[0])
         resp_sem = np.mean(resp)/np.sqrt(resp.shape[0])
