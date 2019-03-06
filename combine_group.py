@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-combine_session.py: Python script that combines data from a single animal across sessions.
+combine_group.py: Python script that combines data from a multiple animals of a single group (WT, KO, etc.).
 """
 
 __author__ = "DM Brady"
@@ -36,19 +36,19 @@ groupings = [
         'name': 'correct_processed',
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+                '/Users/DB/Development/Monkey_frog/data/m1/',
+                '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
             ],
-        'save_path': '/Users/DB/Development/Monkey_frog/data/m1/'
+        'save_path': '/Users/DB/Development/Monkey_frog/data/WT/'
     },
     {
         'name': 'iti_start_processed',
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+                '/Users/DB/Development/Monkey_frog/data/m1/',
+                '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
             ],
-        'save_path': '/Users/DB/Development/Monkey_frog/data/m1/'
+        'save_path': '/Users/DB/Development/Monkey_frog/data/WT/'
     }
 ]
 
@@ -57,7 +57,7 @@ for group in groupings:
     name = group['name']
     save_path = group['save_path'] + os.sep
 
-    print('Combining sessions of type: %s to %s' % (name, save_path))
+    print('Combining groups of type: %s to %s' % (name, save_path))
     # See if save_path exists, if not creates a folder
     if not os.path.isdir(save_path):
         os.mkdir(save_path)
@@ -90,14 +90,14 @@ for group in groupings:
             metadict[key] = list(value_list)[0]
 
     # Combine traces into dataframe
-    zscores = pd.concat([pd.read_csv(x, index_col=0) for x in traces], axis=1)
+    zscores = pd.concat([pd.read_csv(x, index_col=0).mean(axis=1) for x in traces], axis=1)
     zscores.columns = np.arange(1, zscores.shape[1] + 1)
-    zscores.columns.name = 'trial'
+    zscores.columns.name = 'mouse'
 
     # Combine point estimates into dataframe
-    pe_df = pd.concat([pd.read_csv(x, index_col=0) for x in point_estimates], axis=0)
+    pe_df = pd.concat([pd.read_csv(x, index_col=0).mean(axis=0) for x in point_estimates], axis=1).T
     pe_df.index = np.arange(1, pe_df.shape[0]+1)
-    pe_df.index.name = 'trial'
+    pe_df.index.name = 'mouse'
 
     # Save combined data
     zscores.to_csv(save_path + name + '_zscores_aligned.csv')
@@ -111,35 +111,13 @@ for group in groupings:
         # Get plotting read
         figure = plt.figure(figsize=(12, 12))
         figure.subplots_adjust(hspace=1.3)
-        ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=2, colspan=1)
-        ax2 = plt.subplot2grid((6, 1), (2, 0), rowspan=2, colspan=1)
-        ax3 = plt.subplot2grid((6, 1), (4, 0), rowspan=2, colspan=1)
+        ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=2, colspan=1)
+        ax2 = plt.subplot2grid((4, 1), (2, 0), rowspan=2, colspan=1)
 
         baseline_window = metadict['baseline_window']
         response_window = metadict['response_window']
         quantification = metadict['quantification']
-    ############################ Make rasters #######################################
-        PrintNoNewLine('Making heatmap...')
-        # indice that is closest to event onset
-        # curr_ax = axs[0, 1]
-        curr_ax = ax1
-        # curr_ax = plt.axes()
-        # Plot nearest point to time zero
-        zero = np.concatenate([np.where(zscores.index == np.abs(zscores.index).min())[0], 
-            np.where(zscores.index == -1*np.abs(zscores.index).min())[0]]).min()
-        for_hm = zscores.T.copy()
-        # for_hm.index = for_hm.index + 1
-        for_hm.columns = np.round(for_hm.columns, 1)
-        try:
-            sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
-                xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
-        except:
-            sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', xticklabels=int(for_hm.shape[1]*.15))
-        curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
-        curr_ax.set_ylabel('Trial');
-        curr_ax.set_xlabel('Time (s)');
-        curr_ax.set_title('Z-Score Heat Map');
-        print('Done!')
+
     ########################## Plot Z-score waveform ##########################
         PrintNoNewLine('Plotting Z-Score waveforms...')
         zscores_mean = zscores.mean(axis=1)
@@ -149,7 +127,7 @@ for group in groupings:
         # Plotting signal
         # current axis
         # curr_ax = axs[1, 1]
-        curr_ax = ax2
+        curr_ax = ax1
         #curr_ax = plt.axes()
         # Plot baseline and response
         baseline_start = zscores[baseline_window[0]:baseline_window[1]].index[0]
@@ -212,7 +190,7 @@ for group in groupings:
             sig = 'ns'
 
         #curr_ax = plt.axes() 
-        curr_ax = ax3
+        curr_ax = ax2
         ind = np.arange(2)
         labels = ['baseline', 'response']
         bar_kwargs = {'width': 0.7,'color': ['.6', 'r'],'linewidth':2,'zorder':5}
