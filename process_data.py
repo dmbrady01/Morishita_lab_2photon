@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-preprocess_data.py: Python script that processes fiber photometry data. It truncates
+process_data.py: Python script that processes fiber photometry data. It truncates
 the signal, filters it, labels events, processes trials, and groups trials by epoch.
 """
 
