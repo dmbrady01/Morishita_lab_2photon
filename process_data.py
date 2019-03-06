@@ -56,6 +56,9 @@ path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
 dpath = '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/'
 dpath = '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/'
 dpath = '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+dpath = '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
+
+
 ## LUCY
 # mode = 'manual'
 # path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
