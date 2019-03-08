@@ -33,31 +33,31 @@ plot_data = True
 
 groupings = [
     {
-        'name': 'correct_processed',
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/correct_processed',
+                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/correct_processed'
             ],
-        'save_path': '/Users/DB/Development/Monkey_frog/data/m1/'
+        'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
+        'save_filename': 'correct_processed'
     },
     {
-        'name': 'iti_start_processed',
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/'
+                '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/iti_start_processed',
+                '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/iti_start_processed'
             ],
-        'save_path': '/Users/DB/Development/Monkey_frog/data/m1/'
+        'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
+        'save_filename': 'iti_start_processed'
     }
 ]
 
 for group in groupings:
     dpaths = group['dpaths']
-    name = group['name']
-    save_path = group['save_path'] + os.sep
+    filename = group['save_filename']
+    save_path = group['save_folder'] + os.sep
 
-    print('Combining sessions of type: %s to %s' % (name, save_path))
+    print('Combining sessions of to %s' % (save_path))
     # See if save_path exists, if not creates a folder
     if not os.path.isdir(save_path):
         os.mkdir(save_path)
@@ -67,8 +67,8 @@ for group in groupings:
     point_estimates = []
     metadata = []
     for dpath in dpaths:
-        data = [x for x in glob.glob(dpath + os.sep + '*' + name +  '*.csv')]
-        metadatas = [x for x in glob.glob(dpath + os.sep + '*' + name +  '*.json')]
+        data = [x for x in glob.glob(dpath +  '*.csv')]
+        metadatas = [x for x in glob.glob(dpath +  '*.json')]
         if (len(data) == 0) or (len(metadatas) == 0):
             raise ValueError('Could not find the appropriate files (zscores, point estimates, and metadata). Please check your "dpaths" and "name".')
         
@@ -100,11 +100,11 @@ for group in groupings:
     pe_df.index.name = 'trial'
 
     # Save combined data
-    zscores.to_csv(save_path + name + '_zscores_aligned.csv')
-    pe_df.to_csv(save_path + name + '_point_estimates.csv')
+    zscores.to_csv(save_path + filename + '_zscores_aligned.csv')
+    pe_df.to_csv(save_path + filename + '_point_estimates.csv')
 
     # Save metadata
-    with open(save_path + name + '_metadata.json', 'w') as fp:
+    with open(save_path + filename + '_metadata.json', 'w') as fp:
         json.dump(metadict, fp)
 
     if plot_data:
@@ -228,7 +228,7 @@ for group in groupings:
         curr_ax.set_ylabel(ylabel)
         curr_ax.set_title('Baseline vs. Response Changes in Z-Score Signal \n {} of {}s'.format(test, quantification))
 
-        figure.savefig(save_path + name + '.png')
+        figure.savefig(save_path + filename + '.png')
         plt.close()
 
         print('Done!')
