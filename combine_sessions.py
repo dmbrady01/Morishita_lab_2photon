@@ -93,6 +93,7 @@ for group in groupings:
     zscores = pd.concat([pd.read_csv(x, index_col=0) for x in traces], axis=1)
     zscores.columns = np.arange(1, zscores.shape[1] + 1)
     zscores.columns.name = 'trial'
+    zscores = zscores.ffill().bfill()
 
     # Combine point estimates into dataframe
     pe_df = pd.concat([pd.read_csv(x, index_col=0) for x in point_estimates], axis=0)
