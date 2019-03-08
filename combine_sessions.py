@@ -39,7 +39,7 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/correct_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
-        'save_filename': 'correct_processed'
+        'save_filename': 'correct_sessions_combined'
     },
     {
         'dpaths':
@@ -48,7 +48,7 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/iti_start_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
-        'save_filename': 'iti_start_processed'
+        'save_filename': 'iti_start_sessions_combined'
     }
 ]
 

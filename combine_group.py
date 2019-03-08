@@ -35,20 +35,20 @@ groupings = [
     {
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/m1/correct_processed',
+                '/Users/DB/Development/Monkey_frog/data/m1/correct_sessions_combined',
                 '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/correct_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
-        'save_filename': 'correct_processed'
+        'save_filename': 'correct_grouped'
     },
     {
         'dpaths':
             [
-                '/Users/DB/Development/Monkey_frog/data/m1/iti_start_processed',
+                '/Users/DB/Development/Monkey_frog/data/m1/iti_start_sessions_combined',
                 '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/iti_start_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
-        'save_filename': 'iti_start_processed'
+        'save_filename': 'iti_start_grouped'
     }
 ]
 
