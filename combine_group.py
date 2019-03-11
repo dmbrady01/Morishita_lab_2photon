@@ -39,7 +39,10 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/correct_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
-        'save_filename': 'correct_grouped'
+        'save_filename': 'correct_grouped',
+        'plot_paramaters': {
+            'smoothing_window': 500
+        }
     },
     {
         'dpaths':
@@ -48,7 +51,10 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/iti_start_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
-        'save_filename': 'iti_start_grouped'
+        'save_filename': 'iti_start_grouped',
+        'plot_paramaters': {
+            'smoothing_window': None
+        }
     }
 ]
 
@@ -56,6 +62,7 @@ for group in groupings:
     dpaths = group['dpaths']
     filename = group['save_filename']
     save_path = group['save_folder'] + os.sep
+    smoothing_window = group['plot_paramaters']['smoothing_window']
 
     print('Combining groups of type to %s' % (save_path))
     # See if save_path exists, if not creates a folder
@@ -124,6 +131,12 @@ for group in groupings:
         zscores_mean = zscores.mean(axis=1)
 
         zscores_sem = zscores.sem(axis=1)
+
+        if smoothing_window is not None:
+            zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
+            zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
 
         # Plotting signal
         # current axis

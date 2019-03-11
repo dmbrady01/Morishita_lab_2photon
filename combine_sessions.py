@@ -159,6 +159,12 @@ for group in groupings:
 
         zscores_sem = zscores.sem(axis=1)
 
+
+        if smoothing_window is not None:
+            zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
+            zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
         # Plotting signal
         # current axis
         # curr_ax = axs[1, 1]
