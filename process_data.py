@@ -74,8 +74,8 @@ analysis_blocks = [
         'response_window': [0, 3],
         'save_file_as': 'iti_start_processed',
         'plot_paramaters': {
-            'heatmap_range': [None, None],
-            'smoothing_window': 500
+            'heatmap_range': [-2, 2],
+            'smoothing_window': None
         }
     }
 ]
@@ -534,7 +534,7 @@ for dpath in dpaths:
                 'baseline_window': baseline_window,
                 'response_window': response_window, 
                 'quantification': quantification,
-                'sampling_rate': sampling_rate
+                'sampling_rate': float(sampling_rate)
             }
             with open(save_path + '_metadata.json', 'w') as fp:
                 json.dump(metadata, fp)
