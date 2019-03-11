@@ -56,7 +56,11 @@ analysis_blocks = [
         'quantification': 'mean', # options are AUC, median, and mean
         'baseline_window': [-5, -2],
         'response_window': [1, 4],
-        'save_file_as': 'correct_processed'
+        'save_file_as': 'correct_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        }
     },
     {
         'epoch_name': 'correct',
@@ -68,8 +72,11 @@ analysis_blocks = [
         'quantification': 'AUC', # options are AUC, median, and mean
         'baseline_window': [-6, -3],
         'response_window': [0, 3],
-        'save_file_as': 'iti_start_processed'
-
+        'save_file_as': 'iti_start_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        }
     }
 ]
 
@@ -104,7 +111,11 @@ analysis_blocks = [
 #         'quantification': 'mean', # options are AUC, median, and mean
 #         'baseline_window': [-5, -2],
 #         'response_window': [1, 4],
-#         'save_file_as': 'active_processed'
+#         'save_file_as': 'active_processed',
+        # 'plot_paramaters': {
+        #     'heatmap_range': [None, None],
+        #     'smoothing_window': 500
+        # }
 #     }
 # ]
 
@@ -215,6 +226,8 @@ for dpath in dpaths:
             baseline_window = block['baseline_window']
             response_window = block['response_window']
             save_file_as = block['save_file_as']
+            heatmap_range = block['plot_paramaters']['heatmap_range']
+            smoothing_window = block['plot_paramaters']['smoothing_window']
 
             lookup = {}
             for channel in ['Filtered_signal', 'Filtered_reference', 'Detrended', 'DeltaF_F_or_Z_score']:
@@ -385,9 +398,11 @@ for dpath in dpaths:
             for_hm.columns = np.round(for_hm.columns, 1)
             try:
                 sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
-                    xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
+                    xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15), 
+                    vmin=heatmap_range[0], vmax=heatmap_range[1])
             except:
-                sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', xticklabels=int(for_hm.shape[1]*.15))
+                sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', 
+                    xticklabels=int(for_hm.shape[1]*.15), vmin=heatmap_range[0], vmax=heatmap_range[1])
             curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
             curr_ax.set_ylabel('Trial');
             curr_ax.set_xlabel('Time (s)');
@@ -518,7 +533,8 @@ for dpath in dpaths:
             metadata = {
                 'baseline_window': baseline_window,
                 'response_window': response_window, 
-                'quantification': quantification
+                'quantification': quantification,
+                'sampling_rate': sampling_rate
             }
             with open(save_path + '_metadata.json', 'w') as fp:
                 json.dump(metadata, fp)
