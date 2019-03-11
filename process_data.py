@@ -15,7 +15,7 @@ import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
 from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment, AlignEventsAndSignals
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
-from imaging_analysis.signal_processing import ProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator
+from imaging_analysis.signal_processing import ProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod
 import numpy as np
 from neo.core import Epoch, Event
 import quantities as pq
@@ -56,7 +56,11 @@ analysis_blocks = [
         'quantification': 'mean', # options are AUC, median, and mean
         'baseline_window': [-5, -2],
         'response_window': [1, 4],
-        'save_file_as': 'correct_processed'
+        'save_file_as': 'correct_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        }
     },
     {
         'epoch_name': 'correct',
@@ -68,8 +72,11 @@ analysis_blocks = [
         'quantification': 'AUC', # options are AUC, median, and mean
         'baseline_window': [-6, -3],
         'response_window': [0, 3],
-        'save_file_as': 'iti_start_processed'
-
+        'save_file_as': 'iti_start_processed',
+        'plot_paramaters': {
+            'heatmap_range': [-2, 2],
+            'smoothing_window': None
+        }
     }
 ]
 
@@ -104,10 +111,51 @@ analysis_blocks = [
 #         'quantification': 'mean', # options are AUC, median, and mean
 #         'baseline_window': [-5, -2],
 #         'response_window': [1, 4],
-#         'save_file_as': 'active_processed'
+#         'save_file_as': 'active_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         }
 #     }
 # ]
 
+##################### KAZU SECTION ######################
+# z_score_before_alignment = True
+# deltaf_options = {
+#     'detrend': 'savgol_from_reference',
+#     'second_detrend': 'linear',
+#     'signal_window_length': 3001,
+#     'mode': 'z_score_period', 
+#     'period': [22860, 34290],
+# } # Any parameters you want to pass when calculating deltaf/f
+# signal_channel = '465A 1' # Name of our signal channel
+# reference_channel = '405A 1' # Name of our reference channel
+
+# mode = 'manual'
+# path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
+# dpaths = [
+#     '/Users/DB/Development/Monkey_frog/data/Kazu/FirstFibPho-190219-162604/'
+# ]
+
+
+# analysis_blocks = [
+#     {
+#         'epoch_name': 'stim',
+#         'event': 'stim',
+#         'prewindow': 30,
+#         'postwindow': 30,
+#         'z_score_window': [],
+#         'downsample': 10,
+#         'quantification': 'mean', # options are AUC, median, and mean
+#         'baseline_window': [-30, 0],
+#         'response_window': [0, 30],
+#         'save_file_as': 'stim_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         }
+#     }
+# ]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
@@ -215,6 +263,8 @@ for dpath in dpaths:
             baseline_window = block['baseline_window']
             response_window = block['response_window']
             save_file_as = block['save_file_as']
+            heatmap_range = block['plot_paramaters']['heatmap_range']
+            smoothing_window = block['plot_paramaters']['smoothing_window']
 
             lookup = {}
             for channel in ['Filtered_signal', 'Filtered_reference', 'Detrended', 'DeltaF_F_or_Z_score']:
@@ -270,14 +320,24 @@ for dpath in dpaths:
             signal_mean = signal.mean(axis=1)
             reference_mean = reference.mean(axis=1)
 
-            signal_se = signal.sem(axis=1)
-            reference_se = reference.sem(axis=1)
+            signal_sem = signal.sem(axis=1)
+            reference_sem = reference.sem(axis=1)
 
             signal_dc = signal_mean.mean()
             reference_dc = reference_mean.mean()
 
             signal_avg_response = signal_mean - signal_dc 
             reference_avg_response = reference_mean - reference_dc
+
+            if smoothing_window is not None:
+                signal_avg_response = SmoothSignalWithPeriod(x=signal_avg_response, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
+                reference_avg_response = SmoothSignalWithPeriod(x=reference_avg_response, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
+                signal_sem = SmoothSignalWithPeriod(x=signal_sem, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
+                reference_sem = SmoothSignalWithPeriod(x=reference_sem, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
 
             # # Scale signal if it is too weak (want std to be at least 1)
             # if (np.abs(signal_avg_response.std()) < 1.) or (np.abs(reference_avg_response.std()) < 1.):
@@ -293,13 +353,13 @@ for dpath in dpaths:
             #curr_ax = axs[0, 0]
             curr_ax = ax1
             curr_ax.plot(signal_avg_response.index, signal_avg_response.values, color='b', linewidth=2)
-            curr_ax.fill_between(signal_avg_response.index, (signal_avg_response - signal_se).values, 
-                (signal_avg_response + signal_se).values, color='b', alpha=0.05)
+            curr_ax.fill_between(signal_avg_response.index, (signal_avg_response - signal_sem).values, 
+                (signal_avg_response + signal_sem).values, color='b', alpha=0.05)
 
             # Plotting reference
             curr_ax.plot(reference_avg_response.index, reference_avg_response.values, color='g', linewidth=2)
-            curr_ax.fill_between(reference_avg_response.index, (reference_avg_response - reference_se).values, 
-                (reference_avg_response + reference_se).values, color='g', alpha=0.05)
+            curr_ax.fill_between(reference_avg_response.index, (reference_avg_response - reference_sem).values, 
+                (reference_avg_response + reference_sem).values, color='g', alpha=0.05)
 
             # Plot event onset
             curr_ax.axvline(0, color='black', linestyle='--')
@@ -324,6 +384,12 @@ for dpath in dpaths:
             detrended_signal_mean = detrended_signal.mean(axis=1)
 
             detrended_signal_sem = detrended_signal.sem(axis=1)
+
+            if smoothing_window is not None:
+                detrended_signal_mean = SmoothSignalWithPeriod(x=detrended_signal_mean, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
+                detrended_signal_sem = SmoothSignalWithPeriod(x=detrended_signal_sem, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
 
             # Plotting signal
             # current axis
@@ -385,9 +451,11 @@ for dpath in dpaths:
             for_hm.columns = np.round(for_hm.columns, 1)
             try:
                 sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
-                    xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
+                    xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15), 
+                    vmin=heatmap_range[0], vmax=heatmap_range[1])
             except:
-                sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', xticklabels=int(for_hm.shape[1]*.15))
+                sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', 
+                    xticklabels=int(for_hm.shape[1]*.15), vmin=heatmap_range[0], vmax=heatmap_range[1])
             curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
             curr_ax.set_ylabel('Trial');
             curr_ax.set_xlabel('Time (s)');
@@ -403,6 +471,11 @@ for dpath in dpaths:
 
             zscores_sem = zscores.sem(axis=1)
 
+            if smoothing_window is not None:
+                zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
+                zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
+                    ms_bin=smoothing_window, window='flat')
             # Plotting signal
             # current axis
             # curr_ax = axs[1, 1]
@@ -518,7 +591,8 @@ for dpath in dpaths:
             metadata = {
                 'baseline_window': baseline_window,
                 'response_window': response_window, 
-                'quantification': quantification
+                'quantification': quantification,
+                'sampling_rate': float(sampling_rate)
             }
             with open(save_path + '_metadata.json', 'w') as fp:
                 json.dump(metadata, fp)

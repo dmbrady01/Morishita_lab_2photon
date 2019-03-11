@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 from imaging_analysis.utils import PrintNoNewLine
+from imaging_analysis.signal_processing import SmoothSignalWithPeriod
 import json
 
 sns.set_style('darkgrid')
@@ -39,7 +40,11 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/correct_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
-        'save_filename': 'correct_sessions_combined'
+        'save_filename': 'correct_sessions_combined',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        }
     },
     {
         'dpaths':
@@ -48,7 +53,11 @@ groupings = [
                 '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/iti_start_processed'
             ],
         'save_folder': '/Users/DB/Development/Monkey_frog/data/m1/',
-        'save_filename': 'iti_start_sessions_combined'
+        'save_filename': 'iti_start_sessions_combined',
+        'plot_paramaters': {
+            'heatmap_range': [-2, 2],
+            'smoothing_window': None
+        }
     }
 ]
 
@@ -56,6 +65,8 @@ for group in groupings:
     dpaths = group['dpaths']
     filename = group['save_filename']
     save_path = group['save_folder'] + os.sep
+    heatmap_range = group['plot_paramaters']['heatmap_range']
+    smoothing_window = group['plot_paramaters']['smoothing_window']
 
     print('Combining sessions of to %s' % (save_path))
     # See if save_path exists, if not creates a folder
@@ -119,6 +130,7 @@ for group in groupings:
         baseline_window = metadict['baseline_window']
         response_window = metadict['response_window']
         quantification = metadict['quantification']
+        sampling_rate = float(metadict['sampling_rate'])
     ############################ Make rasters #######################################
         PrintNoNewLine('Making heatmap...')
         # indice that is closest to event onset
@@ -133,9 +145,11 @@ for group in groupings:
         for_hm.columns = np.round(for_hm.columns, 1)
         try:
             sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr',
-                xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15))
+                xticklabels=int(for_hm.shape[1]*.15), yticklabels=int(for_hm.shape[0]*.15), 
+                vmin=heatmap_range[0], vmax=heatmap_range[1])
         except:
-            sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', xticklabels=int(for_hm.shape[1]*.15))
+            sns.heatmap(for_hm.iloc[::-1], center=0, robust=True, ax=curr_ax, cmap='bwr', 
+                xticklabels=int(for_hm.shape[1]*.15), vmin=heatmap_range[0], vmax=heatmap_range[1])
         curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
         curr_ax.set_ylabel('Trial');
         curr_ax.set_xlabel('Time (s)');
@@ -147,6 +161,12 @@ for group in groupings:
 
         zscores_sem = zscores.sem(axis=1)
 
+
+        if smoothing_window is not None:
+            zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
+            zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
+                ms_bin=smoothing_window, window='flat')
         # Plotting signal
         # current axis
         # curr_ax = axs[1, 1]
