@@ -1,1 +1,1 @@
-{"epochs": ["start"], "startoftrial": ["start"], "endoftrial": ["end"], "events": {"passive": {"plot": "-k", "type": "start"}, "active": {"plot": "-k", "type": "start"}, "mutual": {"plot": "-k", "type": "start"}, "end": {"plot": "-b", "type": "end"}}}
+{"epochs": ["start"], "startoftrial": ["start"], "endoftrial": ["end"], "events": {"passive": {"plot": "-k", "type": "start"}, "active": {"plot": "-k", "type": "start"}, "mutual": {"plot": "-k", "type": "start"}, "stim": {"plot": "-k", "type": "start"}, "end": {"plot": "-b", "type": "end"}}}

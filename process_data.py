@@ -119,6 +119,43 @@ analysis_blocks = [
 #     }
 # ]
 
+##################### KAZU SECTION ######################
+# z_score_before_alignment = True
+# deltaf_options = {
+#     'detrend': 'savgol_from_reference',
+#     'second_detrend': 'linear',
+#     'signal_window_length': 3001,
+#     'mode': 'z_score_period', 
+#     'period': [22860, 34290],
+# } # Any parameters you want to pass when calculating deltaf/f
+# signal_channel = '465A 1' # Name of our signal channel
+# reference_channel = '405A 1' # Name of our reference channel
+
+# mode = 'manual'
+# path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
+# dpaths = [
+#     '/Users/DB/Development/Monkey_frog/data/Kazu/FirstFibPho-190219-162604/'
+# ]
+
+
+# analysis_blocks = [
+#     {
+#         'epoch_name': 'stim',
+#         'event': 'stim',
+#         'prewindow': 30,
+#         'postwindow': 30,
+#         'z_score_window': [],
+#         'downsample': 10,
+#         'quantification': 'mean', # options are AUC, median, and mean
+#         'baseline_window': [-30, 0],
+#         'response_window': [0, 30],
+#         'save_file_as': 'stim_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         }
+#     }
+# ]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
