@@ -231,7 +231,13 @@ def SmoothSignalWithPeriod(x, sampling_rate=None, ms_bin=None, window='flat'):
     if num_bins // 2 == 0:
         num_bins += 1
 
-    return SmoothSignal(x, window_len=num_bins, window=window)
+    if isinstance(x, np.ndarray):
+        return SmoothSignal(x, window_len=num_bins, window=window)
+    elif isinstance(x, pd.core.series.Series):
+        values = SmoothSignal(x.values, window_len=num_bins, window=window)
+        series = pd.Series(values, index=x.index)
+        series.index.name = x.index.name
+        return series
 
 def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=False):
     """
