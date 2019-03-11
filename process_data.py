@@ -112,10 +112,10 @@ analysis_blocks = [
 #         'baseline_window': [-5, -2],
 #         'response_window': [1, 4],
 #         'save_file_as': 'active_processed',
-        # 'plot_paramaters': {
-        #     'heatmap_range': [None, None],
-        #     'smoothing_window': 500
-        # }
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         }
 #     }
 # ]
 

@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 from imaging_analysis.utils import PrintNoNewLine
+from imaging_analysis.signal_processing import SmoothSignalWithPeriod
 import json
 
 sns.set_style('darkgrid')
@@ -129,6 +130,7 @@ for group in groupings:
         baseline_window = metadict['baseline_window']
         response_window = metadict['response_window']
         quantification = metadict['quantification']
+        sampling_rate = float(metadict['sampling_rate'])
     ############################ Make rasters #######################################
         PrintNoNewLine('Making heatmap...')
         # indice that is closest to event onset
