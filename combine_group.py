@@ -42,7 +42,8 @@ groupings = [
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
         'save_filename': 'correct_grouped',
         'plot_paramaters': {
-            'smoothing_window': 500
+            'smoothing_window': 500,
+            'yrange': [-5, 10]
         }
     },
     {
@@ -54,7 +55,9 @@ groupings = [
         'save_folder': '/Users/DB/Development/Monkey_frog/data/WT/',
         'save_filename': 'iti_start_grouped',
         'plot_paramaters': {
-            'smoothing_window': None
+            'smoothing_window': None,
+            'yrange': []
+
         }
     }
 ]
@@ -64,6 +67,7 @@ for group in groupings:
     filename = group['save_filename']
     save_path = group['save_folder'] + os.sep
     smoothing_window = group['plot_paramaters']['smoothing_window']
+    yrange = group['plot_paramaters']['yrange']
 
     print('Combining groups of type to %s' % (save_path))
     # See if save_path exists, if not creates a folder
@@ -162,6 +166,10 @@ for group in groupings:
 
         # Plot event onset
         curr_ax.axvline(0, color='black', linestyle='--')
+
+        # set ylim
+        if len(yrange) == 2:
+            curr_ax.set_ylim(yrange)
 
         curr_ax.set_ylabel('Z-Score')
         curr_ax.set_xlabel('Time (s)')

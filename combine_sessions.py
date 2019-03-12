@@ -43,7 +43,8 @@ groupings = [
         'save_filename': 'correct_sessions_combined',
         'plot_paramaters': {
             'heatmap_range': [None, None],
-            'smoothing_window': 500
+            'smoothing_window': 500,
+            'yrange': [-5, 10]
         }
     },
     {
@@ -56,7 +57,8 @@ groupings = [
         'save_filename': 'iti_start_sessions_combined',
         'plot_paramaters': {
             'heatmap_range': [-2, 2],
-            'smoothing_window': None
+            'smoothing_window': None,
+            'yrange': []
         }
     }
 ]
@@ -67,6 +69,7 @@ for group in groupings:
     save_path = group['save_folder'] + os.sep
     heatmap_range = group['plot_paramaters']['heatmap_range']
     smoothing_window = group['plot_paramaters']['smoothing_window']
+    yrange = group['plot_paramaters']['yrange']
 
     print('Combining sessions of to %s' % (save_path))
     # See if save_path exists, if not creates a folder
@@ -189,6 +192,10 @@ for group in groupings:
 
         # Plot event onset
         curr_ax.axvline(0, color='black', linestyle='--')
+
+        # set ylim
+        if len(yrange) == 2:
+            curr_ax.set_ylim(yrange)
 
         curr_ax.set_ylabel('Z-Score')
         curr_ax.set_xlabel('Time (s)')
