@@ -592,7 +592,8 @@ for dpath in dpaths:
                 'baseline_window': baseline_window,
                 'response_window': response_window, 
                 'quantification': quantification,
-                'sampling_rate': float(sampling_rate)
+                'original_sampling_rate': float(sampling_rate),
+                'downsampled_sampling_rate': float(sampling_rate)/downsample
             }
             with open(save_path + '_metadata.json', 'w') as fp:
                 json.dump(metadata, fp)

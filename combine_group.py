@@ -96,7 +96,7 @@ for group in groupings:
     metadict = {}
     for key in metadata[0].keys():
         value_list = {tuple(x[key]) if isinstance(x[key], list) else x[key] for x in metadata}
-        if len(value_list) != 1:
+        if (len(value_list) != 1) and ('sampling_rate' not in key):
             raise ValueError('You have different analysis parameters (quantification type, baseline window, response window, etc.). Please run process_data.py again with similar values.')
         else:
             metadict[key] = list(value_list)[0]
@@ -106,6 +106,9 @@ for group in groupings:
     zscores.columns = np.arange(1, zscores.shape[1] + 1)
     zscores.columns.name = 'mouse'
     zscores = zscores.ffill().bfill()
+
+    # Recalculate sampling rate because of backward/forward fills
+    metadict[u'downsampled_sampling_rate'] = zscores.shape[0]/(np.abs(zscores.index[0]) + np.abs(zscores.index[-1]))
 
     # Combine point estimates into dataframe
     pe_df = pd.concat([pd.read_csv(x, index_col=0).mean(axis=0) for x in point_estimates], axis=1).T
@@ -130,7 +133,7 @@ for group in groupings:
         baseline_window = metadict['baseline_window']
         response_window = metadict['response_window']
         quantification = metadict['quantification']
-        sampling_rate = float(metadict['sampling_rate'])
+        sampling_rate = float(metadict['downsampled_sampling_rate'])
 
     ########################## Plot Z-score waveform ##########################
         PrintNoNewLine('Plotting Z-Score waveforms...')
