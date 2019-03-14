@@ -37,7 +37,13 @@ signal_channel = '465A 1' # Name of our signal channel
 reference_channel = '405A 1' # Name of our reference channel
 
 mode = 'TTL'
-path_to_ttl_event_params = 'imaging_analysis/ttl_event_params_new_rig.json'
+path_to_ttl_event_params = [
+    'imaging_analysis/ttl_event_params_new_rig.json',
+    'imaging_analysis/ttl_event_params_new_rig.json',
+    'imaging_analysis/ttl_event_params_new_rig.json',
+    'imaging_analysis/ttl_event_params_new_rig.json'
+]
+
 dpaths = [
     '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/',
     '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
@@ -94,8 +100,13 @@ analysis_blocks = [
 # reference_channel = 'LMag 2' # Name of our reference channel
 
 # mode = 'manual'
-# path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
+# path_to_social_excel = [
+#     '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv',
+#     '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
+# ]
+
 # dpaths = [
+#     '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/',
 #     '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
 # ]
 
@@ -119,47 +130,9 @@ analysis_blocks = [
 #     }
 # ]
 
-##################### KAZU SECTION ######################
-# z_score_before_alignment = True
-# deltaf_options = {
-#     'detrend': 'savgol_from_reference',
-#     'second_detrend': 'linear',
-#     'signal_window_length': 3001,
-#     'mode': 'z_score_period', 
-#     'period': [22860, 34290],
-# } # Any parameters you want to pass when calculating deltaf/f
-# signal_channel = '465A 1' # Name of our signal channel
-# reference_channel = '405A 1' # Name of our reference channel
-
-# mode = 'manual'
-# path_to_social_excel = '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
-# dpaths = [
-#     '/Users/DB/Development/Monkey_frog/data/Kazu/FirstFibPho-190219-162604/'
-# ]
-
-
-# analysis_blocks = [
-#     {
-#         'epoch_name': 'stim',
-#         'event': 'stim',
-#         'prewindow': 30,
-#         'postwindow': 30,
-#         'z_score_window': [],
-#         'downsample': 10,
-#         'quantification': 'mean', # options are AUC, median, and mean
-#         'baseline_window': [-30, 0],
-#         'response_window': [0, 30],
-#         'save_file_as': 'stim_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [None, None],
-#             'smoothing_window': 500
-#         }
-#     }
-# ]
-
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
-for dpath in dpaths:
+for dpath_ind, dpath in enumerate(dpaths):
     # Reads data from Tdt folder
     PrintNoNewLine('\nCannot find processed pkl object, reading TDT folder instead...')
     block = ReadNeoTdt(path=dpath, return_block=True)
@@ -201,11 +174,11 @@ for dpath in dpaths:
         print('Done!')
         if mode == 'TTL':
             # Loading event labeling/combo parameters
-            path_to_event_params = path_to_ttl_event_params
+            path_to_event_params = path_to_ttl_event_params[dpath_ind]
         elif mode == 'manual':
             # Generates a json for reading excel file events
             path_to_event_params = 'imaging_analysis/manual_event_params.json'
-            GenerateManualEventParamsJson(path_to_social_excel, event_col='Bout type', 
+            GenerateManualEventParamsJson(path_to_social_excel[dpath_ind], event_col='Bout type', 
                 name=path_to_event_params)
         # This loads our event params json
         start, end, epochs, evtframe, typeframe = LoadEventParams(dpath=path_to_event_params, 
@@ -216,7 +189,7 @@ for dpath in dpaths:
         # Processing events
         PrintNoNewLine('\nProcessing event times and labels...')
         if mode == 'manual':
-            manualframe = path_to_social_excel
+            manualframe = path_to_social_excel[dpath_ind]
         else:
             manualframe = None
         ProcessEvents(seg=segment, tolerance=.1, evtframe=evtframe, 
