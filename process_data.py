@@ -81,7 +81,7 @@ analysis_blocks = [
         'save_file_as': 'iti_start_processed',
         'plot_paramaters': {
             'heatmap_range': [-2, 2],
-            'smoothing_window': None
+            'smoothing_window': 1000
         }
     }
 ]
@@ -303,13 +303,17 @@ for dpath_ind, dpath in enumerate(dpaths):
             reference_avg_response = reference_mean - reference_dc
 
             if smoothing_window is not None:
-                signal_avg_response = SmoothSignalWithPeriod(x=signal_avg_response, sampling_rate=sampling_rate, 
+                signal_avg_response = SmoothSignalWithPeriod(x=signal_avg_response, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
-                reference_avg_response = SmoothSignalWithPeriod(x=reference_avg_response, sampling_rate=sampling_rate, 
+                reference_avg_response = SmoothSignalWithPeriod(x=reference_avg_response, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
-                signal_sem = SmoothSignalWithPeriod(x=signal_sem, sampling_rate=sampling_rate, 
+                signal_sem = SmoothSignalWithPeriod(x=signal_sem, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
-                reference_sem = SmoothSignalWithPeriod(x=reference_sem, sampling_rate=sampling_rate, 
+                reference_sem = SmoothSignalWithPeriod(x=reference_sem, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
 
             # # Scale signal if it is too weak (want std to be at least 1)
@@ -359,9 +363,11 @@ for dpath_ind, dpath in enumerate(dpaths):
             detrended_signal_sem = detrended_signal.sem(axis=1)
 
             if smoothing_window is not None:
-                detrended_signal_mean = SmoothSignalWithPeriod(x=detrended_signal_mean, sampling_rate=sampling_rate, 
+                detrended_signal_mean = SmoothSignalWithPeriod(x=detrended_signal_mean, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
-                detrended_signal_sem = SmoothSignalWithPeriod(x=detrended_signal_sem, sampling_rate=sampling_rate, 
+                detrended_signal_sem = SmoothSignalWithPeriod(x=detrended_signal_sem, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
 
             # Plotting signal
@@ -445,9 +451,11 @@ for dpath_ind, dpath in enumerate(dpaths):
             zscores_sem = zscores.sem(axis=1)
 
             if smoothing_window is not None:
-                zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, sampling_rate=sampling_rate, 
+                zscores_mean = SmoothSignalWithPeriod(x=zscores_mean, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
-                zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
+                zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, 
+                    sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
             # Plotting signal
             # current axis
@@ -544,7 +552,8 @@ for dpath_ind, dpath in enumerate(dpaths):
         ################# Save Stuff ##################################
             PrintNoNewLine('Saving everything...')
             save_path = dpath + save_file_as
-            figure.savefig(save_path + '.png')
+            figure.savefig(save_path + '.png', format='png')
+            figure.savefig(save_path + '.eps', format='eps')
             plt.close()
             print('Done!')
 

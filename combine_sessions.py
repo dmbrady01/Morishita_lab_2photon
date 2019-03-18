@@ -259,7 +259,8 @@ for group in groupings:
         curr_ax.set_ylabel(ylabel)
         curr_ax.set_title('Baseline vs. Response Changes in Z-Score Signal \n {} of {}s'.format(test, quantification))
 
-        figure.savefig(save_path + filename + '.png')
+        figure.savefig(save_path + filename + '.png', format='png')
+        figure.savefig(save_path + filename + '.eps', format='eps')
         plt.close()
 
         print('Done!')
