@@ -553,7 +553,7 @@ for dpath_ind, dpath in enumerate(dpaths):
             PrintNoNewLine('Saving everything...')
             save_path = dpath + save_file_as
             figure.savefig(save_path + '.png', format='png')
-            figure.savefig(save_path + '.eps', format='eps')
+            figure.savefig(save_path + '.pdf', format='pdf')
             plt.close()
             print('Done!')
 
@@ -579,5 +579,10 @@ for dpath_ind, dpath in enumerate(dpaths):
             }
             with open(save_path + '_metadata.json', 'w') as fp:
                 json.dump(metadata, fp)
+            # Save smoothed data
+            smoothed_zscore = pd.concat([zscores_mean, zscores_sem], axis=1)
+            smoothed_zscore.columns = ['mean', 'sem']
+            smoothed_zscore.to_csv(save_path + '_smoothed_zscores.csv')
+
 
     print('Finished processing datapath: %s' % dpath)
