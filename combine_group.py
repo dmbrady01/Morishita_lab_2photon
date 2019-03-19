@@ -147,6 +147,11 @@ for group in groupings:
             zscores_sem = SmoothSignalWithPeriod(x=zscores_sem, sampling_rate=sampling_rate, 
                 ms_bin=smoothing_window, window='flat')
 
+        # Save smoothed data
+        smoothed_zscore = pd.concat([zscores_mean, zscores_sem], axis=1)
+        smoothed_zscore.columns = ['mean', 'sem']
+        smoothed_zscore.to_csv(save_path + filename + '_smoothed_zscores.csv')
+
         # Plotting signal
         # current axis
         # curr_ax = axs[1, 1]
@@ -234,7 +239,7 @@ for group in groupings:
         curr_ax.set_title('Baseline vs. Response Changes in Z-Score Signal \n {} of {}s'.format(test, quantification))
 
         figure.savefig(save_path + filename + '.png', format='png')
-        figure.savefig(save_path + filename + '.eps', format='eps')
+        figure.savefig(save_path + filename + '.pdf', format='pdf')
         plt.close()
 
         print('Done!')
