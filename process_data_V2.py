@@ -15,7 +15,7 @@ import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
 from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment, AlignEventsAndSignals
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
-from imaging_analysis.signal_processing import ProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod
+from imaging_analysis.signal_processing import SingleStepProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod
 import numpy as np
 from neo.core import Epoch, Event
 import quantities as pq
@@ -31,68 +31,69 @@ sns.set_style('darkgrid')
 #######################################################################
 ############ KEVIN SECTION ##################################
 ### For new rig/Kevin's data
-signal_channel = '465A 1' # Name of our signal channel
-reference_channel = '405A 1' # Name of our reference channel
-mode = 'TTL'
 
-before_alignment = [
-    {'type': 'filter', 'options': {}}
-]
+# before_alignment = [
+#     {'type': 'filter', 'options': {}},
+# ]
 
-after_alignment = [
-    {'type': 'detrend', 'options': {}},
-    {'type': 'measure', 'options': {}}
-]
+# after_alignment = [
+#     {'type': 'detrend', 'options': {'detrend': 'savgol_from_reference'}},
+#     {'type': 'detrend', 'options': {'detrend': 'linear'}}
+# ]
 
-##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
-path_to_ttl_event_params = [
-    'imaging_analysis/ttl_event_params_new_rig.json',
-    'imaging_analysis/ttl_event_params_new_rig.json',
-    'imaging_analysis/ttl_event_params_new_rig.json',
-    'imaging_analysis/ttl_event_params_new_rig.json'
-]
-#### WHERE IS THE DATA
-dpaths = [
-    '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
-]
-#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
-alignment_blocks = [
-    {
-        'epoch_name': 'correct',
-        'event': 'correct',
-        'prewindow': 10,
-        'postwindow': 30,
-        'z_score_window': [-8, -3],
-        'downsample': 10,
-        'quantification': 'mean', # options are AUC, median, and mean
-        'baseline_window': [-5, -2],
-        'response_window': [1, 4],
-        'save_file_as': 'correct_processed',
-        'plot_paramaters': {
-            'heatmap_range': [None, None],
-            'smoothing_window': 500
-        }
-    },
-    {
-        'epoch_name': 'correct',
-        'event': 'iti_start',
-        'prewindow': 10,
-        'postwindow': 30,
-        'z_score_window': [-10, -5],
-        'downsample': 10,
-        'quantification': 'AUC', # options are AUC, median, and mean
-        'baseline_window': [-6, -3],
-        'response_window': [0, 3],
-        'save_file_as': 'iti_start_processed',
-        'plot_paramaters': {
-            'heatmap_range': [-2, 2],
-            'smoothing_window': 1000
-        }
-    }
-]
+
+# signal_channel = '465A 1' # Name of our signal channel
+# reference_channel = '405A 1' # Name of our reference channel
+
+# mode = 'TTL'
+# path_to_ttl_event_params = [
+#     'imaging_analysis/ttl_event_params_new_rig.json',
+#     'imaging_analysis/ttl_event_params_new_rig.json',
+#     'imaging_analysis/ttl_event_params_new_rig.json',
+#     'imaging_analysis/ttl_event_params_new_rig.json'
+# ]
+
+# dpaths = [
+#     '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/',
+#     '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
+#     '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/',
+#     '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
+# ]
+
+# analysis_blocks = [
+#     {
+#         'epoch_name': 'correct',
+#         'event': 'correct',
+#         'prewindow': 10,
+#         'postwindow': 30,
+#         'z_score_window': [-8, -3],
+#         'downsample': 10,
+#         'quantification': 'mean', # options are AUC, median, and mean
+#         'baseline_window': [-5, -2],
+#         'response_window': [1, 4],
+#         'save_file_as': 'correct_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         }
+#     },
+#     {
+#         'epoch_name': 'correct',
+#         'event': 'iti_start',
+#         'prewindow': 10,
+#         'postwindow': 30,
+#         'z_score_window': [-10, -5],
+#         'downsample': 10,
+#         'quantification': 'AUC', # options are AUC, median, and mean
+#         'baseline_window': [-6, -3],
+#         'response_window': [0, 3],
+#         'save_file_as': 'iti_start_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [-2, 2],
+#             'smoothing_window': 1000
+#         }
+#     }
+# ]
 
 
 ##################### LUCY SECTION ######################
@@ -138,6 +139,50 @@ alignment_blocks = [
 #     }
 # ]
 
+##################### Kazu/Mike Section ###############################
+signal_channel = '465A 1' # Name of our signal channel
+reference_channel = '405A 1' # ame of our reference channel
+mode = 'csv'
+
+before_alignment = [
+    {'type': 'filter', 'options': {}},
+    {'type': 'detrend', 'options': {'detrend': 'savgol_from_reference'}},
+    {'type': 'detrend', 'options': {'detrend': 'linear'}}
+]
+
+after_alignment = [
+    {'type': 'measure', 'options': {}}
+]
+
+##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
+path_to_social_excel = [
+    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1/1292036-1.csv'
+]
+#### WHERE IS THE DATA
+dpaths = [
+    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1'
+]
+#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
+analysis_blocks = [
+ {
+         'epoch_name': 'empty',
+         'event': 'empty',
+         'prewindow': 30,
+         'postwindow': 30,
+         'z_score_window': [-30,0],
+         'downsample': 10,
+         'quantification': 'mean', # options are AUC, median, and mean
+         'baseline_window': [-30, 0],
+         'response_window': [0, 30],
+         'save_file_as': 'empty',
+         'plot_paramaters': {
+             'heatmap_range': [None, None],
+             'smoothing_window': 200
+         }
+     },
+         
+ ]
+
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
 for dpath_ind, dpath in enumerate(dpaths):
@@ -170,9 +215,28 @@ for dpath_ind, dpath in enumerate(dpaths):
         # NormalizeSignal has a ton of options, you can pass in paramters using
         # the deltaf_options dictionary above. For example, if you want it to be mean centered
         # and not run the savgol_filter, set deltaf_options = {'mode': 'mean', 'detrend': False}
-        PrintNoNewLine('\nCalculating delta_f/f...')
-        all_signals = ProcessSignalData(seg=segment, sig_ch=signal_channel, ref_ch=reference_channel,
-                            name='DeltaF_F', fs=sampling_rate, highcut=40.0, **deltaf_options)
+        PrintNoNewLine('\nProcessing signal before event alignment...')
+        if len(before_alignment) > 0:
+            for step_number, process in enumerate(before_alignment):
+                if step_number == 0:
+                    input_sig_ch = signal_channel
+                    input_ref_ch = reference_channel
+
+                signal, reference = SingleStepProcessSignalData(seg=segment, process_type=process['type'], 
+                    input_sig_ch=input_sig_ch, input_ref_ch=input_ref_ch, **process['options'])
+
+                if process['type'] == 'filter':
+                    input_sig_ch = 'filtered_signal' 
+                    input_ref_ch = 'filtered_reference'
+                elif process['type'] == 'detrend':
+                    input_sig_ch = 'detrended_signal'
+                    input_ref_ch = 'detrended_reference'
+                elif process['type'] == 'subtract':
+                    input_sig_ch = 'subtracted_signal'
+                    input_ref_ch = None
+                elif process['type'] == 'measure':
+                    input_sig_ch = 'measure_signal'
+                    input_ref_ch = 'measure_reference'
         # Appends an Event object that has all event timestamps and the proper label
         # (determined by the evtframe loaded earlier). Uses a tolerance (in seconds)
         # to determine if events co-occur. For example, if tolerance is 1 second
@@ -180,10 +244,12 @@ for dpath_ind, dpath in enumerate(dpaths):
         # an event 3 seconds later, the output array will be [1, 1, 0] and will
         # match the label in evtframe (e.g. 'omission')
         print('Done!')
+        
+
         if mode == 'TTL':
             # Loading event labeling/combo parameters
             path_to_event_params = path_to_ttl_event_params[dpath_ind]
-        elif mode == 'manual':
+        elif mode == 'csv':
             # Generates a json for reading excel file events
             path_to_event_params = 'imaging_analysis/manual_event_params.json'
             GenerateManualEventParamsJson(path_to_social_excel[dpath_ind], event_col='Bout type', 
@@ -194,9 +260,10 @@ for dpath_ind, dpath in enumerate(dpaths):
         # Appends processed event_param.json info to segment object
         AppendDataframesToSegment(segment, [evtframe, typeframe], 
             ['eventframe', 'resultsframe'])
+       
         # Processing events
         PrintNoNewLine('\nProcessing event times and labels...')
-        if mode == 'manual':
+        if mode == 'csv':
             manualframe = path_to_social_excel[dpath_ind]
         else:
             manualframe = None
@@ -204,6 +271,8 @@ for dpath_ind, dpath in enumerate(dpaths):
             name='Events', mode=mode, manualframe=manualframe, 
             event_col='Bout type', start_col='Bout start', end_col='Bout end')
         print('Done!')
+        
+
         # Takes processed events and segments them by trial number. Trial start
         # is determined by events in the list 'start' from LoadEventParams. This
         # can be set in the event_params.json. Additionally, the result of the 
@@ -218,6 +287,7 @@ for dpath_ind, dpath in enumerate(dpaths):
             startoftrial=start, epochs=epochs, typedf=typeframe, 
             appendmultiple=False)
         print('Done!')
+        
         # With processed trials, we comb through each epoch ('correct', 'omission'
         # etc.) and find start/end times for each trial. Start time is determined
         # by the earliest 'start' event in a trial. Stop time is determined by

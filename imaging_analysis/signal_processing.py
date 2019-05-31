@@ -567,3 +567,150 @@ def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2',
     seg.analogsignals.append(subtracted)
 
     return all_signals
+
+def SingleStepProcessSignalData(seg=None, process_type='filter', input_sig_ch='LMag 1', 
+    input_ref_ch='LMag 2', **kwargs):
+
+    options = {
+        'signal_btype': 'lowpass', 
+        'signal_highcut': 40.0, 
+        'signal_lowcut': None,
+        'signal_order': 5,
+        'signal_window_length': 3001,
+        'signal_savgol_order': 1,
+        'reference_btype': 'lowpass', 
+        'reference_highcut': 40.0, 
+        'reference_lowcut': None,
+        'reference_order': 5,
+        'reference_window_length': 3001,
+        'reference_savgol_order': 1,
+        'detrend': 'no_detrend',
+        'detrend_from_reference': True,
+        'subtract': False,
+        'mode': 'no_deltaf_or_zscore',
+        'period': 3001,
+        'offset': 0,
+        'axis': 0,
+        'fs': 381
+        }
+    # Update based on kwargs
+    options.update(kwargs)
+
+    # Check that segment object was passed
+    if not isinstance(seg, neo.core.Segment):
+        raise TypeError('%s must be a Segment object' % seg)
+    # Retrieves signal and reference
+    if input_sig_ch:
+        try:
+            signal = filter(lambda x: x.name == input_sig_ch, seg.analogsignals)[-1]
+        except IndexError:
+            raise ValueError('There is no input signal channel named %s' % input_sig_ch)
+
+    if input_ref_ch:
+        try:
+            reference = filter(lambda x: x.name == input_ref_ch, seg.analogsignals)[-1]
+        except IndexError:
+            raise ValueError('There is no input reference channel named %s' % input_ref_ch)
+    else:
+        reference = None
+
+    units = pq.V # new units are in %
+    t_start = signal.t_start # has the same start time as all other analog signal objects in segment
+    fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
+    signal = signal.magnitude
+    reference = reference.magnitude
+
+    if process_type == 'filter':
+        ##### Filter the signals
+        # Pass signal and reference through filters
+        signal = FilterSignal(signal, lowcut=options['signal_lowcut'], 
+            highcut=options['signal_highcut'], fs=options['fs'], order=options['signal_order'], 
+            btype=options['signal_btype'], axis=options['axis'])
+        new_sig_ch_name = 'filtered_signal'
+        if not isinstance(reference, types.NoneType):
+            reference = FilterSignal(reference, lowcut=options['reference_lowcut'], 
+                highcut=options['reference_highcut'], fs=options['fs'], order=options['reference_order'], 
+                btype=options['reference_btype'], axis=options['axis'])
+            new_ref_ch_name = 'filtered_reference'
+        else:
+            new_ref_ch_name = None
+
+    elif process_type == 'detrend':
+        if not options['detrend_from_reference']:
+            detrend_ref = signal
+            detrend_sig = None
+        else:
+            detrend_ref = reference
+            detrend_sig = signal
+        
+        ####### Detrend the signal
+        if options['detrend'] == 'savgol':
+            # for signal
+            trend_sig = FilterSignal(signal, fs=options['fs'], btype='savgol', 
+                axis=options['axis'], window_length=options['signal_window_length'], 
+                savgol_order=options['signal_savgol_order'])
+            signal = signal - trend_sig 
+            # for reference
+            if not isinstance(reference, types.NoneType):
+                trend_ref = FilterSignal(reference, fs=options['fs'], btype='savgol', 
+                    axis=options['axis'], window_length=options['reference_window_length'], 
+                    savgol_order=options['reference_savgol_order'])
+                reference = reference - trend_ref 
+        
+        elif options['detrend'] == 'linear':
+            signal = PolyfitWindow(detrend_ref, signal=detrend_sig, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            reference = PolyfitWindow(reference, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
+        
+        elif options['detrend'] == 'decay':
+            signal = ExponentialFitWindow(detrend_ref, signal=detrend_sig, 
+                window_length=options['signal_window_length'], return_projection=False)
+            # filt_signal = PolyfitWindow(filt_signal, signal=None, 
+            #     window_length=options['signal_window_length'], return_projection=False)
+            reference = ExponentialFitWindow(reference, signal=None,
+                window_length=options['reference_window_length'], return_projection=False)
+        
+        elif options['detrend'] == 'savgol_from_reference':
+            reference = reference - np.median(reference) 
+            signal = signal - np.median(signal) 
+            trend_ref = FilterSignal(reference, fs=options['fs'], btype='savgol', 
+                axis=options['axis'], window_length=options['reference_window_length'], 
+                savgol_order=options['reference_savgol_order'])
+            signal = signal - trend_ref 
+            reference = reference - trend_ref 
+
+        new_sig_ch_name = 'detrended_signal'
+        if not isinstance(reference, types.NoneType):
+            new_ref_ch_name = 'detrended_reference'
+        else:
+            new_ref_ch_name = None
+
+    elif process_type == 'subtract':
+        signal = signal - reference
+        new_sig_ch_name = 'subtracted_signal'
+        new_ref_ch_name = None
+
+    elif process_type == 'measure':
+        units = pq.percent
+        signal = DeltaFOverF(signal, reference=reference, 
+            mode=options['mode'], period=options['period'], offset=options['offset'])
+        new_sig_ch_name = 'measure_signal'
+        if not isinstance(reference, types.NoneType):
+            reference = DeltaFOverF(reference, reference=reference, 
+                mode=options['mode'], period=options['period'], offset=options['offset'])
+            new_ref_ch_name = 'measure_reference'
+        else:
+            new_ref_ch_name = None
+
+    # Add processed to channels
+    new_sig_ch = AnalogSignal(signal, units=units, t_start=t_start, sampling_rate=fs, name=new_sig_ch_name)
+    seg.analogsignals.append(new_sig_ch)
+
+    if new_ref_ch_name:
+        new_ref_ch = AnalogSignal(reference, units=units, t_start=t_start, sampling_rate=fs, name=new_ref_ch_name)
+        seg.analogsignals.append(new_ref_ch)
+
+    return signal, reference
