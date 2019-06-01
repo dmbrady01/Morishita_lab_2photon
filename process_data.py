@@ -63,22 +63,22 @@ analysis_blocks = [
             'smoothing_window': 500
         }
     },
-    {
-        'epoch_name': 'correct',
-        'event': 'iti_start',
-        'prewindow': 10,
-        'postwindow': 30,
-        'z_score_window': [-10, -5],
-        'downsample': 10,
-        'quantification': 'AUC', # options are AUC, median, and mean
-        'baseline_window': [-6, -3],
-        'response_window': [0, 3],
-        'save_file_as': 'iti_start_processed',
-        'plot_paramaters': {
-            'heatmap_range': [-2, 2],
-            'smoothing_window': 1000
-        }
-    }
+    # {
+    #     'epoch_name': 'correct',
+    #     'event': 'iti_start',
+    #     'prewindow': 10,
+    #     'postwindow': 30,
+    #     'z_score_window': [-10, -5],
+    #     'downsample': 10,
+    #     'quantification': 'AUC', # options are AUC, median, and mean
+    #     'baseline_window': [-6, -3],
+    #     'response_window': [0, 3],
+    #     'save_file_as': 'iti_start_processed',
+    #     'plot_paramaters': {
+    #         'heatmap_range': [-2, 2],
+    #         'smoothing_window': 1000
+    #     }
+    # }
 ]
 
 

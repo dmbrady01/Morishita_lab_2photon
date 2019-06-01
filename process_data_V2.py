@@ -104,28 +104,28 @@ alignment_blocks = [
         },
         'after_alignment': [
             {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
+            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-8, -3]}}
         ]
     },
-    {
-        'epoch_name': 'correct',
-        'event': 'iti_start',
-        'prewindow': 10,
-        'postwindow': 30,
-        'downsample': 10,
-        'quantification': 'AUC', # options are AUC, median, and mean
-        'baseline_window': [-6, -3],
-        'response_window': [0, 3],
-        'save_file_as': 'iti_start_processed',
-        'plot_paramaters': {
-            'heatmap_range': [-2, 2],
-            'smoothing_window': 1000
-        },
-        'after_alignment': [
-            {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
-        ]
-    }
+    # {
+    #     'epoch_name': 'correct',
+    #     'event': 'iti_start',
+    #     'prewindow': 10,
+    #     'postwindow': 30,
+    #     'downsample': 10,
+    #     'quantification': 'AUC', # options are AUC, median, and mean
+    #     'baseline_window': [-6, -3],
+    #     'response_window': [0, 3],
+    #     'save_file_as': 'iti_start_processed',
+    #     'plot_paramaters': {
+    #         'heatmap_range': [-2, 2],
+    #         'smoothing_window': 1000
+    #     },
+    #     'after_alignment': [
+    #         {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
+    #         {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
+    #     ]
+    # }
 ]
 
 ####################### PREPROCESSING DATA ###############################
@@ -302,17 +302,6 @@ for dpath_ind, dpath in enumerate(dpaths):
                     input_sig_ch=filter_signal_name, input_ref_ch=filter_reference_name, 
                     datatype='dataframe', **process['options'])
 
-            filter_signal_name = 'filtered_signal'
-            filter_reference_name = 'filtered_reference'
-            lookup[filter_signal_name] = epoch_name + '_' + filter_signal_name
-            lookup[filter_reference_name] = epoch_name + '_' + filter_reference_name
-            if lookup[filter_signal_name] in segment.analyzed.keys():
-                segment.analyzed[lookup[filter_signal_name]]['all_traces'] = signal
-                segment.analyzed[lookup[filter_reference_name]]['all_traces'] = reference
-            else:
-                segment.analyzed[lookup[filter_signal_name]] = {'all_traces': signal, 'all_events': results}
-                segment.analyzed[lookup[filter_reference_name]] = {'all_traces': reference, 'all_events': results}
-
             # Down sample data
             if downsample > 0:
                 signal.reset_index(inplace=True)
@@ -322,6 +311,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 reference = reference.groupby(sample).mean()
                 signal = signal.set_index('index')
                 reference = reference.set_index('index') 
+
+            filter_signal_name = 'filtered_signal'
+            filter_reference_name = 'filtered_reference'
+            lookup[filter_signal_name] = epoch_name + '_' + filter_signal_name
+            lookup[filter_reference_name] = epoch_name + '_' + filter_reference_name
+            if lookup[filter_signal_name] in segment.analyzed.keys():
+                segment.analyzed[lookup[filter_signal_name]]['all_traces'] = signal.copy()
+                segment.analyzed[lookup[filter_reference_name]]['all_traces'] = reference.copy()
+            else:
+                segment.analyzed[lookup[filter_signal_name]] = {'all_traces': signal.copy(), 'all_events': results}
+                segment.analyzed[lookup[filter_reference_name]] = {'all_traces': reference.copy(), 'all_events': results}
 
             # Get plotting read
             figure = plt.figure(figsize=(12, 12))
@@ -424,11 +424,20 @@ for dpath_ind, dpath in enumerate(dpaths):
             lookup[detrend_signal_name] = epoch_name + '_' + detrend_signal_name
             lookup[detrend_reference_name] = epoch_name + '_' + detrend_reference_name
             if lookup[detrend_signal_name] in segment.analyzed.keys():
-                segment.analyzed[lookup[detrend_signal_name]]['all_traces'] = detrended_signal
-                segment.analyzed[lookup[detrend_reference_name]]['all_traces'] = detrended_reference
+                segment.analyzed[lookup[detrend_signal_name]]['all_traces'] = detrended_signal.copy()
+                segment.analyzed[lookup[detrend_reference_name]]['all_traces'] = detrended_reference.copy()
             else:
-                segment.analyzed[lookup[detrend_signal_name]] = {'all_traces': detrended_signal, 'all_events': results}
-                segment.analyzed[lookup[detrend_reference_name]] = {'all_traces': detrended_reference, 'all_events': results}
+                segment.analyzed[lookup[detrend_signal_name]] = {'all_traces': detrended_signal.copy(), 'all_events': results}
+                segment.analyzed[lookup[detrend_reference_name]] = {'all_traces': detrended_reference.copy(), 'all_events': results}
+
+            # if downsample > 0:
+            #     detrended_signal.reset_index(inplace=True)
+            #     detrended_reference.reset_index(inplace=True)
+            #     sample = (detrended_signal.index.to_series() / downsample).astype(int)
+            #     detrended_signal = detrended_signal.groupby(sample).mean()
+            #     detrended_reference = detrended_reference.groupby(sample).mean()
+            #     detrended_signal = detrended_signal.set_index('index')
+            #     detrended_reference = detrended_reference.set_index('index')
 
         ################# PLOT DETRENDED SIGNAL ###################################
 
@@ -515,11 +524,21 @@ for dpath_ind, dpath in enumerate(dpaths):
             lookup[measure_signal_name] = epoch_name + '_' + measure_signal_name
             lookup[measure_reference_name] = epoch_name + '_' + measure_reference_name
             if lookup[measure_signal_name] in segment.analyzed.keys():
-                segment.analyzed[lookup[measure_signal_name]]['all_traces'] = measure_signal
-                segment.analyzed[lookup[measure_reference_name]]['all_traces'] = measure_reference
+                segment.analyzed[lookup[measure_signal_name]]['all_traces'] = measure_signal.copy()
+                segment.analyzed[lookup[measure_reference_name]]['all_traces'] = measure_reference.copy()
             else:
-                segment.analyzed[lookup[measure_signal_name]] = {'all_traces': measure_signal, 'all_events': results}
-                segment.analyzed[lookup[measure_reference_name]] = {'all_traces': measure_reference, 'all_events': results}
+                segment.analyzed[lookup[measure_signal_name]] = {'all_traces': measure_signal.copy(), 'all_events': results}
+                segment.analyzed[lookup[measure_reference_name]] = {'all_traces': measure_reference.copy(), 'all_events': results}
+
+            # if downsample > 0:
+            #     measure_signal.reset_index(inplace=True)
+            #     measure_reference.reset_index(inplace=True)
+            #     sample = (measure_signal.index.to_series() / downsample).astype(int)
+            #     measure_signal = measure_signal.groupby(sample).mean()
+            #     measure_reference = measure_reference.groupby(sample).mean()
+            #     measure_signal = measure_signal.set_index('index')
+            #     measure_reference = measure_reference.set_index('index')
+
 
             zscores = measure_signal.copy()
 
@@ -661,7 +680,7 @@ for dpath_ind, dpath in enumerate(dpaths):
             PrintNoNewLine('Saving everything...')
             save_path = dpath + save_file_as
             figure.savefig(save_path + '.png', format='png')
-            figure.savefig(save_path + '.pdf', format='pdf')
+            # figure.savefig(save_path + '.pdf', format='pdf')
             plt.close()
             print('Done!')
 
