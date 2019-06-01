@@ -17,7 +17,7 @@ import sys
 from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
 from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment, AlignEventsAndSignals
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
-from imaging_analysis.signal_processing import SingleStepProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod
+from imaging_analysis.signal_processing import SingleStepProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod, Downsample
 import numpy as np
 from neo.core import Epoch, Event
 import quantities as pq
@@ -70,63 +70,44 @@ alignment_blocks = [
     },        
 ]
 ##################### Kevin Section ###############################
-signal_channel = '465A 1' # Name of our signal channel
-reference_channel = '405A 1' # ame of our reference channel
-mode = 'TTL'
+# signal_channel = '465A 1' # Name of our signal channel
+# reference_channel = '405A 1' # ame of our reference channel
+# mode = 'TTL'
 
-before_alignment = [
-    {'type': 'filter', 'options': {}}
-]
+# before_alignment = [
+#     {'type': 'filter', 'options': {}}
+# ]
 
-##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
-path_to_ttl_event_params = [
-    'imaging_analysis/ttl_event_params_new_rig.json'
-]
-#### WHERE IS THE DATA
-dpaths = [
-    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
-]
-#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
-alignment_blocks = [
-    {
-        'epoch_name': 'correct',
-        'event': 'correct',
-        'prewindow': 10,
-        'postwindow': 30,
-        'downsample': 10,
-        'quantification': 'mean', # options are AUC, median, and mean
-        'baseline_window': [-5, -2],
-        'response_window': [1, 4],
-        'save_file_as': 'correct_processed',
-        'plot_paramaters': {
-            'heatmap_range': [None, None],
-            'smoothing_window': 500
-        },
-        'after_alignment': [
-            {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-8, -3]}}
-        ]
-    },
-    # {
-    #     'epoch_name': 'correct',
-    #     'event': 'iti_start',
-    #     'prewindow': 10,
-    #     'postwindow': 30,
-    #     'downsample': 10,
-    #     'quantification': 'AUC', # options are AUC, median, and mean
-    #     'baseline_window': [-6, -3],
-    #     'response_window': [0, 3],
-    #     'save_file_as': 'iti_start_processed',
-    #     'plot_paramaters': {
-    #         'heatmap_range': [-2, 2],
-    #         'smoothing_window': 1000
-    #     },
-    #     'after_alignment': [
-    #         {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-    #         {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
-    #     ]
-    # }
-]
+# ##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
+# path_to_ttl_event_params = [
+#     'imaging_analysis/ttl_event_params_new_rig.json'
+# ]
+# #### WHERE IS THE DATA
+# dpaths = [
+#     '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
+# ]
+# #### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
+# alignment_blocks = [
+#     {
+#         'epoch_name': 'correct',
+#         'event': 'correct',
+#         'prewindow': 10,
+#         'postwindow': 30,
+#         'downsample': 10,
+#         'quantification': 'mean', # options are AUC, median, and mean
+#         'baseline_window': [-5, -2],
+#         'response_window': [1, 4],
+#         'save_file_as': 'correct_processed',
+#         'plot_paramaters': {
+#             'heatmap_range': [None, None],
+#             'smoothing_window': 500
+#         },
+#         'after_alignment': [
+#             {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
+#             {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-8, -3]}}
+#         ]
+#     }
+# ]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
@@ -301,16 +282,6 @@ for dpath_ind, dpath in enumerate(dpaths):
                 signal, reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
                     input_sig_ch=filter_signal_name, input_ref_ch=filter_reference_name, 
                     datatype='dataframe', **process['options'])
-
-            # Down sample data
-            if downsample > 0:
-                signal.reset_index(inplace=True)
-                reference.reset_index(inplace=True)
-                sample = (signal.index.to_series() / downsample).astype(int)
-                signal = signal.groupby(sample).mean()
-                reference = reference.groupby(sample).mean()
-                signal = signal.set_index('index')
-                reference = reference.set_index('index') 
 
             filter_signal_name = 'filtered_signal'
             filter_reference_name = 'filtered_reference'
@@ -552,6 +523,7 @@ for dpath_ind, dpath in enumerate(dpaths):
             zero = np.concatenate([np.where(zscores.index == np.abs(zscores.index).min())[0], 
                 np.where(zscores.index == -1*np.abs(zscores.index).min())[0]]).min()
             for_hm = zscores.T.copy()
+            for_hm.reset_index(drop=True, inplace=True)
             # for_hm.index = for_hm.index + 1
             for_hm.columns = np.round(for_hm.columns, 1)
             try:
@@ -690,6 +662,8 @@ for dpath_ind, dpath in enumerate(dpaths):
             zscores.columns.name = 'trial'
             # Fix rows 
             zscores.index.name = 'time'
+            if downsample > 0:
+                zscores = Downsample(zscores, downsample, index_col='time')
             zscores.to_csv(save_path + '_zscores_aligned.csv')
             # Trial point estimates
             point_estimates = pd.DataFrame({'baseline': base, 'response': resp}, 
@@ -709,6 +683,8 @@ for dpath_ind, dpath in enumerate(dpaths):
             # Save smoothed data
             smoothed_zscore = pd.concat([zscores_mean, zscores_sem], axis=1)
             smoothed_zscore.columns = ['mean', 'sem']
+            if downsample > 0:
+                smoothed_zscore = Downsample(smoothed_zscore, downsample, index_col='time')
             smoothed_zscore.to_csv(save_path + '_smoothed_zscores.csv')
 
 

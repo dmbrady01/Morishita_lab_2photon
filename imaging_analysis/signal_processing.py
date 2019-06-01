@@ -159,8 +159,8 @@ def DeltaFOverF(signal, reference=None, period=None, mode='median', offset=0):
             % mode)
 
 def ZScoreCalculator(signal, baseline_start=None, baseline_end=None):
-    mean_baseline = np.mean(signal[baseline_start:baseline_end])
-    std_baseline = np.std(signal[baseline_start:baseline_end])
+    mean_baseline = np.mean(signal[baseline_start:baseline_end], axis=0)
+    std_baseline = np.std(signal[baseline_start:baseline_end], axis=0)
     z_score = (signal - mean_baseline) / std_baseline
     return z_score
 
@@ -743,3 +743,10 @@ def SingleStepProcessSignalData(data=None, process_type='filter', input_sig_ch='
         return signal, reference
     else:
         return signal, None
+
+def Downsample(signal, window, index_col='index'):
+    signal.reset_index(inplace=True)
+    sample = (signal.index.to_series() / window).astype(int)
+    signal = signal.groupby(sample).mean()
+    signal = signal.set_index(index_col)
+    return signal 
