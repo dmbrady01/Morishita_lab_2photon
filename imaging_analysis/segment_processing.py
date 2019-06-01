@@ -361,6 +361,8 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
         # avg_df.to_csv(dpath + '_average_trace.csv')
         # pe_df.to_csv(dpath + '_point_estimate.csv')
 
+    return event_df
+
 
 
 

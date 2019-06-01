@@ -244,6 +244,7 @@ def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=
     Applies a polynomial fit in a sliding window to an input signal. This has the same functionality as a 
     Savitzky-Golay filter. 
     """
+
     if not isinstance(signal, types.NoneType):
         x = reference
         y = signal
@@ -251,25 +252,34 @@ def PolyfitWindow(reference, signal=None, window_length=3001, return_projection=
         x = np.arange(reference.shape[0])
         y = reference
 
-    shape = y.shape
-    num_samples = len(x)
-    idx = np.arange(window_length)
-    x_out = np.zeros(num_samples)
-    steps = np.arange(0, num_samples, window_length)
 
-    x = x.flatten()
-    y = y.flatten()
+    if window_length is not None:
+        shape = y.shape
+        num_samples = len(x)
+        idx = np.arange(window_length)
+        x_out = np.zeros(num_samples)
+        steps = np.arange(0, num_samples, window_length)
 
-    for step in steps:
-        x_frame = x[step:step+window_length]
-        y_frame = y[step:step+window_length]
-        p = np.polyfit(x_frame, y_frame, deg=1)
-        x_out[step:step+window_length] = np.polyval(p, x_frame)
+        x = x.flatten()
+        y = y.flatten()
 
-    if return_projection:
-        return x_out.reshape(shape)
+        for step in steps:
+            x_frame = x[step:step+window_length]
+            y_frame = y[step:step+window_length]
+            p = np.polyfit(x_frame, y_frame, deg=1)
+            x_out[step:step+window_length] = np.polyval(p, x_frame)
+
+        if return_projection:
+            return x_out.reshape(shape)
+        else:
+            return (y - x_out).reshape(shape)
     else:
-        return (y - x_out).reshape(shape)
+        fits = np.array([np.polyfit(x[:, i], y[:, i],1) for i in xrange(y.shape[1])])
+        Y_fit_all = np.array([np.polyval(fits[i], x[:,i]) for i in np.arange(x.shape[1])]).T
+        Y_df_all = y - Y_fit_all
+        return Y_df_all
+
+
 
 def ExponentialFitWindow(reference, signal=None, window_length=3001, return_projection=False):
     """Tries to fit an exponential decay across the window_length"""
@@ -673,16 +683,16 @@ def SingleStepProcessSignalData(data=None, process_type='filter', input_sig_ch='
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
-            reference = PolyfitWindow(reference, signal=None,
-                window_length=options['reference_window_length'], return_projection=False)
+            # reference = PolyfitWindow(reference, signal=None,
+            #     window_length=options['reference_window_length'], return_projection=False)
         
         elif options['detrend'] == 'decay':
             signal = ExponentialFitWindow(detrend_ref, signal=detrend_sig, 
                 window_length=options['signal_window_length'], return_projection=False)
             # filt_signal = PolyfitWindow(filt_signal, signal=None, 
             #     window_length=options['signal_window_length'], return_projection=False)
-            reference = ExponentialFitWindow(reference, signal=None,
-                window_length=options['reference_window_length'], return_projection=False)
+            # reference = ExponentialFitWindow(reference, signal=None,
+            #     window_length=options['reference_window_length'], return_projection=False)
         
         elif options['detrend'] == 'savgol_from_reference':
             reference = reference - np.median(reference) 
@@ -699,10 +709,10 @@ def SingleStepProcessSignalData(data=None, process_type='filter', input_sig_ch='
         else:
             new_ref_ch_name = None
 
-    elif process_type == 'subtract':
-        signal = signal - reference
-        new_sig_ch_name = 'subtracted_signal'
-        new_ref_ch_name = None
+    # elif process_type == 'subtract':
+    #     signal = signal - reference
+    #     new_sig_ch_name = 'subtracted_signal'
+    #     new_ref_ch_name = None
 
     elif process_type == 'measure':
         units = pq.percent

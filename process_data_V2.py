@@ -65,9 +65,67 @@ alignment_blocks = [
             'smoothing_window': 200
         },
         'after_alignment': [
-           {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}},
+            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}},
         ]
     },        
+]
+##################### Kevin Section ###############################
+signal_channel = '465A 1' # Name of our signal channel
+reference_channel = '405A 1' # ame of our reference channel
+mode = 'TTL'
+
+before_alignment = [
+    {'type': 'filter', 'options': {}}
+]
+
+##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
+path_to_ttl_event_params = [
+    'imaging_analysis/ttl_event_params_new_rig.json'
+]
+#### WHERE IS THE DATA
+dpaths = [
+    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
+]
+#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
+alignment_blocks = [
+    {
+        'epoch_name': 'correct',
+        'event': 'correct',
+        'prewindow': 10,
+        'postwindow': 30,
+        'downsample': 10,
+        'quantification': 'mean', # options are AUC, median, and mean
+        'baseline_window': [-5, -2],
+        'response_window': [1, 4],
+        'save_file_as': 'correct_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        },
+        'after_alignment': [
+            {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
+            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
+        ]
+    },
+    {
+        'epoch_name': 'correct',
+        'event': 'iti_start',
+        'prewindow': 10,
+        'postwindow': 30,
+        'downsample': 10,
+        'quantification': 'AUC', # options are AUC, median, and mean
+        'baseline_window': [-6, -3],
+        'response_window': [0, 3],
+        'save_file_as': 'iti_start_processed',
+        'plot_paramaters': {
+            'heatmap_range': [-2, 2],
+            'smoothing_window': 1000
+        },
+        'after_alignment': [
+            {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
+            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}}
+        ]
+    }
 ]
 
 ####################### PREPROCESSING DATA ###############################
@@ -226,7 +284,7 @@ for dpath_ind, dpath in enumerate(dpaths):
                 dict_name = epoch_name + '_' + channel
                 lookup[channel] = dict_name
 
-                AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
+                results = AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
                     event_ch_name='Events', event=event, event_type='label', 
                     prewindow=prewindow, postwindow=postwindow, window_type='event', 
                     clip=False, name=dict_name, to_csv=False, dpath=dpath)
@@ -243,6 +301,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 signal, reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
                     input_sig_ch=filter_signal_name, input_ref_ch=filter_reference_name, 
                     datatype='dataframe', **process['options'])
+
+            filter_signal_name = 'filtered_signal'
+            filter_reference_name = 'filtered_reference'
+            lookup[filter_signal_name] = epoch_name + '_' + filter_signal_name
+            lookup[filter_reference_name] = epoch_name + '_' + filter_reference_name
+            if lookup[filter_signal_name] in segment.analyzed.keys():
+                segment.analyzed[lookup[filter_signal_name]]['all_traces'] = signal
+                segment.analyzed[lookup[filter_reference_name]]['all_traces'] = reference
+            else:
+                segment.analyzed[lookup[filter_signal_name]] = {'all_traces': signal, 'all_events': results}
+                segment.analyzed[lookup[filter_reference_name]] = {'all_traces': reference, 'all_events': results}
 
             # Down sample data
             if downsample > 0:
@@ -318,7 +387,7 @@ for dpath_ind, dpath in enumerate(dpaths):
                 # fits = np.array([np.polyfit(reference.values[:, i],signal.values[:, i],1) for i in xrange(signal.shape[1])])
                 # Y_fit_all = np.array([np.polyval(fits[i], reference.values[:,i]) for i in np.arange(reference.values.shape[1])]).T
                 # Y_df_all = signal.values - Y_fit_all
-                # detrended_signal = pd.DataFrame(Y_df_all, index=signal.index)
+                # # detrended_signal = pd.DataFrame(Y_df_all, index=signal.index)
 
             # Checks to see if we have detrended the data before alignment
             detrend_channel_names = [x for x in before_alignment_channels if 'detrended' in x]
@@ -326,16 +395,18 @@ for dpath_ind, dpath in enumerate(dpaths):
                 detrend_channel_names = [filter_signal_name, filter_reference_name]
 
             PrintNoNewLine('Centering trials and analyzing for detrended signal...')
-            for channel in detrend_channel_names:
-                dict_name = epoch_name + '_' + channel
-                lookup[channel] = dict_name
+            try:
+                for channel in detrend_channel_names:
+                    dict_name = epoch_name + '_' + channel
+                    lookup[channel] = dict_name
 
-                AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
-                    event_ch_name='Events', event=event, event_type='label', 
-                    prewindow=prewindow, postwindow=postwindow, window_type='event', 
-                    clip=False, name=dict_name, to_csv=False, dpath=dpath)
-            print('Done!')
-
+                    results = AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
+                        event_ch_name='Events', event=event, event_type='label', 
+                        prewindow=prewindow, postwindow=postwindow, window_type='event', 
+                        clip=False, name=dict_name, to_csv=False, dpath=dpath)
+                print('Done!')
+            except:
+                print('No detrending before alignment...')
             detrend_signal_name = [x for x in detrend_channel_names if 'signal' in x][0]
             detrend_reference_name = [x for x in detrend_channel_names if 'reference' in x][0]
             detrended_signal = segment.analyzed[lookup[detrend_signal_name]]['all_traces']
@@ -347,6 +418,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 detrended_signal, detrended_reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
                     input_sig_ch=detrend_signal_name, input_ref_ch=detrend_reference_name, 
                     datatype='dataframe', **process['options'])
+
+            detrend_signal_name = 'detrended_signal'
+            detrend_reference_name = 'detrended_reference'
+            lookup[detrend_signal_name] = epoch_name + '_' + detrend_signal_name
+            lookup[detrend_reference_name] = epoch_name + '_' + detrend_reference_name
+            if lookup[detrend_signal_name] in segment.analyzed.keys():
+                segment.analyzed[lookup[detrend_signal_name]]['all_traces'] = detrended_signal
+                segment.analyzed[lookup[detrend_reference_name]]['all_traces'] = detrended_reference
+            else:
+                segment.analyzed[lookup[detrend_signal_name]] = {'all_traces': detrended_signal, 'all_events': results}
+                segment.analyzed[lookup[detrend_reference_name]] = {'all_traces': detrended_reference, 'all_events': results}
 
         ################# PLOT DETRENDED SIGNAL ###################################
 
@@ -403,14 +485,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 measure_channel_names = [detrend_signal_name, detrend_reference_name]
 
             PrintNoNewLine('Centering trials and analyzing for z scores...')
-            for channel in measure_channel_names:
-                dict_name = epoch_name + '_' + channel
-                lookup[channel] = dict_name
+            try:
+                for channel in measure_channel_names:
+                    dict_name = epoch_name + '_' + channel
+                    lookup[channel] = dict_name
 
-                AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
-                    event_ch_name='Events', event=event, event_type='label', 
-                    prewindow=prewindow, postwindow=postwindow, window_type='event', 
-                    clip=False, name=dict_name, to_csv=False, dpath=dpath)
+                    results = AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
+                        event_ch_name='Events', event=event, event_type='label', 
+                        prewindow=prewindow, postwindow=postwindow, window_type='event', 
+                        clip=False, name=dict_name, to_csv=False, dpath=dpath)
+            except:
+                print('No z scores before alignment...')
             print('Done!')
 
             measure_signal_name = [x for x in measure_channel_names if 'signal' in x][0]
@@ -424,6 +509,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 measure_signal, measure_reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
                     input_sig_ch=measure_signal_name, input_ref_ch=measure_reference_name, 
                     datatype='dataframe', **process['options'])
+
+            measure_signal_name = 'measure_signal'
+            measure_reference_name = 'measure_reference'
+            lookup[measure_signal_name] = epoch_name + '_' + measure_signal_name
+            lookup[measure_reference_name] = epoch_name + '_' + measure_reference_name
+            if lookup[measure_signal_name] in segment.analyzed.keys():
+                segment.analyzed[lookup[measure_signal_name]]['all_traces'] = measure_signal
+                segment.analyzed[lookup[measure_reference_name]]['all_traces'] = measure_reference
+            else:
+                segment.analyzed[lookup[measure_signal_name]] = {'all_traces': measure_signal, 'all_events': results}
+                segment.analyzed[lookup[measure_reference_name]] = {'all_traces': measure_reference, 'all_events': results}
 
             zscores = measure_signal.copy()
 

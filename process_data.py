@@ -37,18 +37,13 @@ signal_channel = '465A 1' # Name of our signal channel
 reference_channel = '405A 1' # Name of our reference channel
 
 mode = 'TTL'
+##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
 path_to_ttl_event_params = [
-    'imaging_analysis/ttl_event_params_new_rig.json',
-    'imaging_analysis/ttl_event_params_new_rig.json',
-    'imaging_analysis/ttl_event_params_new_rig.json',
     'imaging_analysis/ttl_event_params_new_rig.json'
 ]
-
+#### WHERE IS THE DATA
 dpaths = [
-    '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/',
-    '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
+    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
 ]
 
 analysis_blocks = [
