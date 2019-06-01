@@ -568,8 +568,8 @@ def ProcessSignalData(seg=None, sig_ch='LMag 1', ref_ch='LMag 2',
 
     return all_signals
 
-def SingleStepProcessSignalData(seg=None, process_type='filter', input_sig_ch='LMag 1', 
-    input_ref_ch='LMag 2', **kwargs):
+def SingleStepProcessSignalData(data=None, process_type='filter', input_sig_ch='LMag 1', 
+    input_ref_ch='LMag 2', datatype='segment', **kwargs):
 
     options = {
         'signal_btype': 'lowpass', 
@@ -596,29 +596,40 @@ def SingleStepProcessSignalData(seg=None, process_type='filter', input_sig_ch='L
     # Update based on kwargs
     options.update(kwargs)
 
-    # Check that segment object was passed
-    if not isinstance(seg, neo.core.Segment):
-        raise TypeError('%s must be a Segment object' % seg)
-    # Retrieves signal and reference
-    if input_sig_ch:
-        try:
-            signal = filter(lambda x: x.name == input_sig_ch, seg.analogsignals)[-1]
-        except IndexError:
-            raise ValueError('There is no input signal channel named %s' % input_sig_ch)
+    if datatype == 'segment':
+        # Retrieves signal and reference
+        if input_sig_ch:
+            try:
+                signal = filter(lambda x: x.name == input_sig_ch, data.analogsignals)[-1]
+            except IndexError:
+                raise ValueError('There is no input signal channel named %s' % input_sig_ch)
 
-    if input_ref_ch:
-        try:
-            reference = filter(lambda x: x.name == input_ref_ch, seg.analogsignals)[-1]
-        except IndexError:
-            raise ValueError('There is no input reference channel named %s' % input_ref_ch)
+        if input_ref_ch:
+            try:
+                reference = filter(lambda x: x.name == input_ref_ch, data.analogsignals)[-1]
+            except IndexError:
+                raise ValueError('There is no input reference channel named %s' % input_ref_ch)
+        else:
+            reference = None
+
+        units = pq.V # new units are in %
+        t_start = signal.t_start # has the same start time as all other analog signal objects in segment
+        fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
+        signal = signal.magnitude
+        reference = reference.magnitude
     else:
-        reference = None
-
-    units = pq.V # new units are in %
-    t_start = signal.t_start # has the same start time as all other analog signal objects in segment
-    fs = signal.sampling_rate # has the same sampling rate as all other analog signal objects in segment
-    signal = signal.magnitude
-    reference = reference.magnitude
+        signal = data[input_sig_ch]
+        if input_ref_ch is not None:
+            reference = data[input_ref_ch].values
+        else:
+            reference = None
+        index = signal.index
+        if (process_type == 'measure') and ('period' in options['mode']):
+            measure_period = np.where((signal.index >= options['period'][0]) & (signal.index <= options['period'][1]))[0]
+            options['period'][0] = measure_period[0]
+            options['period'][1] = measure_period[-1]
+        columns = signal.columns
+        signal = signal.values
 
     if process_type == 'filter':
         ##### Filter the signals
@@ -705,12 +716,20 @@ def SingleStepProcessSignalData(seg=None, process_type='filter', input_sig_ch='L
         else:
             new_ref_ch_name = None
 
-    # Add processed to channels
-    new_sig_ch = AnalogSignal(signal, units=units, t_start=t_start, sampling_rate=fs, name=new_sig_ch_name)
-    seg.analogsignals.append(new_sig_ch)
+    if datatype == 'segment':   
+        # Add processed to channels
+        new_sig_ch = AnalogSignal(signal, units=units, t_start=t_start, sampling_rate=fs, name=new_sig_ch_name)
+        data.analogsignals.append(new_sig_ch)
 
-    if new_ref_ch_name:
-        new_ref_ch = AnalogSignal(reference, units=units, t_start=t_start, sampling_rate=fs, name=new_ref_ch_name)
-        seg.analogsignals.append(new_ref_ch)
+        if new_ref_ch_name:
+            new_ref_ch = AnalogSignal(reference, units=units, t_start=t_start, sampling_rate=fs, name=new_ref_ch_name)
+            data.analogsignals.append(new_ref_ch)
+    else:
+        signal = pd.DataFrame(signal, index=index, columns=columns)
+        if not isinstance(reference, types.NoneType):
+            reference = pd.DataFrame(reference, index=index, columns=columns)
 
-    return signal, reference
+    if not isinstance(reference, types.NoneType):
+        return signal, reference
+    else:
+        return signal, None

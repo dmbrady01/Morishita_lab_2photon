@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-process_data.py: Python script that processes fiber photometry data. It truncates
+process_data_V2.py: Python script that processes fiber photometry data. It truncates
 the signal, filters it, labels events, processes trials, and groups trials by epoch.
+The main difference in V2 is that you can specify the order of processing explicitly
+for both before and after aligning with events.
 """
 
 
@@ -27,131 +29,15 @@ import json
 
 sns.set_style('darkgrid')
 ############## PART 1 Preprocess data ##########################
-
-#######################################################################
-############ KEVIN SECTION ##################################
-### For new rig/Kevin's data
-
-# before_alignment = [
-#     {'type': 'filter', 'options': {}},
-# ]
-
-# after_alignment = [
-#     {'type': 'detrend', 'options': {'detrend': 'savgol_from_reference'}},
-#     {'type': 'detrend', 'options': {'detrend': 'linear'}}
-# ]
-
-
-# signal_channel = '465A 1' # Name of our signal channel
-# reference_channel = '405A 1' # Name of our reference channel
-
-# mode = 'TTL'
-# path_to_ttl_event_params = [
-#     'imaging_analysis/ttl_event_params_new_rig.json',
-#     'imaging_analysis/ttl_event_params_new_rig.json',
-#     'imaging_analysis/ttl_event_params_new_rig.json',
-#     'imaging_analysis/ttl_event_params_new_rig.json'
-# ]
-
-# dpaths = [
-#     '/Users/DB/Development/Monkey_frog/data/KN_newRigData/RS/12/FirstFibPho-180817-160254/',
-#     '/Users/DB/Development/Monkey_frog/data/912_m1/FirstFibPho-180817-160254/',
-#     '/Users/DB/Development/Monkey_frog/data/921_m1/FirstFibPho-180817-160254/',
-#     '/Users/DB/Development/Monkey_frog/data/967_m2/FirstFibPho-190125-160545/'
-# ]
-
-# analysis_blocks = [
-#     {
-#         'epoch_name': 'correct',
-#         'event': 'correct',
-#         'prewindow': 10,
-#         'postwindow': 30,
-#         'z_score_window': [-8, -3],
-#         'downsample': 10,
-#         'quantification': 'mean', # options are AUC, median, and mean
-#         'baseline_window': [-5, -2],
-#         'response_window': [1, 4],
-#         'save_file_as': 'correct_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [None, None],
-#             'smoothing_window': 500
-#         }
-#     },
-#     {
-#         'epoch_name': 'correct',
-#         'event': 'iti_start',
-#         'prewindow': 10,
-#         'postwindow': 30,
-#         'z_score_window': [-10, -5],
-#         'downsample': 10,
-#         'quantification': 'AUC', # options are AUC, median, and mean
-#         'baseline_window': [-6, -3],
-#         'response_window': [0, 3],
-#         'save_file_as': 'iti_start_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [-2, 2],
-#             'smoothing_window': 1000
-#         }
-#     }
-# ]
-
-
-##################### LUCY SECTION ######################
-# z_score_before_alignment = True
-# deltaf_options = {
-#     'detrend': 'savgol_from_reference',
-#     'second_detrend': 'linear',
-#     'signal_window_length': 3001,
-#     'mode': 'z_score_period', 
-#     'period': [1000, 30000],
-# } # Any parameters you want to pass when calculating deltaf/f
-# signal_channel = 'LMag 1' # Name of our signal channel
-# reference_channel = 'LMag 2' # Name of our reference channel
-
-# mode = 'manual'
-# path_to_social_excel = [
-#     '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv',
-#     '/Users/DB/Development/Monkey_frog/data/social/FP_41718_PVGHjSI_9949_3_chunky_social.csv'
-# ]
-
-# dpaths = [
-#     '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/',
-#     '/Users/DB/Development/Monkey_frog/data/social/TDT-LockinRX8-22Oct2014_20-4-15_DT1_04171819/'
-# ]
-
-
-# alignment_blocks = [
-#     {
-#         'epoch_name': 'active',
-#         'event': 'active',
-#         'prewindow': 30,
-#         'postwindow': 60,
-#         'z_score_window': [],
-#         'downsample': 10,
-#         'quantification': 'mean', # options are AUC, median, and mean
-#         'baseline_window': [-5, -2],
-#         'response_window': [1, 4],
-#         'save_file_as': 'active_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [None, None],
-#             'smoothing_window': 500
-#         }
-#     }
-# ]
-
 ##################### Kazu/Mike Section ###############################
 signal_channel = '465A 1' # Name of our signal channel
 reference_channel = '405A 1' # ame of our reference channel
-mode = 'csv'
+mode = 'manual'
 
 before_alignment = [
     {'type': 'filter', 'options': {}},
     {'type': 'detrend', 'options': {'detrend': 'savgol_from_reference'}},
     {'type': 'detrend', 'options': {'detrend': 'linear'}}
-]
-
-after_alignment = [
-    {'type': 'measure', 'options': {}}
 ]
 
 ##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
@@ -163,25 +49,26 @@ dpaths = [
     '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1'
 ]
 #### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
-analysis_blocks = [
- {
-         'epoch_name': 'empty',
-         'event': 'empty',
-         'prewindow': 30,
-         'postwindow': 30,
-         'z_score_window': [-30,0],
-         'downsample': 10,
-         'quantification': 'mean', # options are AUC, median, and mean
-         'baseline_window': [-30, 0],
-         'response_window': [0, 30],
-         'save_file_as': 'empty',
-         'plot_paramaters': {
-             'heatmap_range': [None, None],
-             'smoothing_window': 200
-         }
-     },
-         
- ]
+alignment_blocks = [
+{
+        'epoch_name': 'empty',
+        'event': 'empty',
+        'prewindow': 30,
+        'postwindow': 30,
+        'downsample': 10,
+        'quantification': 'mean', # options are AUC, median, and mean
+        'baseline_window': [-30, 0],
+        'response_window': [0, 30],
+        'save_file_as': 'empty',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 200
+        },
+        'after_alignment': [
+           {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}},
+        ]
+    },        
+]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
@@ -216,14 +103,15 @@ for dpath_ind, dpath in enumerate(dpaths):
         # the deltaf_options dictionary above. For example, if you want it to be mean centered
         # and not run the savgol_filter, set deltaf_options = {'mode': 'mean', 'detrend': False}
         PrintNoNewLine('\nProcessing signal before event alignment...')
+        before_alignment_channels = []
         if len(before_alignment) > 0:
             for step_number, process in enumerate(before_alignment):
                 if step_number == 0:
                     input_sig_ch = signal_channel
                     input_ref_ch = reference_channel
 
-                signal, reference = SingleStepProcessSignalData(seg=segment, process_type=process['type'], 
-                    input_sig_ch=input_sig_ch, input_ref_ch=input_ref_ch, **process['options'])
+                signal, reference = SingleStepProcessSignalData(data=segment, process_type=process['type'], 
+                    input_sig_ch=input_sig_ch, input_ref_ch=input_ref_ch, datatype='segment', **process['options'])
 
                 if process['type'] == 'filter':
                     input_sig_ch = 'filtered_signal' 
@@ -237,6 +125,12 @@ for dpath_ind, dpath in enumerate(dpaths):
                 elif process['type'] == 'measure':
                     input_sig_ch = 'measure_signal'
                     input_ref_ch = 'measure_reference'
+
+                if input_sig_ch not in before_alignment_channels:
+                    before_alignment_channels.append(input_sig_ch)
+                
+                if input_ref_ch not in before_alignment_channels:
+                    before_alignment_channels.append(input_ref_ch)
         # Appends an Event object that has all event timestamps and the proper label
         # (determined by the evtframe loaded earlier). Uses a tolerance (in seconds)
         # to determine if events co-occur. For example, if tolerance is 1 second
@@ -249,7 +143,7 @@ for dpath_ind, dpath in enumerate(dpaths):
         if mode == 'TTL':
             # Loading event labeling/combo parameters
             path_to_event_params = path_to_ttl_event_params[dpath_ind]
-        elif mode == 'csv':
+        elif mode == 'manual':
             # Generates a json for reading excel file events
             path_to_event_params = 'imaging_analysis/manual_event_params.json'
             GenerateManualEventParamsJson(path_to_social_excel[dpath_ind], event_col='Bout type', 
@@ -263,7 +157,7 @@ for dpath_ind, dpath in enumerate(dpaths):
        
         # Processing events
         PrintNoNewLine('\nProcessing event times and labels...')
-        if mode == 'csv':
+        if mode == 'manual':
             manualframe = path_to_social_excel[dpath_ind]
         else:
             manualframe = None
@@ -309,34 +203,46 @@ for dpath_ind, dpath in enumerate(dpaths):
             prewindow = block['prewindow']
             postwindow = block['postwindow']
             downsample = block['downsample']
-            z_score_window = block['z_score_window']
+            after_alignment = block['after_alignment']
             quantification = block['quantification']
             baseline_window = block['baseline_window']
             response_window = block['response_window']
             save_file_as = block['save_file_as']
             heatmap_range = block['plot_paramaters']['heatmap_range']
             smoothing_window = block['plot_paramaters']['smoothing_window']
-
             lookup = {}
-            for channel in ['Filtered_signal', 'Filtered_reference', 'Detrended', 'DeltaF_F_or_Z_score']:
-                print('\nAnalyzing "%s" trials centered around "%s". Channel: "%s" \n' % (epoch_name, event, channel))
 
-                dict_name = epoch_name +  '_' + channel
-                lookup[channel] = dict_name 
-                PrintNoNewLine('Centering trials and analyzing...')
+    #############################################################################
+    ######################## PROCESS SIGNALS (IF NECESSARY); PLOT; STATS ######
+            # Load data
+
+            # Checks to see if we have filtered the data before alignment
+            filter_channel_names = [x for x in before_alignment_channels if 'filtered' in x]
+            if len(filter_channel_names) == 0:
+                filter_channel_names = [signal_channel, reference_channel]
+
+            PrintNoNewLine('Centering trials and analyzing for filtered signal...')
+            for channel in filter_channel_names:
+                dict_name = epoch_name + '_' + channel
+                lookup[channel] = dict_name
+
                 AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
                     event_ch_name='Events', event=event, event_type='label', 
                     prewindow=prewindow, postwindow=postwindow, window_type='event', 
                     clip=False, name=dict_name, to_csv=False, dpath=dpath)
-                print('Done!')
+            print('Done!')
 
+            filter_signal_name = [x for x in filter_channel_names if 'signal' in x][0]
+            filter_reference_name = [x for x in filter_channel_names if 'reference' in x][0]
+            signal = segment.analyzed[lookup[filter_signal_name]]['all_traces']
+            reference = segment.analyzed[lookup[filter_reference_name]]['all_traces']
 
-
-    ######################## PROCESS SIGNALS (IF NECESSARY); PLOT; STATS ######
-            # Load data
-
-            signal = segment.analyzed[lookup['Filtered_signal']]['all_traces']
-            reference = segment.analyzed[lookup['Filtered_reference']]['all_traces']
+            # check to see if we need to filter after alignment
+            for process in [x for x in after_alignment if x['type'] == 'filter']:
+                data = {filter_signal_name: signal, filter_reference_name: reference}
+                signal, reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
+                    input_sig_ch=filter_signal_name, input_ref_ch=filter_reference_name, 
+                    datatype='dataframe', **process['options'])
 
             # Down sample data
             if downsample > 0:
@@ -348,13 +254,6 @@ for dpath_ind, dpath in enumerate(dpaths):
                 signal = signal.set_index('index')
                 reference = reference.set_index('index') 
 
-            # # Scale signal if it is too weak (want std to be at least 1)
-            # if (np.abs(signal.mean().std()) < 1.) or (np.abs(reference.mean().std()) < 1.):
-            #     scale_factor = 10**(np.ceil(np.log10(1/(signal.mean().std()))))
-
-            #     signal = signal * scale_factor
-            #     reference = reference * scale_factor
-
             # Get plotting read
             figure = plt.figure(figsize=(12, 12))
             figure.subplots_adjust(hspace=1.3)
@@ -363,8 +262,6 @@ for dpath_ind, dpath in enumerate(dpaths):
             ax3 = plt.subplot2grid((6, 2), (4, 0), rowspan=2)
             ax4 = plt.subplot2grid((6, 2), (0, 1), rowspan=3)
             ax5 = plt.subplot2grid((6, 2), (3, 1), rowspan=3)
-            # fig, axs = plt.subplots(2, 2, sharex=False, sharey=False)
-            # fig.set_size_inches(12, 12)
 
         ############################### PLOT AVERAGE EVOKED RESPONSE ######################
             PrintNoNewLine('Calculating average filtered responses for %s trials...' % epoch_name)
@@ -394,18 +291,6 @@ for dpath_ind, dpath in enumerate(dpaths):
                     sampling_rate=float(sampling_rate)/downsample, 
                     ms_bin=smoothing_window, window='flat')
 
-            # # Scale signal if it is too weak (want std to be at least 1)
-            # if (np.abs(signal_avg_response.std()) < 1.) or (np.abs(reference_avg_response.std()) < 1.):
-            #     scale_factor = 10**(np.ceil(np.log10(1/(signal_avg_response).std())))
-
-            #     signal_avg_response = signal_avg_response * scale_factor
-            #     signal_se = signal_se * scale_factor
-            #     reference_avg_response = reference_avg_response * scale_factor
-            #     reference_se = reference_se * scale_factor
-
-            # Plotting signal
-            # current axis
-            #curr_ax = axs[0, 0]
             curr_ax = ax1
             curr_ax.plot(signal_avg_response.index, signal_avg_response.values, color='b', linewidth=2)
             curr_ax.fill_between(signal_avg_response.index, (signal_avg_response - signal_sem).values, 
@@ -423,21 +308,49 @@ for dpath_ind, dpath in enumerate(dpaths):
             curr_ax.legend(['465 nm', '405 nm', event])
             curr_ax.set_title('Average Lowpass Signal $\pm$ SEM: {} Trials'.format(signal.shape[1]))
             print('Done!')
+
+
+################################################################################################################
         ############################# Calculate detrended signal #################################
-            if z_score_before_alignment:
-                detrended_signal = segment.analyzed[lookup['Detrended']]['all_traces']
-            else:
-                # Detrending
-                PrintNoNewLine('Detrending signal...')
-                fits = np.array([np.polyfit(reference.values[:, i],signal.values[:, i],1) for i in xrange(signal.shape[1])])
-                Y_fit_all = np.array([np.polyval(fits[i], reference.values[:,i]) for i in np.arange(reference.values.shape[1])]).T
-                Y_df_all = signal.values - Y_fit_all
-                detrended_signal = pd.DataFrame(Y_df_all, index=signal.index)
+
+                # # Detrending
+                # PrintNoNewLine('Detrending signal...')
+                # fits = np.array([np.polyfit(reference.values[:, i],signal.values[:, i],1) for i in xrange(signal.shape[1])])
+                # Y_fit_all = np.array([np.polyval(fits[i], reference.values[:,i]) for i in np.arange(reference.values.shape[1])]).T
+                # Y_df_all = signal.values - Y_fit_all
+                # detrended_signal = pd.DataFrame(Y_df_all, index=signal.index)
+
+            # Checks to see if we have detrended the data before alignment
+            detrend_channel_names = [x for x in before_alignment_channels if 'detrended' in x]
+            if len(detrend_channel_names) == 0:
+                detrend_channel_names = [filter_signal_name, filter_reference_name]
+
+            PrintNoNewLine('Centering trials and analyzing for detrended signal...')
+            for channel in detrend_channel_names:
+                dict_name = epoch_name + '_' + channel
+                lookup[channel] = dict_name
+
+                AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
+                    event_ch_name='Events', event=event, event_type='label', 
+                    prewindow=prewindow, postwindow=postwindow, window_type='event', 
+                    clip=False, name=dict_name, to_csv=False, dpath=dpath)
+            print('Done!')
+
+            detrend_signal_name = [x for x in detrend_channel_names if 'signal' in x][0]
+            detrend_reference_name = [x for x in detrend_channel_names if 'reference' in x][0]
+            detrended_signal = segment.analyzed[lookup[detrend_signal_name]]['all_traces']
+            detrended_reference = segment.analyzed[lookup[detrend_reference_name]]['all_traces']
+
+            # check to see if we need to filter after alignment
+            for process in [x for x in after_alignment if x['type'] == 'detrend']:
+                data = {detrend_signal_name: detrended_signal, detrend_reference_name: detrended_reference}
+                detrended_signal, detrended_reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
+                    input_sig_ch=detrend_signal_name, input_ref_ch=detrend_reference_name, 
+                    datatype='dataframe', **process['options'])
 
         ################# PLOT DETRENDED SIGNAL ###################################
 
             detrended_signal_mean = detrended_signal.mean(axis=1)
-
             detrended_signal_sem = detrended_signal.sem(axis=1)
 
             if smoothing_window is not None:
@@ -453,9 +366,10 @@ for dpath_ind, dpath in enumerate(dpaths):
             curr_ax = ax2
             # # curr_ax = axs[1, 0]
             #curr_ax = plt.axes()
-            if z_score_before_alignment:
+            if any([x['type'] == 'measure' for x in before_alignment]):
                 pass
             else:
+                z_score_window = [x['options']['period'] for x in after_alignment if x['type'] == 'measure'][0]
                 zscore_start = detrended_signal[z_score_window[0]:z_score_window[1]].index[0]
                 zscore_end = detrended_signal[z_score_window[0]:z_score_window[1]].index[-1]
                 zscore_height = detrended_signal[z_score_window[0]:z_score_window[1]].mean(axis=1).min()
@@ -472,7 +386,7 @@ for dpath_ind, dpath in enumerate(dpaths):
                 (detrended_signal_mean + detrended_signal_sem).values, color='b', alpha=0.05)
 
             # Plot event onset
-            if z_score_before_alignment:
+            if any([x['type'] == 'measure' for x in before_alignment]):
                 pass
             else:
                 curr_ax.legend(['z-score window'])
@@ -484,15 +398,34 @@ for dpath_ind, dpath in enumerate(dpaths):
             print('Done!')
         
         # ########### Calculate z-scores ###############################################
-            if z_score_before_alignment:
-                zscores = segment.analyzed[lookup['DeltaF_F_or_Z_score']]['all_traces']
-            else:
-                PrintNoNewLine('Calculating Z-Scores for %s trials...' % event)
-                # calculate z_scores
-                zscores = ZScoreCalculator(detrended_signal, baseline_start=z_score_window[0], 
-                    baseline_end=z_score_window[1])
-                print('Done!')
+            measure_channel_names = [x for x in before_alignment_channels if 'measure' in x]
+            if len(measure_channel_names) == 0:
+                measure_channel_names = [detrend_signal_name, detrend_reference_name]
 
+            PrintNoNewLine('Centering trials and analyzing for z scores...')
+            for channel in measure_channel_names:
+                dict_name = epoch_name + '_' + channel
+                lookup[channel] = dict_name
+
+                AlignEventsAndSignals(seg=segment, epoch_name=epoch_name, analog_ch_name=channel, 
+                    event_ch_name='Events', event=event, event_type='label', 
+                    prewindow=prewindow, postwindow=postwindow, window_type='event', 
+                    clip=False, name=dict_name, to_csv=False, dpath=dpath)
+            print('Done!')
+
+            measure_signal_name = [x for x in measure_channel_names if 'signal' in x][0]
+            measure_reference_name = [x for x in measure_channel_names if 'reference' in x][0]
+            measure_signal = segment.analyzed[lookup[measure_signal_name]]['all_traces']
+            measure_reference = segment.analyzed[lookup[measure_reference_name]]['all_traces']
+            
+            # check to see if we need to filter after alignment
+            for process in [x for x in after_alignment if x['type'] == 'measure']:
+                data = {measure_signal_name: measure_signal, measure_reference_name: measure_reference}
+                measure_signal, measure_reference = SingleStepProcessSignalData(data=data, process_type=process['type'], 
+                    input_sig_ch=measure_signal_name, input_ref_ch=measure_reference_name, 
+                    datatype='dataframe', **process['options'])
+
+            zscores = measure_signal.copy()
 
         ############################ Make rasters #######################################
             PrintNoNewLine('Making heatmap for %s trials...' % event)
@@ -516,9 +449,10 @@ for dpath_ind, dpath in enumerate(dpaths):
             curr_ax.axvline(zero, linestyle='--', color='black', linewidth=2)
             curr_ax.set_ylabel('Trial');
             curr_ax.set_xlabel('Time (s)');
-            if z_score_before_alignment:
+            if any([x['type'] == 'measure' for x in before_alignment]):
+                period = [x['options']['period'] for x in before_alignment if x['type'] == 'measure'][0]
                 sampling_per = segment.analogsignals[0].sampling_period
-                curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(round(deltaf_options['period'][0]*sampling_per), round(deltaf_options['period'][1]*sampling_per)));
+                curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(round(period[0]*sampling_per), round(period[1]*sampling_per)));
             else:
                 curr_ax.set_title('Z-Score Heat Map \n Baseline Window: {} to {} Seconds'.format(z_score_window[0], z_score_window[1]));
             print('Done!')

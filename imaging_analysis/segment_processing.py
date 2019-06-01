@@ -171,7 +171,7 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
 
     # Extract analog signal object
     try:
-        signal = filter(lambda x: x.name == analog_ch_name, seg.analogsignals)[0]
+        signal = filter(lambda x: x.name == analog_ch_name, seg.analogsignals)[-1]
     except:
         raise ValueError("""%s not in segment object. Did you not run 
             ProcessSignalData or misspell the analog_ch_name?"""
