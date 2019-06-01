@@ -171,7 +171,7 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
 
     # Extract analog signal object
     try:
-        signal = filter(lambda x: x.name == analog_ch_name, seg.analogsignals)[0]
+        signal = filter(lambda x: x.name == analog_ch_name, seg.analogsignals)[-1]
     except:
         raise ValueError("""%s not in segment object. Did you not run 
             ProcessSignalData or misspell the analog_ch_name?"""
@@ -360,6 +360,8 @@ def AlignEventsAndSignals(seg=None, epoch_name=None, analog_ch_name=None,
         event_df.to_csv(dpath + '_all_events.csv')
         # avg_df.to_csv(dpath + '_average_trace.csv')
         # pe_df.to_csv(dpath + '_point_estimate.csv')
+
+    return event_df
 
 
 
