@@ -1,0 +1,13 @@
+name: monkey_frog
+dependencies:
+  - pip
+  - numpy
+  - matplotlib
+  - pandas
+  - python=2.7
+  - ipython
+  - seaborn
+  - scipy
+  - pip:
+    - quantities
+    - neo
