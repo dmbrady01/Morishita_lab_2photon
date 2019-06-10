@@ -21,6 +21,7 @@ import copy as cp
 import types
 import pandas as pd
 from neo.core import AnalogSignal
+from copy import deepcopy
 
 def TruncateSignal(signal, start=0, end=0):
     """Given an AnalogSignal object, will remove the first 'start' seconds and the 
@@ -605,6 +606,8 @@ def SingleStepProcessSignalData(data=None, process_type='filter', input_sig_ch='
         }
     # Update based on kwargs
     options.update(kwargs)
+
+    options = deepcopy(options)
 
     if datatype == 'segment':
         # Retrieves signal and reference
