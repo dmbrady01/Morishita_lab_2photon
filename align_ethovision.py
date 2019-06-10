@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
+import os
 
-datapath = '~/Downloads/ethovision.csv'
-save_folder = '~/Downloads/'
-
+datapath = './data/ethovision.csv'
 time_offset = 0
 time_column = 'Trial time'
+minimum_bout_time = 1
+
+# Will save to the base folder of the datapath (example above saves to ~/Downloads/)
+save_folder = os.sep.join(datapath.split(os.sep)[:-1]) + os.sep
 
 # Reads the dataframe to figure out how many rows to skip
 header_df = pd.read_csv(datapath, header=None)
@@ -45,6 +48,12 @@ for column in zone_columns:
 
     results_df = pd.concat([results_df, zone_df], axis=0)
 
+# Combine all results and sort them
 results_df = results_df.sort_values('Bout start')
 results_df.reset_index(drop=True, inplace=True)
-results_df.to_csv(save_folder + animal_name + '.csv')
+
+# Make sure bouts are above minimum threshold
+results_df = results_df.loc[results_df['Bout end'] - results_df['Bout start'] >= minimum_bout_time]
+
+# Save data
+results_df.to_csv(save_folder + 'ethovision_' + animal_name + '.csv', index=False)
