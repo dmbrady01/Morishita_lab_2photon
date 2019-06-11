@@ -76,7 +76,7 @@ if __name__ == '__main__':
         help='Path to ethnovision csv.'
     )
     parser.add_argument(
-        '--savefolder', type=str, default='./data/',
+        '--savefolder', type=str, default=None,
         help='Folder to save data to'
     )
     parser.add_argument(
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         help='How much time to offset all bouts (to align with imaging data)',
     )
     parser.add_argument(
-        '--minimum-bout-time', type=str, default=0,
+        '--minimum-bout-time', type=float, default=0,
         help='minimum length of time for a bout',
     )
     args = parser.parse_args()
