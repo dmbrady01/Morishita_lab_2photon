@@ -80,7 +80,7 @@ if __name__ == '__main__':
         help='Folder to save data to'
     )
     parser.add_argument(
-        '--time-column', type=str, default='Time trial',
+        '--time-column', type=str, default='Trial time',
         help='Column in dataframe with times',
     )
     parser.add_argument(
@@ -92,11 +92,10 @@ if __name__ == '__main__':
         help='minimum length of time for a bout',
     )
     args = parser.parse_args()
-    print(args.datapath)
-    datapath=args.datapath, 
-    savefolder=args.savefolder, 
-    time_offset=args.time_offset, 
-    time_column=args.time_column, 
-    minimum_bout_time=args.minimum_bout_time
+    datapath = args.datapath 
+    savefolder = args.savefolder 
+    time_offset = args.time_offset 
+    time_column = args.time_column 
+    minimum_bout_time = args.minimum_bout_time
     main(datapath=datapath, savefolder=savefolder, time_offset=time_offset, time_column=time_column, 
         minimum_bout_time=minimum_bout_time)
