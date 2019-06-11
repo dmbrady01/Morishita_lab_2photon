@@ -84,7 +84,7 @@ if __name__ == '__main__':
         help='Column in dataframe with times',
     )
     parser.add_argument(
-        '--time-offset', type=int, default=0,
+        '--time-offset', type=float, default=0,
         help='How much time to offset all bouts (to align with imaging data)',
     )
     parser.add_argument(
