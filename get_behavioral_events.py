@@ -32,7 +32,7 @@ class GetBehavioralEvents(object):
 
             df.to_csv(self.savefolder + self.dtype + '_' + animal_name + '.csv', index=False)
 
-    def ethovision_to_list_of_dataframes(self):
+    def process_ethovision(self):
         # Reads the dataframe to figure out how many rows to skip
         header_df = pd.read_csv(self.datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
@@ -84,7 +84,7 @@ class GetBehavioralEvents(object):
         self.set_datapath()
         self.set_savefolder()
         if self.dtype == 'ethovision':
-            dataset = self.ethovision_to_list_of_dataframes()
+            dataset = self.process_ethovision()
         self.save_files(dataset)
 
 
