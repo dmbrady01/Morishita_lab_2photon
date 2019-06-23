@@ -3,6 +3,31 @@ import numpy as np
 import os
 import argparse
 
+class GetBehavioralEvents(object):
+
+    def __init__(self, datapath=None, savefolder=None, time_offset=0, time_column='Trial time', 
+        minimum_bout_time=1, dtype='ethovision'):
+        self.time_offset = time_offset
+        self.time_column = time_column
+        self.minimum_bout_time = minimum_bout_time
+        # Datapaths
+        self.savefolder = savefolder
+        self.datapath = datapath
+        self.dtype = dtype
+
+    def set_datapath(self):
+        if self.datapath is None:
+            self.datapath = './data/ethovision.csv'
+
+    def set_savefolder(self):
+        # Will save to the base folder of the datapath (example above saves to ~/Downloads/)
+        self.set_datapath()
+        if self.savefolder is None:
+            self.savefolder = os.sep.join(self.datapath.split(os.sep)[:-1]) + os.sep
+
+    def ethovision_to_list_of_dataframes(self):
+        pass       
+
 def main(datapath=None, savefolder=None, time_offset=0, time_column='Trial time', minimum_bout_time=1):
     
     if datapath is None:
