@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
 import os
+import re
 import argparse
 
 class GetBehavioralEvents(object):
 
-    def __init__(self, datapath=None, savefolder=None, time_offset=0, time_column='Trial time', 
-        minimum_bout_time=1, dtype='ethovision'):
+    def __init__(self, datapath=None, savefolder=None, time_offset=0, 
+        time_column='Trial time', minimum_bout_time=1, dtype='ethovision',
+        name_match=r'\d{5,}-\d*'):
+        # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
         self.minimum_bout_time = minimum_bout_time
@@ -14,6 +17,9 @@ class GetBehavioralEvents(object):
         self.savefolder = savefolder
         self.datapath = datapath
         self.dtype = dtype
+        # Animal info
+        self.name_match = name_match
+        self.regexp = None
 
     def set_datapath(self):
         if self.datapath is None:
@@ -24,6 +30,9 @@ class GetBehavioralEvents(object):
         self.set_datapath()
         if self.savefolder is None:
             self.savefolder = os.sep.join(self.datapath.split(os.sep)[:-1]) + os.sep
+
+    def compile_name_match(self):
+        self.regexp = re.compile(self.name_match)
 
     def save_files(self, dataset):
         for data in dataset:
@@ -80,11 +89,20 @@ class GetBehavioralEvents(object):
 
         return [(animal_name, results_df)]
 
+    def process_anymaze(self):
+        with open(self.datapath, 'r') as fp:
+            contents = fp.readlines()
+
+        animals = set([x.split()[0] for x in contents if bool(self.regexp.search(x))])
+
     def run(self):
+        self.compile_name_match()
         self.set_datapath()
         self.set_savefolder()
         if self.dtype == 'ethovision':
             dataset = self.process_ethovision()
+        elif self.dtype == 'anymaze':
+            dataset = self.process_anymaze()
         self.save_files(dataset)
 
 
