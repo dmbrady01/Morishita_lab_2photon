@@ -8,11 +8,12 @@ class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=1, dtype='ethovision',
-        name_match=r'\d{5,}-\d*', zone_match=r'zone'):
+        name_match=r'\d{5,}-\d*', max_session_time=600):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
         self.minimum_bout_time = minimum_bout_time
+        self.max_session_time = max_session_time
         # Datapaths
         self.savefolder = savefolder
         self.datapath = datapath
@@ -41,9 +42,24 @@ class GetBehavioralEvents(object):
     def prune_minimum_bouts(self, df):
         return df.loc[df['Bout end'] - df['Bout start'] >= self.minimum_bout_time]
 
+    def add_time_offset(self, df):
+        df['Bout start'] = df['Bout start'] + self.time_offset
+        df['Bout end'] = df['Bout end'] + self.time_offset
+        return df
+
+    def sort_by_bout_start(self, df):
+        # Combine all results and sort them
+        df = df.sort_values('Bout start')
+        df.reset_index(drop=True, inplace=True)
+        return df
+
+    def prune_offset_and_sort_dataset(self, dataset):
+        dataset = [(x[0], self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))) for x in dataset]
+        return dataset
+
     @staticmethod
     def clean_and_strip_string(string, sep=' '):
-        sep.join(string.split())
+        return sep.join(string.split())
 
     def process_ethovision(self):
         # Reads the dataframe to figure out how many rows to skip
@@ -70,8 +86,8 @@ class GetBehavioralEvents(object):
             entries_index = zone_series.loc[change_mask & (zone_series == 1)].index
             exits_index = zone_series.loc[change_mask & (zone_series == 0)].index
             # Entries and exits time
-            entry_times = data.loc[entries_index, self.time_column].values + self.time_offset
-            exit_times = data.loc[exits_index, self.time_column].values + self.time_offset
+            entry_times = data.loc[entries_index, self.time_column].values
+            exit_times = data.loc[exits_index, self.time_column].values
             # Add final time if mouse never does a last exit
             if len(exit_times) < len(entry_times):
                 exit_times = np.append(exit_times, data.loc[data.index[-1], time_column])
@@ -83,13 +99,6 @@ class GetBehavioralEvents(object):
             zone_df['Bout type'] = column
 
             results_df = pd.concat([results_df, zone_df], axis=0)
-
-        # Combine all results and sort them
-        results_df = results_df.sort_values('Bout start')
-        results_df.reset_index(drop=True, inplace=True)
-
-        # Make sure bouts are above minimum threshold
-        results_df = self.prune_minimum_bouts(results_df)
 
         return [(animal_name, results_df)]
 
@@ -105,7 +114,7 @@ class GetBehavioralEvents(object):
         animals = set([x.split()[0] for x in contents if bool(animal_regex.search(x))])
         datadict = {}
         for animal in animals:
-            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Milkshake Location'])
+            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Milkshake Location', 'Start ind', 'End ind'])
 
         zone = None
         milkshake_loc = None
@@ -115,7 +124,7 @@ class GetBehavioralEvents(object):
         bout_start = None
         bout_end = None
 
-        for line in contents:
+        for idx, line in enumerate(contents):
             line = self.clean_and_strip_string(line)
             # Check zone
             if bool(zone_regex.search(line)):
@@ -139,9 +148,19 @@ class GetBehavioralEvents(object):
                 # bout start
                 if (prev_time == 0) and (curr_time > 0):
                     bout_start = time_row[0] + curr_time
+                    start_ind = idx
+                # bout start at beginning of session
+                elif (curr_time > 0) and (time_row[0] == 0):
+                    bout_start = time_row[0] + curr_time
+                    start_ind = idx
                 # bout end
                 elif (prev_time > 0) and (curr_time == 0):
                     bout_end = time_row[0] + prev_time - 1
+                    end_ind = idx
+                # # bout end because session ends
+                elif (curr_time > 0) and (time_row[1] == self.max_session_time):
+                    bout_end = time_row[0] + curr_time
+                    end_ind = idx
 
                 # Log bout and reset bout start/end
                 if (bout_start is not None) and (bout_end is not None):
@@ -150,11 +169,15 @@ class GetBehavioralEvents(object):
                             'Bout type': zone,
                             'Bout start': bout_start,
                             'Bout end': bout_end,
-                            'Milkshake Location': milkshake_loc
+                            'Milkshake Location': milkshake_loc,
+                            'Start ind': start_ind,
+                            'End ind': end_ind
                     }
-                    datadict[animal] = datadict[animal].append(row)
+                    datadict[animal] = datadict[animal].append(row, ignore_index=True)
                     bout_start = None
                     bout_end = None
+                    prev_time = 0
+                    curr_time = 0
 
                 prev_time = curr_time
 
@@ -162,12 +185,12 @@ class GetBehavioralEvents(object):
 
 
     def run(self):
-        self.set_datapath()
         self.set_savefolder()
         if self.dtype == 'ethovision':
             dataset = self.process_ethovision()
         elif self.dtype == 'anymaze':
             dataset = self.process_anymaze()
+        dataset = self.prune_offset_and_sort_dataset(dataset)
         self.save_files(dataset)
 
 
