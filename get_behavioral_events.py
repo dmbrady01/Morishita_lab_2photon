@@ -100,7 +100,7 @@ class GetBehavioralEvents(object):
         animal_regex = re.compile(self.name_match)
         zone_regex = re.compile(r'zone')
         milkshake_loc_regex = re.compile(r'^(Left|Right)')
-        time_regex = re.compile(r'secs')
+        time_regex = re.compile(r'secs\. 1')
 
         animals = set([x.split()[0] for x in contents if bool(animal_regex.search(x))])
         datadict = {}
@@ -110,20 +110,56 @@ class GetBehavioralEvents(object):
         zone = None
         milkshake_loc = None
         animal = None
-        time = None
+        prev_time = 0
+        curr_time = 0
+        bout_start = None
+        bout_end = None
 
         for line in contents:
+            line = self.clean_and_strip_string(line)
             # Check zone
             if bool(zone_regex.search(line)):
-                zone = self.clean_and_strip_string(line)
+                zone = line
 
             # Check milkshake location
             elif bool(milkshake_loc_regex.search(line)):
-                milkshake_loc = self.clean_and_strip_string(line)
+                milkshake_loc = line
 
             # Check animal location
             elif bool(animal_regex.search(line)):
-                animal = self.clean_and_strip_string(line)
+                animal = line
+
+            # Check time information - skip case (N = 0)
+            elif time_regex.search(line):
+                # Splits the time row '100 - 101 secs.          1   0.00    0.0' ->
+                # [100, 101, 1, 0, 0]
+                time_row = [float(x) for x in line.replace('- ', '').replace('secs. ', '').split(' ')]
+                curr_time = time_row[-1]
+
+                # bout start
+                if (prev_time == 0) and (curr_time > 0):
+                    bout_start = time_row[0] + curr_time
+                # bout end
+                elif (prev_time > 0) and (curr_time == 0):
+                    bout_end = time_row[0] + prev_time - 1
+
+                # Log bout and reset bout start/end
+                if (bout_start is not None) and (bout_end is not None):
+                    # prepare dictionary for row append
+                    row = {
+                            'Bout type': zone,
+                            'Bout start': bout_start,
+                            'Bout end': bout_end,
+                            'Milkshake Location': milkshake_loc
+                    }
+                    datadict[animal] = datadict[animal].append(row)
+                    bout_start = None
+                    bout_end = None
+
+                prev_time = curr_time
+
+        return datadict.items()
+
 
     def run(self):
         self.set_datapath()
