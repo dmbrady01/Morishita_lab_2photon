@@ -114,7 +114,7 @@ class GetBehavioralEvents(object):
         animals = set([x.split()[0] for x in contents if bool(animal_regex.search(x))])
         datadict = {}
         for animal in animals:
-            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Milkshake Location', 'Start ind', 'End ind'])
+            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Milkshake Location'])
 
         zone = None
         milkshake_loc = None
@@ -169,9 +169,7 @@ class GetBehavioralEvents(object):
                             'Bout type': zone,
                             'Bout start': bout_start,
                             'Bout end': bout_end,
-                            'Milkshake Location': milkshake_loc,
-                            'Start ind': start_ind,
-                            'End ind': end_ind
+                            'Milkshake Location': milkshake_loc
                     }
                     datadict[animal] = datadict[animal].append(row, ignore_index=True)
                     bout_start = None
@@ -213,12 +211,16 @@ if __name__ == '__main__':
         help='How much time to offset all bouts (to align with imaging data)',
     )
     parser.add_argument(
-        '--minimum-bout-time', type=float, default=0,
+        '--minimum-bout-time', type=float, default=1,
         help='minimum length of time for a bout',
     )
     parser.add_argument(
         '--datatype', type=str, default='ethovision',
         help='datatype (ethovision, anymaze, etc.)'
+        )
+    parser.add_argument(
+        '--max-session-time', type=float, default=600,
+        help='Maximum time for a recording session'
         )
     args = parser.parse_args()
     datapath = args.datapath 
@@ -227,6 +229,7 @@ if __name__ == '__main__':
     time_column = args.time_column 
     minimum_bout_time = args.minimum_bout_time
     dtype = args.datatype
+    max_session_time = args.max_session_time
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -234,6 +237,7 @@ if __name__ == '__main__':
                                         time_offset=time_offset, 
                                         time_column=time_column, 
                                         minimum_bout_time=minimum_bout_time,
-                                        dtype=dtype
+                                        dtype=dtype,
+                                        max_session_time=max_session_time
                                     )
     event_parser.run()
