@@ -4,11 +4,34 @@ import os
 import re
 import argparse
 
+BOUT_TYPE_DICT = [
+    {
+        'location': 'right',
+        'zone': 'left interaction',
+        'name': 'object'
+    },
+    {
+        'location': 'left',
+        'zone': 'left interaction',
+        'name': 'social'
+    },
+    {
+        'location': 'right',
+        'zone': 'right interaction',
+        'name': 'social'
+    },
+    {
+        'location': 'left',
+        'zone': 'right interaction',
+        'name': 'object'
+    }
+]
+
 class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=1, datatype='ethovision',
-        name_match=r'\d{5,}-\d*', max_session_time=600):
+        name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -20,6 +43,7 @@ class GetBehavioralEvents(object):
         self.datatype = datatype
         # Animal info
         self.name_match = name_match
+        self.label_dict = label_dict
 
     def set_datapath(self):
         if self.datapath is None:
@@ -53,9 +77,24 @@ class GetBehavioralEvents(object):
         df.reset_index(drop=True, inplace=True)
         return df
 
-    def prune_offset_and_sort_dataset(self, dataset):
-        dataset = [(x[0], self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))) for x in dataset]
+    def relabel_bout_type(self, zone, stimulus):
+        new_name = None
+        for case in self.label_dict:
+            if case['zone'] in zone.lower() and case['location'] in stimulus.lower():
+                new_name = case['name']
+        if new_name is None:
+            new_name = zone
+        return new_name
+
+    def relabel_bout_type_for_df(self, df):
+        # Relabel bout types
+        df['Bout type'] = df.apply(lambda x: self.relabel_bout_type(x['Bout type'], x['Stimulus Location']), axis=1)
+        return df
+
+    def prune_offset_sort_and_relabel_dataset(self, dataset):
+        dataset = [(x[0], self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1]))))) for x in dataset]
         return dataset
+
 
     @staticmethod
     def clean_and_strip_string(string, sep=' '):
@@ -74,6 +113,8 @@ class GetBehavioralEvents(object):
 
         # Get the zone columns
         zone_columns = [x for x in data.columns if 'In zone' in x]
+        # # relabel zone columns
+        # zone_columns = [self.relabel_bout_type(x, stimulus_location) for x in zone_columns]
 
         results_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
 
@@ -171,7 +212,7 @@ class GetBehavioralEvents(object):
                             'Bout type': zone,
                             'Bout start': bout_start,
                             'Bout end': bout_end,
-                            'Milkshake Location': milkshake_loc
+                            'Stimulus Location': milkshake_loc
                     }
                     datadict[animal] = datadict[animal].append(row, ignore_index=True)
                     bout_start = None
@@ -190,7 +231,7 @@ class GetBehavioralEvents(object):
             dataset = self.process_ethovision()
         elif self.datatype == 'anymaze':
             dataset = self.process_anymaze()
-        dataset = self.prune_offset_and_sort_dataset(dataset)
+        dataset = self.prune_offset_sort_and_relabel_dataset(dataset)
         self.save_files(dataset)
 
 
