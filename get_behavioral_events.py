@@ -7,23 +7,43 @@ import argparse
 BOUT_TYPE_DICT = [
     {
         'location': 'right',
-        'zone': 'left interaction',
+        'zone': ['left interaction'],
         'name': 'object'
     },
     {
         'location': 'left',
-        'zone': 'left interaction',
+        'zone': ['left interaction'],
         'name': 'social'
     },
     {
         'location': 'right',
-        'zone': 'right interaction',
+        'zone': ['right interaction'],
         'name': 'social'
     },
     {
         'location': 'left',
-        'zone': 'right interaction',
+        'zone': ['right interaction'],
         'name': 'object'
+    },
+    {
+        'location': 'right',
+        'zone': ['left chamber', 'left basin'],
+        'name': 'chamber to object'
+    },
+    {
+        'location': 'left',
+        'zone': ['left chamber', 'left basin'],
+        'name': 'chamber to social'
+    },
+    {
+        'location': 'right',
+        'zone': ['right chamber', 'right basin'],
+        'name': 'chamber to social'
+    },
+    {
+        'location': 'left',
+        'zone': ['right chamber', 'right basin'],
+        'name': 'chamber to object'
     }
 ]
 
@@ -80,7 +100,7 @@ class GetBehavioralEvents(object):
     def relabel_bout_type(self, zone, stimulus):
         new_name = None
         for case in self.label_dict:
-            if case['zone'] in zone.lower() and case['location'] in stimulus.lower():
+            if any([x in zone.lower() for x in case['zone']]) and case['location'] in stimulus.lower():
                 new_name = case['name']
         if new_name is None:
             new_name = zone
