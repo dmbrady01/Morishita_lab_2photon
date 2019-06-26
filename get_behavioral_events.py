@@ -114,7 +114,7 @@ class GetBehavioralEvents(object):
         animals = set([x.split()[0] for x in contents if bool(animal_regex.search(x))])
         datadict = {}
         for animal in animals:
-            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Milkshake Location'])
+            datadict[animal] = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
 
         zone = None
         milkshake_loc = None
