@@ -133,7 +133,7 @@ class GetBehavioralEvents(object):
         try:
             stimulus_location = header_df.loc[header_df[0] == 'Stimulus location', 1].values[0]
         except:
-            stimulus_location = header_df.loc[header_df[0] == 'Stranger location', 1].values[0]
+            stimulus_location = header_df.loc[header_df[0] == 'Stranger Location', 1].values[0]
 
         # read the data again
         data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
@@ -144,7 +144,7 @@ class GetBehavioralEvents(object):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.offset_datapath)
 
         # find first time value after initialization
-        start_value = data[data[self.time_column] > 1.034, self.time_column].values[0]
+        start_value = data.loc[data[self.time_column] > 1.034, self.time_column].values[0]
 
         return start_value
 
