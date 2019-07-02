@@ -3,6 +3,7 @@ import numpy as np
 import os
 import re
 import argparse
+from imaging_analysis.utils import ReadNeoTdt
 
 BOUT_TYPE_DICT = [
     {
@@ -51,7 +52,8 @@ class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=1, datatype='ethovision',
-        name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT):
+        name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
+        offset_datapath=None, fp_datapath=None):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -61,6 +63,8 @@ class GetBehavioralEvents(object):
         self.savefolder = savefolder
         self.datapath = datapath
         self.datatype = datatype
+        self.offset_datapath = offset_datapath
+        self.fp_datapath = fp_datapath
         # Animal info
         self.name_match = name_match
         self.label_dict = label_dict
@@ -115,21 +119,49 @@ class GetBehavioralEvents(object):
         dataset = [(x[0], self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1]))))) for x in dataset]
         return dataset
 
-
     @staticmethod
     def clean_and_strip_string(string, sep=' '):
         return sep.join(string.split())
 
-    def process_ethovision(self):
+    @staticmethod
+    def load_ethovision_data(datapath):
         # Reads the dataframe to figure out how many rows to skip
-        header_df = pd.read_csv(self.datapath, header=None)
+        header_df = pd.read_csv(datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
         # Gets the animal name
         animal_name = header_df.loc[header_df[0] == 'Animal ID', 1].values[0]
-        stimulus_location = header_df.loc[header_df[0] == 'Stimulus location', 1].values[0]
+        try:
+            stimulus_location = header_df.loc[header_df[0] == 'Stimulus location', 1].values[0]
+        except:
+            stimulus_location = header_df.loc[header_df[0] == 'Stranger Location', 1].values[0]
 
         # read the data again
-        data = pd.read_csv(self.datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
+        data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
+
+        return data, animal_name, stimulus_location
+
+    def get_ethovision_start_ttl(self):
+        data, animal_name, stimulus_location = self.load_ethovision_data(self.offset_datapath)
+
+        # find first time value after initialization
+        start_value = data.loc[data[self.time_column] > 1.034, self.time_column].values[0]
+
+        return start_value
+
+    def get_fp_start_ttl(self):
+        block = ReadNeoTdt(path=self.fp_datapath)
+        seglist = block.segments
+        seg = seglist[0]
+        return seg.events[1].times[0].magnitude
+
+    def get_ethovision_offset(self):
+        etho_start = self.get_ethovision_start_ttl()
+        fp_start = self.get_fp_start_ttl()
+        offset = fp_start - etho_start
+        return offset
+
+    def process_ethovision(self):
+        data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
 
         # Get the zone columns
         zone_columns = [x for x in data.columns if 'In zone' in x]
@@ -244,10 +276,12 @@ class GetBehavioralEvents(object):
 
         return datadict.items()
 
-
     def run(self):
         self.set_savefolder()
         if self.datatype == 'ethovision':
+            # Calculate offset
+            if (self.fp_datapath is not None) and (self.offset_datapath is not None):
+                self.time_offset = self.get_ethovision_offset()
             dataset = self.process_ethovision()
         elif self.datatype == 'anymaze':
             dataset = self.process_anymaze()
@@ -259,7 +293,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--datapath', type=str, default='./data/ethovision.csv',
-        help='Path to ethnovision csv.'
+        help='Path to ethovision csv.'
     )
     parser.add_argument(
         '--savefolder', type=str, default=None,
@@ -285,6 +319,13 @@ if __name__ == '__main__':
         '--max-session-time', type=float, default=600,
         help='Maximum time for a recording session'
         )
+    parser.add_argument(
+        '--offset-datapath', type=str, default=None,
+        help='Path to ethovision hardware arena csv'
+        )
+    parser.add_argument(
+        '--fp-datapath', type=str, default=None,
+        help='Path to FP data')
     args = parser.parse_args()
     datapath = args.datapath 
     savefolder = args.savefolder 
@@ -293,6 +334,8 @@ if __name__ == '__main__':
     minimum_bout_time = args.minimum_bout_time
     datatype = args.datatype
     max_session_time = args.max_session_time
+    offset_datapath = args.offset_datapath
+    fp_datapath = args.fp_datapath
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -301,6 +344,8 @@ if __name__ == '__main__':
                                         time_column=time_column, 
                                         minimum_bout_time=minimum_bout_time,
                                         datatype=datatype,
-                                        max_session_time=max_session_time
+                                        max_session_time=max_session_time,
+                                        offset_datapath=offset_datapath,
+                                        fp_datapath=fp_datapath
                                     )
     event_parser.run()
