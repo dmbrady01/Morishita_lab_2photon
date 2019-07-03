@@ -1,6 +1,5 @@
 name: monkey_frog
 dependencies:
-  - pip=19.0.2
   - numpy=1.16.4
   - matplotlib=2.2.3
   - pandas=0.24.2
@@ -9,6 +8,7 @@ dependencies:
   - seaborn=0.9.0
   - scipy=1.2.1
   - xlrd=1.2.0
+  - pip=19.0.1
   - pip:
-    - quantities=0.12.3
-    - neo=0.7.1
+    - quantities==0.12.3
+    - neo==0.7.1
