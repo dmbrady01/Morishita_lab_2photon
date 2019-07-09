@@ -48,12 +48,18 @@ BOUT_TYPE_DICT = [
     }
 ]
 
+STIMULUS_NAME_SET = {
+    'milkshake location',
+    'stranger location',
+    'stimulus location'
+}
+
 class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=1, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
-        offset_datapath=None, fp_datapath=None):
+        offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -68,6 +74,8 @@ class GetBehavioralEvents(object):
         # Animal info
         self.name_match = name_match
         self.label_dict = label_dict
+        # Added to stimulus set
+        self.stimulus_name_set = stimulus_name_set
 
     def set_datapath(self):
         if self.datapath is None:
@@ -123,17 +131,13 @@ class GetBehavioralEvents(object):
     def clean_and_strip_string(string, sep=' '):
         return sep.join(string.split())
 
-    @staticmethod
-    def load_ethovision_data(datapath):
+    def load_ethovision_data(self, datapath):
         # Reads the dataframe to figure out how many rows to skip
         header_df = pd.read_csv(datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
         # Gets the animal name
         animal_name = header_df.loc[header_df[0] == 'Animal ID', 1].values[0]
-        try:
-            stimulus_location = header_df.loc[header_df[0] == 'Stimulus location', 1].values[0]
-        except:
-            stimulus_location = header_df.loc[header_df[0] == 'Stranger Location', 1].values[0]
+        stimulus_location = header_df.loc[header_df[0].str.lower().isin(self.stimulus_name_set), 1].values[0]
 
         # read the data again
         data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
@@ -141,7 +145,7 @@ class GetBehavioralEvents(object):
         return data, animal_name, stimulus_location
 
     def get_ethovision_start_ttl(self):
-        data, animal_name, stimulus_location = self.load_ethovision_data(self.offset_datapath)
+        data, _, _ = self.load_ethovision_data(self.offset_datapath)
 
         # find first time value after initialization
         start_value = data.loc[data[self.time_column] > 1.034, self.time_column].values[0]
