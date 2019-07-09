@@ -177,7 +177,9 @@ class GetBehavioralEvents(object):
         for column in zone_columns:
             zone_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
             # Separate by zone type
-            zone_series = data.loc[:, column]
+            # zone_series = data.loc[:, column]
+            # Get rid of missing data
+            zone_series = data.loc[data.loc[:, column].astype(str).isin({'0', '1'}), column].astype(int)
             # Mask for entering/exiting
             change_mask = zone_series.diff().abs() > 0
             # Entries and exits indices
