@@ -8,22 +8,22 @@ from imaging_analysis.utils import ReadNeoTdt
 BOUT_TYPE_DICT = [
     {
         'location': 'right',
-        'zone': ['left interaction'],
+        'zone': ['left interaction', 'left sniffing'],
         'name': 'object'
     },
     {
         'location': 'left',
-        'zone': ['left interaction'],
+        'zone': ['left interaction', 'left sniffing'],
         'name': 'social'
     },
     {
         'location': 'right',
-        'zone': ['right interaction'],
+        'zone': ['right interaction', 'right sniffing'],
         'name': 'social'
     },
     {
         'location': 'left',
-        'zone': ['right interaction'],
+        'zone': ['right interaction', 'right sniffing'],
         'name': 'object'
     },
     {
