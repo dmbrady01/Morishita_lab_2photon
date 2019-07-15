@@ -190,9 +190,9 @@ class GetBehavioralEvents(object):
             exit_times = data.loc[exits_index, self.time_column].values
             # Add final time if mouse never does a last exit
             if len(exit_times) < len(entry_times):
-                exit_times = np.append(exit_times, data.loc[data.index[-1], time_column])
-            elif len(entry_times) > len(exit_times):
-                entry_times = np.append(data.loc[0, time_column], entry_times)
+                exit_times = np.append(exit_times, data.loc[data.index[-1], self.time_column])
+            elif len(exit_times) > len(entry_times):
+                entry_times = np.append(data.loc[0, self.time_column], entry_times)
             # Add to zone_df
             zone_df['Bout start'] = entry_times
             zone_df['Bout end'] = exit_times
