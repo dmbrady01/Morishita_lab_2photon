@@ -11,4 +11,4 @@ dependencies:
   - pip=19.0.1
   - pip:
     - quantities==0.12.3
-    - neo==0.7.1
+    - neo==0.5.2
