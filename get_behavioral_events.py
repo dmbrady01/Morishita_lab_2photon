@@ -57,7 +57,7 @@ STIMULUS_NAME_SET = {
 class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
-        time_column='Trial time', minimum_bout_time=1, datatype='ethovision',
+        time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET):
         # Timing info
