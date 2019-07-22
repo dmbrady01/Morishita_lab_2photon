@@ -164,6 +164,20 @@ class GetBehavioralEvents(object):
         offset = fp_start - etho_start
         return offset
 
+    @staticmethod
+    def unspool_dataframe(df):
+        list_of_dataframes = []
+        for time in ['start', 'end']:
+            new_df = pd.DataFrame(columns=['Bout type', 'Timestamp', 'Stimulus Location'])
+            new_df['Bout type'] = df['Bout type'] + ' (Bout {})'.format(time)
+            new_df['Timestamp'] = df['Bout {}'.format(time)]
+            new_df['Stimulus Location'] = df['Stimulus Location']
+            list_of_dataframes.append(new_df)
+
+        df = pd.concat(list_of_dataframes, ignore_index=True)
+        df = df.sort_values(by=['Timestamp', 'Bout type']).reset_index(drop=True)
+        return df
+
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
 
