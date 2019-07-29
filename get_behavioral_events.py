@@ -29,22 +29,22 @@ BOUT_TYPE_DICT = [
     {
         'location': 'right',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber to object'
+        'name': 'chamber_to_object'
     },
     {
         'location': 'left',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber to social'
+        'name': 'chamber_to_social'
     },
     {
         'location': 'right',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber to social'
+        'name': 'chamber_to_social'
     },
     {
         'location': 'left',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber to object'
+        'name': 'chamber_to_object'
     }
 ]
 
@@ -57,7 +57,7 @@ STIMULUS_NAME_SET = {
 class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
-        time_column='Trial time', minimum_bout_time=1, datatype='ethovision',
+        time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET):
         # Timing info
@@ -123,9 +123,18 @@ class GetBehavioralEvents(object):
         df['Bout type'] = df.apply(lambda x: self.relabel_bout_type(x['Bout type'], x['Stimulus Location']), axis=1)
         return df
 
-    def prune_offset_sort_and_relabel_dataset(self, dataset):
-        dataset = [(x[0], self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1]))))) for x in dataset]
-        return dataset
+    def process_dataset(self, dataset):
+        "Runs the following jobs: add time offset, prune minimum bouts, sort by bout start, relabel bout types, anneal bouts"
+        cleaned_dataset = []
+        for name, df in dataset:
+            df = self.add_time_offset(df)
+            df = self.prune_minimum_bouts(df)
+            df = self.sort_by_bout_start(df)
+            df = self.relabel_bout_type_for_df(df)
+            df = self.anneal_bouts(df)
+            cleaned_dataset.append((name, df))
+        # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
+        return cleaned_dataset
 
     @staticmethod
     def clean_and_strip_string(string, sep=' '):
@@ -163,6 +172,31 @@ class GetBehavioralEvents(object):
         fp_start = self.get_fp_start_ttl()
         offset = fp_start - etho_start
         return offset
+
+    @staticmethod
+    def unspool_dataframe(df):
+        list_of_dataframes = []
+        for time in ['start', 'end']:
+            new_df = pd.DataFrame(columns=['Bout type', 'Timestamp', 'Stimulus Location'])
+            new_df['Bout type'] = df['Bout type'] + ' (Bout {})'.format(time)
+            new_df['Timestamp'] = df['Bout {}'.format(time)]
+            new_df['Stimulus Location'] = df['Stimulus Location']
+            list_of_dataframes.append(new_df)
+
+        df = pd.concat(list_of_dataframes, ignore_index=True)
+        df = df.sort_values(by=['Timestamp', 'Bout type']).reset_index(drop=True)
+        return df
+
+    @staticmethod
+    def anneal_bouts(df):
+        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
+        change_bout_type_mask.name = None
+        change_bout_type_mask[0] = True
+        grouper = change_bout_type_mask.astype(int).cumsum()
+        agg_fns = {col: 'first' for col in df.columns}
+        agg_fns['Bout end'] = 'last'
+        new_df = df.groupby(grouper).agg(agg_fns)
+        return new_df[df.columns]
 
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
@@ -291,7 +325,7 @@ class GetBehavioralEvents(object):
             dataset = self.process_ethovision()
         elif self.datatype == 'anymaze':
             dataset = self.process_anymaze()
-        dataset = self.prune_offset_sort_and_relabel_dataset(dataset)
+        dataset = self.process_dataset(dataset)
         self.save_files(dataset)
 
 
