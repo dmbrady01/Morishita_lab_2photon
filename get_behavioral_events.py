@@ -124,8 +124,16 @@ class GetBehavioralEvents(object):
         return df
 
     def prune_offset_sort_and_relabel_dataset(self, dataset):
-        dataset = [(x[0], self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1]))))) for x in dataset]
-        return dataset
+        cleaned_dataset = []
+        for name, df in dataset:
+            df = self.add_time_offset(df)
+            df = self.prune_minimum_bouts(df)
+            df = self.sort_by_bout_start(df)
+            df = self.relabel_bout_type_for_df(df)
+            df = self.anneal_bouts(df)
+            cleaned_dataset.append((name, df))
+        # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
+        return cleaned_dataset
 
     @staticmethod
     def clean_and_strip_string(string, sep=' '):
@@ -177,6 +185,17 @@ class GetBehavioralEvents(object):
         df = pd.concat(list_of_dataframes, ignore_index=True)
         df = df.sort_values(by=['Timestamp', 'Bout type']).reset_index(drop=True)
         return df
+
+    @staticmethod
+    def anneal_bouts(df):
+        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
+        change_bout_type_mask.name = None
+        change_bout_type_mask[0] = True
+        grouper = change_bout_type_mask.astype(int).cumsum()
+        agg_fns = {col: 'first' for col in df.columns}
+        agg_fns['Bout end'] = 'last'
+        new_df = df.groupby(grouper).agg(agg_fns)
+        return new_df[df.columns]
 
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
