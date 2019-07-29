@@ -123,7 +123,8 @@ class GetBehavioralEvents(object):
         df['Bout type'] = df.apply(lambda x: self.relabel_bout_type(x['Bout type'], x['Stimulus Location']), axis=1)
         return df
 
-    def prune_offset_sort_and_relabel_dataset(self, dataset):
+    def process_dataset(self, dataset):
+        "Runs the following jobs: add time offset, prune minimum bouts, sort by bout start, relabel bout types, anneal bouts"
         cleaned_dataset = []
         for name, df in dataset:
             df = self.add_time_offset(df)
@@ -324,7 +325,7 @@ class GetBehavioralEvents(object):
             dataset = self.process_ethovision()
         elif self.datatype == 'anymaze':
             dataset = self.process_anymaze()
-        dataset = self.prune_offset_sort_and_relabel_dataset(dataset)
+        dataset = self.process_dataset(dataset)
         self.save_files(dataset)
 
 
