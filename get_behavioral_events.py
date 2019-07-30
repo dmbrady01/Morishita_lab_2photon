@@ -29,22 +29,22 @@ BOUT_TYPE_DICT = [
     {
         'location': 'right',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber_to_object'
+        'name': 'object_chamber'
     },
     {
         'location': 'left',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber_to_social'
+        'name': 'social_chamber'
     },
     {
         'location': 'right',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber_to_social'
+        'name': 'social_chamber'
     },
     {
         'location': 'left',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber_to_object'
+        'name': 'object_chamber'
     }
 ]
 
