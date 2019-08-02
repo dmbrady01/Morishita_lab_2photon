@@ -45,6 +45,16 @@ BOUT_TYPE_DICT = [
         'location': 'left',
         'zone': ['right chamber', 'right basin'],
         'name': 'object_chamber'
+    },
+    {
+        'location': 'left',
+        'zone': ['center'],
+        'name': 'center_chamber'
+    },
+    {
+        'location': 'right',
+        'zone': ['center'],
+        'name': 'center_chamber'
     }
 ]
 
