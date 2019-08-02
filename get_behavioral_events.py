@@ -140,12 +140,17 @@ class GetBehavioralEvents(object):
         cleaned_dataset = []
         for name, df in dataset:
             df = self.add_time_offset(df)
-            df = self.prune_minimum_bouts(df)
             df = self.sort_by_bout_start(df)
             df = self.relabel_bout_type_for_df(df)
             df = self.calculate_bout_duration(df)
             df = self.calculate_interbout_latency(df)
             df = self.anneal_bouts(df, latency_threshold=self.latency_threshold)
+            df = self.prune_minimum_bouts(df)
+            df = self.calculate_bout_duration(df)
+            df = self.calculate_interbout_latency(df)
+            df = self.anneal_bouts(df, latency_threshold=self.latency_threshold)
+            df = self.calculate_bout_duration(df)
+            df = self.calculate_interbout_latency(df)
             cleaned_dataset.append((name, df))
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
