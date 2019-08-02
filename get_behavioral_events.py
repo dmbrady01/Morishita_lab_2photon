@@ -142,15 +142,12 @@ class GetBehavioralEvents(object):
             df = self.add_time_offset(df)
             df = self.sort_by_bout_start(df)
             df = self.relabel_bout_type_for_df(df)
-            df = self.calculate_bout_duration(df)
-            df = self.calculate_interbout_latency(df)
+            df = self.calculate_bout_durations_and_latencies(df)
             df = self.anneal_bouts(df, latency_threshold=self.latency_threshold)
             df = self.prune_minimum_bouts(df)
-            df = self.calculate_bout_duration(df)
-            df = self.calculate_interbout_latency(df)
+            df = self.calculate_bout_durations_and_latencies(df)
             df = self.anneal_bouts(df, latency_threshold=self.latency_threshold)
-            df = self.calculate_bout_duration(df)
-            df = self.calculate_interbout_latency(df)
+            df = self.calculate_bout_durations_and_latencies(df)
             cleaned_dataset.append((name, df))
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
@@ -193,13 +190,13 @@ class GetBehavioralEvents(object):
         return offset
 
     @staticmethod
-    def anneal_bouts(df, latency_threshold=10):
+    def anneal_bouts(df, latency_threshold=10, latency_col='Latency from previous bout end'):
         # transition mask
         change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
         change_bout_type_mask.name = None
         change_bout_type_mask[0] = True
         # latency mask
-        latency_mask = df['Latency from previous bout'] >= latency_threshold
+        latency_mask = df[latency_col] >= latency_threshold
         latency_mask.name = None
         # full mask
         full_mask = change_bout_type_mask | latency_mask
@@ -215,9 +212,17 @@ class GetBehavioralEvents(object):
         return df
 
     @staticmethod
-    def calculate_interbout_latency(df, start_col='Bout start', end_col='Bout end'):
-        df['Latency from previous bout'] = df['Bout start'] - df['Bout end'].shift(1)
+    def calculate_interbout_latency(df, start_col='Bout start', end_col='Bout end', 
+        name='Latency from previous bout end'):
+        df[name] = df[start_col] - df[end_col].shift(1)
         # df['Latency to next bout'] = df['Latency from previous bout'].shift(-1)
+        return df
+
+    def calculate_bout_durations_and_latencies(self, df):
+        df = self.calculate_bout_duration(df)
+        df = self.calculate_interbout_latency(df)
+        df = self.calculate_interbout_latency(df, end_col='Bout start', 
+            name='Latency from previous bout start')
         return df
 
     def process_ethovision(self):
