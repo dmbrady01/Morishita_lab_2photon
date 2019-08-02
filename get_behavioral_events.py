@@ -156,36 +156,40 @@ class GetBehavioralEvents(object):
     def clean_and_strip_string(string, sep=' '):
         return sep.join(string.split())
 
-    def load_ethovision_data(self, datapath):
+    @staticmethod
+    def load_ethovision_data(datapath, stimulus_name_set=STIMULUS_NAME_SET):
         # Reads the dataframe to figure out how many rows to skip
         header_df = pd.read_csv(datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
         # Gets the animal name
         animal_name = header_df.loc[header_df[0] == 'Animal ID', 1].values[0]
-        stimulus_location = header_df.loc[header_df[0].str.lower().isin(self.stimulus_name_set), 1].values[0]
+        stimulus_location = header_df.loc[header_df[0].str.lower().isin(stimulus_name_set), 1].values[0]
 
         # read the data again
         data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
 
         return data, animal_name, stimulus_location
 
-    def get_ethovision_start_ttl(self):
-        data, _, _ = self.load_ethovision_data(self.offset_datapath)
+    def get_ethovision_start_ttl(self, datapath=None, stimulus_name_set=STIMULUS_NAME_SET, 
+        time_column='Trial time'):
+        data, _, _ = self.load_ethovision_data(datapath, stimulus_name_set=stimulus_name_set)
 
         # find first time value after initialization
-        start_value = data.loc[data[self.time_column] > 1.034, self.time_column].values[0]
+        start_value = data.loc[data[time_column] > 1.034, time_column].values[0]
 
         return start_value
 
-    def get_fp_start_ttl(self):
-        block = ReadNeoTdt(path=self.fp_datapath)
+    @staticmethod
+    def get_fp_start_ttl(fp_datapath):
+        block = ReadNeoTdt(path=fp_datapath)
         seglist = block.segments
         seg = seglist[0]
         return seg.events[1].times[0].magnitude
 
     def get_ethovision_offset(self):
-        etho_start = self.get_ethovision_start_ttl()
-        fp_start = self.get_fp_start_ttl()
+        etho_start = self.get_ethovision_start_ttl(datapath=self.offset_datapath, 
+            stimulus_name_set=self.stimulus_name_set, time_column=self.time_column)
+        fp_start = self.get_fp_start_ttl(self.fp_datapath)
         offset = fp_start - etho_start
         return offset
 
@@ -226,7 +230,8 @@ class GetBehavioralEvents(object):
         return df
 
     def process_ethovision(self):
-        data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
+        data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath, 
+            stimulus_name_set=self.stimulus_name_set)
 
         # Get the zone columns
         zone_columns = [x for x in data.columns if 'In zone' in x]
