@@ -331,7 +331,7 @@ class TestNormalizeSignal(unittest.TestCase):
 
     def test_no_reference_nor_detrend(self):
         "Tests with no reference and no detrend."
-        output = NormalizeSignal(self.signal, fs=self.fs, detrend=False)
+        output = NormalizeSignal(self.signal, fs=self.fs, detrend=False, mode='median')
         test_output = FilterSignal(self.signal, highcut=40.0, fs=self.fs)
         test_output = DeltaFOverF(test_output)
         equal = np.array_equal(test_output, output)
