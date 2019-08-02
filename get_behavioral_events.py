@@ -29,22 +29,32 @@ BOUT_TYPE_DICT = [
     {
         'location': 'right',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber_to_object'
+        'name': 'object_chamber'
     },
     {
         'location': 'left',
         'zone': ['left chamber', 'left basin'],
-        'name': 'chamber_to_social'
+        'name': 'social_chamber'
     },
     {
         'location': 'right',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber_to_social'
+        'name': 'social_chamber'
     },
     {
         'location': 'left',
         'zone': ['right chamber', 'right basin'],
-        'name': 'chamber_to_object'
+        'name': 'object_chamber'
+    },
+    {
+        'location': 'left',
+        'zone': ['center'],
+        'name': 'center_chamber'
+    },
+    {
+        'location': 'right',
+        'zone': ['center'],
+        'name': 'center_chamber'
     }
 ]
 
@@ -59,7 +69,8 @@ class GetBehavioralEvents(object):
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
-        offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET):
+        offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
+        latency_threshold=10):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -76,6 +87,7 @@ class GetBehavioralEvents(object):
         self.label_dict = label_dict
         # Added to stimulus set
         self.stimulus_name_set = stimulus_name_set
+        self.latency_threshold = latency_threshold
 
     def set_datapath(self):
         if self.datapath is None:
@@ -131,7 +143,9 @@ class GetBehavioralEvents(object):
             df = self.prune_minimum_bouts(df)
             df = self.sort_by_bout_start(df)
             df = self.relabel_bout_type_for_df(df)
-            df = self.anneal_bouts(df)
+            df = self.calculate_bout_duration(df)
+            df = self.calculate_interbout_latency(df)
+            df = self.anneal_bouts(df, latency_threshold=self.latency_threshold)
             cleaned_dataset.append((name, df))
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
@@ -174,29 +188,32 @@ class GetBehavioralEvents(object):
         return offset
 
     @staticmethod
-    def unspool_dataframe(df):
-        list_of_dataframes = []
-        for time in ['start', 'end']:
-            new_df = pd.DataFrame(columns=['Bout type', 'Timestamp', 'Stimulus Location'])
-            new_df['Bout type'] = df['Bout type'] + ' (Bout {})'.format(time)
-            new_df['Timestamp'] = df['Bout {}'.format(time)]
-            new_df['Stimulus Location'] = df['Stimulus Location']
-            list_of_dataframes.append(new_df)
-
-        df = pd.concat(list_of_dataframes, ignore_index=True)
-        df = df.sort_values(by=['Timestamp', 'Bout type']).reset_index(drop=True)
-        return df
-
-    @staticmethod
-    def anneal_bouts(df):
+    def anneal_bouts(df, latency_threshold=10):
+        # transition mask
         change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
         change_bout_type_mask.name = None
         change_bout_type_mask[0] = True
-        grouper = change_bout_type_mask.astype(int).cumsum()
+        # latency mask
+        latency_mask = df['Latency from previous bout'] >= latency_threshold
+        latency_mask.name = None
+        # full mask
+        full_mask = change_bout_type_mask | latency_mask
+        grouper = full_mask.astype(int).cumsum()
         agg_fns = {col: 'first' for col in df.columns}
         agg_fns['Bout end'] = 'last'
         new_df = df.groupby(grouper).agg(agg_fns)
         return new_df[df.columns]
+
+    @staticmethod
+    def calculate_bout_duration(df, start_col='Bout start', end_col='Bout end'):
+        df['Bout duration'] = df[end_col] - df[start_col]
+        return df
+
+    @staticmethod
+    def calculate_interbout_latency(df, start_col='Bout start', end_col='Bout end'):
+        df['Latency from previous bout'] = df['Bout start'] - df['Bout end'].shift(1)
+        # df['Latency to next bout'] = df['Latency from previous bout'].shift(-1)
+        return df
 
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath)
@@ -366,6 +383,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--fp-datapath', type=str, default=None,
         help='Path to FP data')
+    parser.add_argument(
+        '--latency-threshold', type=float, default=None,
+        help='Latency threshold between similar bouts to prevent annealing')
     args = parser.parse_args()
     datapath = args.datapath 
     savefolder = args.savefolder 
@@ -376,6 +396,7 @@ if __name__ == '__main__':
     max_session_time = args.max_session_time
     offset_datapath = args.offset_datapath
     fp_datapath = args.fp_datapath
+    latency_threshold = args.latency_threshold
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -386,6 +407,7 @@ if __name__ == '__main__':
                                         datatype=datatype,
                                         max_session_time=max_session_time,
                                         offset_datapath=offset_datapath,
-                                        fp_datapath=fp_datapath
+                                        fp_datapath=fp_datapath,
+                                        latency_threshold=latency_threshold
                                     )
     event_parser.run()
