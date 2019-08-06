@@ -1,6 +1,4 @@
 import unittest
-import tempfile
-import shutil
 import pandas as pd
 import os
 from mock import patch
@@ -29,12 +27,6 @@ class TestStimulusNameSet(unittest.TestCase):
 
 class TestGetBehavioralEvents(unittest.TestCase):
     "Tests for the GetBehavioralEvents object."
-
-    def setUp(self):
-        self.dirpath = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.dirpath)
 
     def test_initialization_attributes(self):
         e = GetBehavioralEvents(
@@ -86,9 +78,10 @@ class TestGetBehavioralEvents(unittest.TestCase):
         default_save_folder = '/abc/'
         self.assertEqual(e.savefolder, default_save_folder)
 
-    def test_save_files(self):
+    @patch('pandas.DataFrame.to_csv')
+    def test_save_files(self, mock_to_csv):
         e = GetBehavioralEvents(
-                                savefolder=self.dirpath,
+                                savefolder='/path',
                                 datatype='abc'
                                 )
         data = [
@@ -96,12 +89,11 @@ class TestGetBehavioralEvents(unittest.TestCase):
                 ('456', pd.DataFrame({'a': [1,2,3], 'b': [4,5,6]}))
                 ]
         e.save_files(data)
-        check_file = self.dirpath + os.sep + 'abc_123.csv'
-        check_file2 = self.dirpath + os.sep + 'abc_456.csv'
-        print(os.listdir(self.dirpath))
-        print(self.dirpath)
-        assert os.path.exists(check_file)
-        assert os.path.exists(check_file2)
+        check_file = '/path' + os.sep + 'abc_123.csv'
+        check_file2 = '/path' + os.sep + 'abc_456.csv'
+        mock_to_csv.assert_any_call(check_file, index=False)
+        mock_to_csv.assert_any_call(check_file2, index=False)
+
 
     def test_prune_minimum_bouts(self):
         e = GetBehavioralEvents(minimum_bout_time=1)
@@ -214,9 +206,10 @@ class TestGetBehavioralEvents(unittest.TestCase):
         mock_read_csv.return_value = test_df
         e = GetBehavioralEvents()
         data, animal, location = e.load_ethovision_data('/a/', {'stimulus location'})
-        pd.testing.assert_frame_equal(data, test_df)
-        self.assertEqual(animal, 'abc')
-        self.assertEqual(location, 'right')
+        mock_read_csv.assert_called_with('/a/', skiprows=[0, 2]) # skips lines check
+        pd.testing.assert_frame_equal(data, test_df) # returns df check
+        self.assertEqual(animal, 'abc') # returns animal name
+        self.assertEqual(location, 'right') # returns location
 
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.load_ethovision_data')
     def test_get_ethovision_start_ttl(self, mock_data):
