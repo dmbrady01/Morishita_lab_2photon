@@ -289,25 +289,25 @@ class TestGetBehavioralEvents(unittest.TestCase):
         print(e.anneal_bouts(df, latency_threshold=5, latency_col='Latency'))
         pd.testing.assert_frame_equal(e.anneal_bouts(df, latency_threshold=5, latency_col='Latency'), annealed_df)
 
-    @patch.object(GetBehavioralEvents, 'add_time_offset', return_value='abc')
-    @patch.object(GetBehavioralEvents, 'sort_by_bout_start', return_value='abc')
-    @patch.object(GetBehavioralEvents, 'relabel_bout_type_for_df', return_value='abc')
-    @patch.object(GetBehavioralEvents, 'calculate_bout_durations_and_latencies', return_value='abc')
-    @patch.object(GetBehavioralEvents, 'anneal_bouts', return_value='abc')
+    @patch.object(GetBehavioralEvents, 'add_time_offset', return_value='b')
+    @patch.object(GetBehavioralEvents, 'sort_by_bout_start', return_value='c')
+    @patch.object(GetBehavioralEvents, 'relabel_bout_type_for_df', return_value='d')
+    @patch.object(GetBehavioralEvents, 'calculate_bout_durations_and_latencies', return_value='e')
+    @patch.object(GetBehavioralEvents, 'anneal_bouts', return_value='f')
     @patch.object(GetBehavioralEvents, 'prune_minimum_bouts', return_value='abc')
     def test_process_dataset(self, mock_prune, mock_anneal, mock_dur, mock_relabel, 
             mock_sort, mock_offset):
         e = GetBehavioralEvents(latency_threshold=10)
-        dataset = [('123', 'abc')]
+        dataset = [('123', 'a')]
         e.process_dataset(dataset)
-        mock_offset.assert_called_with('abc')
-        mock_sort.assert_called_with('abc')
-        mock_relabel.assert_called_with('abc')
-        mock_dur.assert_any_call('abc')
+        mock_offset.assert_called_with('a')
+        mock_sort.assert_called_with('b')
+        mock_relabel.assert_called_with('c')
+        mock_dur.assert_any_call('d')
         self.assertEqual(mock_dur.call_count, 3)
-        mock_anneal.assert_any_call('abc', latency_threshold=10)
+        mock_anneal.assert_any_call('e', latency_threshold=10)
         self.assertEqual(mock_anneal.call_count, 2)
-        mock_prune.assert_any_call('abc')
+        mock_prune.assert_any_call('f')
 
 
 
