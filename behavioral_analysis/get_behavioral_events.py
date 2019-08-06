@@ -3,7 +3,7 @@ import numpy as np
 import os
 import re
 import argparse
-from imaging_analysis.utils import ReadNeoTdt
+from imaging_analysis import utils
 
 BOUT_TYPE_DICT = [
     {
@@ -156,17 +156,18 @@ class GetBehavioralEvents(object):
 
         return animal_name, stimulus_location, lines_to_skip
 
-    def load_ethovision_data(self, datapath, stimulus_name_set=STIMULUS_NAME_SET):
+    def load_ethovision_data(self, datapath=None, 
+            stimulus_name_set=STIMULUS_NAME_SET):
         
-        animal_name, stimulus_location, lines_to_skip = self.get_ethovision_header_info(datapath, stimulus_name_set=stimulus_name_set)
+        animal_name, stimulus_location, lines_to_skip = self.get_ethovision_header_info(datapath=datapath, 
+                stimulus_name_set=stimulus_name_set)
 
         # read the data again
         data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
 
         return data, animal_name, stimulus_location
 
-    def get_ethovision_start_ttl(self, datapath=None, stimulus_name_set=STIMULUS_NAME_SET, 
-        time_column='Trial time'):
+    def get_ethovision_start_ttl(self, datapath=None, stimulus_name_set=STIMULUS_NAME_SET, time_column='Trial time'):
         data, _, _ = self.load_ethovision_data(datapath, stimulus_name_set=stimulus_name_set)
 
         # find first time value after initialization
@@ -176,7 +177,7 @@ class GetBehavioralEvents(object):
 
     @staticmethod
     def get_fp_start_ttl(fp_datapath):
-        block = ReadNeoTdt(path=fp_datapath)
+        block = utils.ReadNeoTdt(path=fp_datapath)
         seglist = block.segments
         seg = seglist[0]
         return seg.events[1].times[0].magnitude
@@ -187,23 +188,6 @@ class GetBehavioralEvents(object):
         fp_start = self.get_fp_start_ttl(self.fp_datapath)
         offset = fp_start - etho_start
         return offset
-
-    @staticmethod
-    def anneal_bouts(df, latency_threshold=10, latency_col='Latency from previous bout end'):
-        # transition mask
-        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
-        change_bout_type_mask.name = None
-        change_bout_type_mask[0] = True
-        # latency mask
-        latency_mask = df[latency_col] >= latency_threshold
-        latency_mask.name = None
-        # full mask
-        full_mask = change_bout_type_mask | latency_mask
-        grouper = full_mask.astype(int).cumsum()
-        agg_fns = {col: 'first' for col in df.columns}
-        agg_fns['Bout end'] = 'last'
-        new_df = df.groupby(grouper).agg(agg_fns)
-        return new_df[df.columns]
 
     @staticmethod
     def calculate_bout_duration(df, start_col='Bout start', end_col='Bout end'):
@@ -223,6 +207,23 @@ class GetBehavioralEvents(object):
         df = self.calculate_interbout_latency(df, end_col='Bout start', 
             name='Latency from previous bout start')
         return df
+
+    @staticmethod
+    def anneal_bouts(df, latency_threshold=10, latency_col='Latency from previous bout end'):
+        # transition mask
+        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
+        change_bout_type_mask.name = None
+        change_bout_type_mask[0] = True
+        # latency mask
+        latency_mask = df[latency_col] >= latency_threshold
+        latency_mask.name = None
+        # full mask
+        full_mask = change_bout_type_mask | latency_mask
+        grouper = full_mask.astype(int).cumsum()
+        agg_fns = {col: 'first' for col in df.columns}
+        agg_fns['Bout end'] = 'last'
+        new_df = df.groupby(grouper).agg(agg_fns)
+        return new_df[df.columns]
 
     def process_dataset(self, dataset):
         "Runs the following jobs: add time offset, prune minimum bouts, sort by bout start, relabel bout types, anneal bouts"

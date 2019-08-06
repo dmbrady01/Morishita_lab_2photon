@@ -4,7 +4,9 @@ import shutil
 import pandas as pd
 import os
 from mock import patch
-from collections import OrderedDict
+import neo
+import quantities as pq
+import numpy as np
 
 from behavioral_analysis.get_behavioral_events import GetBehavioralEvents, BOUT_TYPE_DICT, STIMULUS_NAME_SET
 
@@ -26,7 +28,7 @@ class TestStimulusNameSet(unittest.TestCase):
         self.assertIsInstance(STIMULUS_NAME_SET, set)
 
 class TestGetBehavioralEvents(unittest.TestCase):
-    "Tests for the GetBehavorialEvents object."
+    "Tests for the GetBehavioralEvents object."
 
     def setUp(self):
         self.dirpath = tempfile.mkdtemp()
@@ -203,6 +205,100 @@ class TestGetBehavioralEvents(unittest.TestCase):
         self.assertEqual(l, 5)
         self.assertEqual(a, 'abc')
         self.assertEqual(s, 'right')
+
+    @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_ethovision_header_info')
+    @patch('pandas.read_csv')
+    def test_load_ethovision_data(self, mock_read_csv, mock_header_data):
+        mock_header_data.return_value = ('abc', 'right', 3)
+        test_df = pd.DataFrame({'time': [1,2], 'value': [3,4]})
+        mock_read_csv.return_value = test_df
+        e = GetBehavioralEvents()
+        data, animal, location = e.load_ethovision_data('/a/', {'stimulus location'})
+        pd.testing.assert_frame_equal(data, test_df)
+        self.assertEqual(animal, 'abc')
+        self.assertEqual(location, 'right')
+
+    @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.load_ethovision_data')
+    def test_get_ethovision_start_ttl(self, mock_data):
+        mock_data.return_value = (pd.DataFrame({'Time': [1, 2, 3], 'Value': [4, 5, 6]}), 'animal name', 'animal location')
+        e = GetBehavioralEvents()
+        self.assertEqual(e.get_ethovision_start_ttl(time_column='Time'), 2)
+
+    @patch('imaging_analysis.utils.ReadNeoTdt')
+    def test_get_fp_start_ttl(self, mock_tdt):
+        event = neo.Event(times=[1,2,3]*pq.s)
+        segment = neo.Segment()
+        segment.events.append(event)
+        segment.events.append(event)
+        block = neo.Block()
+        block.segments.append(segment)
+        mock_tdt.return_value = block
+        e = GetBehavioralEvents()
+        self.assertEqual(1, e.get_fp_start_ttl('/path/to/data/'))
+
+    @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_ethovision_start_ttl')
+    @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_fp_start_ttl')
+    def test_get_ethovision_offset(self, mock_fp, mock_etho):
+        mock_etho.return_value = 4
+        mock_fp.return_value = 6
+        self.assertEqual(GetBehavioralEvents().get_ethovision_offset(), 2)
+
+    def test_calculate_bout_duration(self):
+        data = {
+            'start': [1,2,3],
+            'end': [4,5,6]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['Bout duration'] = pd.Series([3, 3, 3])
+        e = GetBehavioralEvents()
+        pd.testing.assert_frame_equal(e.calculate_bout_duration(df, 'start', 'end'), new_df)
+
+    def test_calculate_bout_duration(self):
+        data = {
+            'start': [1.,3.,5.],
+            'end': [2.,4.,6.]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['NEW'] = pd.Series([np.nan, 1., 1.])
+        e = GetBehavioralEvents()
+        pd.testing.assert_frame_equal(e.calculate_interbout_latency(df, 'start', 'end', 'NEW'), new_df)
+
+    def test_calculate_bout_durations_and_latencies(self):
+        data = {
+            'Bout start': [1.,3.,5.],
+            'Bout end': [2.,4.,6.]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['Bout duration'] = pd.Series([1., 1., 1])
+        new_df['Latency from previous bout end'] = pd.Series([np.nan, 1., 1.])
+        new_df['Latency from previous bout start'] = pd.Series([np.nan, 2., 2.])
+        e = GetBehavioralEvents()
+        pd.testing.assert_frame_equal(e.calculate_bout_durations_and_latencies(df), new_df)
+
+    def test_anneal_bouts(self):
+        data = {
+            'Bout type': ['a', 'a', 'b', 'a', 'a'],
+            'Latency': [100, 1, 10, 3, 6],
+            'Bout end': [5, 7, 3, 2, 1]
+        }
+        df = pd.DataFrame(data)
+        annealed_data = {
+            'Bout type': ['a', 'b', 'a', 'a'],
+            'Latency': [100, 10, 3, 6],
+            'Bout end': [7, 3, 2, 1]        
+        }
+        annealed_df = pd.DataFrame(annealed_data, index=[1,2,3,4])
+        e = GetBehavioralEvents()
+        print(annealed_df)
+        print(e.anneal_bouts(df, latency_threshold=5, latency_col='Latency'))
+        pd.testing.assert_frame_equal(e.anneal_bouts(df, latency_threshold=5, latency_col='Latency'), annealed_df)
+
+
+
+
 
 
 
