@@ -34,10 +34,9 @@ SEQUENCE_DICT = [
         'Bout duration': ['>=0', '>=3'],
         'Latency to next bout start': ['<=4', '>=0'],
         'Bout start': ('1', 'Bout start'),
-        'Bout end': ('last', 'Bout end')
+        'Bout end': ('last', 'Bout start')
     }
 ]
-
 
 class GetBehavioralSequences(object):
 
