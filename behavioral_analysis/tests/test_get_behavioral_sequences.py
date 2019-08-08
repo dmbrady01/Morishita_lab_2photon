@@ -97,12 +97,12 @@ class TestGetBehavioralSequences(unittest.TestCase):
         }
         df = pd.DataFrame(data)
         check = [
-            [1., 2., 3.],
-            [2., 3., 4.],
-            [3., 4., np.nan],
-            [4., np.nan, np.nan]
+            ['1', '2', '3'],
+            ['2', '3', '4'],
+            ['3', '4', np.nan],
+            ['4', np.nan, np.nan]
         ]
-        results = GetBehavioralSequences().chain_columns_to_list(df, 'Bout type', 3, dtype=float)
+        results = GetBehavioralSequences().chain_columns_to_list(df, 'Bout type', 3)
         # Need to test frames because nans don't match for lists
         pd.testing.assert_frame_equal(pd.DataFrame(check), pd.DataFrame(results))
 
@@ -142,13 +142,101 @@ class TestGetBehavioralSequences(unittest.TestCase):
             ['==5', '==6', '==2'], 'map_and_eval')
         pd.testing.assert_series_equal(results, check)
 
-    def test_get_bout_time(self):
+    def get_last_from_bout_type_run(self):
         data = {
-            'duration': [1, 1, 2, 3, 5]
+            'Bout type': ['a', 'b', 'b', 'c', 'b', 'b', 'b', 'c', 'c', 'c'],
+            'Bout start': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            'Bout end': [21, 24, 25, 26, 28, 29, 30, 32, 33, 40]
         }
         df = pd.DataFrame(data)
-        results = GetBehavioralSequences().get_bout_time(df, 'duration', 2)
-        pd.testing.assert_series_equal(results, pd.Series([1, 2, 3, 5, np.nan], name='duration'))
+        check_data = {
+            'Bout type': ['a', 'b', 'b', 'c', 'b', 'b', 'b', 'c', 'c', 'c'],
+            'Bout start': [1, 3, 3, 4, 7, 7, 7, 10, 10, 10],
+            'Bout end': [21, 25, 25, 26, 30, 30, 30, 40, 40, 40]        
+        }
+        check_df = pd.DataFrame(check_data)
+        results = GetBehavioralSequences().get_last_from_bout_type_run(df)
+        pd.testing.assert_frame_equal(results, check_df)
+
+    def test_get_bout_time(self):
+        data = {
+            'Bout type': ['a', 'b', 'b', 'c', 'b', 'b', 'b', 'c', 'c', 'c'],
+            'Bout start': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            'Bout end': [21, 24, 25, 26, 28, 29, 30, 32, 33, 40]
+        }
+        sequence = ['c', 'b']
+        df = pd.DataFrame(data)
+        e = GetBehavioralSequences()
+        # simple bout version
+        results = e.get_bout_time(df, 'Bout start', 2, sequence)
+        check = pd.Series([2, 3, 4, 5, 6, 7, 8, 9, 10, np.nan], name='Bout start')
+        pd.testing.assert_series_equal(results, check)
+
+        # last bout version
+        results = e.get_bout_time(df, 'Bout start', 'last', sequence)
+        check = pd.Series([3, 3, 4, 7, 7, 7, 10, 10, 10, np.nan], name='Bout start')
+        pd.testing.assert_series_equal(results, check)
+
+    def test_calculate_bout_duration(self):
+        data = {
+            'start': [1,2,3],
+            'end': [4,5,6]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['Bout duration'] = pd.Series([3, 3, 3])
+        pd.testing.assert_frame_equal(GetBehavioralSequences().calculate_bout_duration(df, 'start', 'end'), new_df)
+
+    def test_calculate_bout_duration(self):
+        data = {
+            'start': [1.,3.,5.],
+            'end': [2.,4.,6.]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['NEW'] = pd.Series([np.nan, 1., 1.])
+        pd.testing.assert_frame_equal(GetBehavioralSequences().calculate_interbout_latency(df, 'start', 'end', 'NEW'), new_df)
+
+    def test_calculate_bout_durations_and_latencies(self):
+        data = {
+            'Bout start': [1.,3.,5.],
+            'Bout end': [2.,4.,6.]
+        }
+        df = pd.DataFrame(data)
+        new_df = df.copy()
+        new_df['Bout duration'] = pd.Series([1., 1., 1])
+        new_df['Latency from previous bout end'] = pd.Series([np.nan, 1., 1.])
+        new_df['Latency from previous bout start'] = pd.Series([np.nan, 2., 2.])
+        new_df['Latency to next bout start'] = pd.Series([2, 2, np.nan])
+        pd.testing.assert_frame_equal(GetBehavioralSequences().calculate_bout_durations_and_latencies(df), new_df)
+
+    def test__find_sequences(self):
+        seq_dict =     {
+                'name': 'prop_object',
+                'sequence': ['a', 'b'],
+                'Bout duration': ['>=0', '<=2'],
+                'Latency to next bout start': ['<=4', '>=0'],
+                'Bout start': ('1', 'Bout start'),
+                'Bout end': ('last', 'Bout end')
+        }
+        data = {
+            'Bout type': ['a', 'a', 'b', 'b', 'a', 'b', 'a', 'c'],
+            'Bout duration': [2., 1., 2., 3., 2., 4., 1., 17.],
+            'Latency to next bout start': [4., 4., 2., 4., 2., 4., 2., np.nan],
+            'Bout start': [1., 5., 9., 11., 15., 17., 21., 23.],
+            'Bout end': [3., 6., 11., 14., 17., 21., 22., 40.],
+        }
+        df = pd.DataFrame(data)
+        check_data = {
+            'Bout type': ['prop_object'],
+            'Bout duration': [1.],
+            'Latency to next bout start': [4.],
+            'Bout start': [5.],
+            'Bout end': [14.],
+        }
+        check = pd.DataFrame(check_data, index=[1])
+        results = GetBehavioralSequences()._find_sequences(df, seq_dict)
+        pd.testing.assert_frame_equal(results, check)
 
     # def test_find_simple_sequences(self):
     #     sequence_dict = [

@@ -100,13 +100,13 @@ class GetBehavioralSequences(object):
         return df
 
     @staticmethod
-    def chain_columns_to_list(df, column, length, dtype=str):
-        return pd.concat([df[column].astype(dtype).shift(-1*x) for x in range(length)], axis=1).values.tolist()
+    def chain_columns_to_list(df, column, length):
+        return pd.concat([df[column].shift(-1*x) for x in range(length)], axis=1).values.tolist()
 
     @staticmethod
     def map_and_eval(value_list, eval_list):
         zipped_list = zip(value_list, eval_list)
-        return all([eval(x+y) if pd.notna(x) else False for x, y in zipped_list])
+        return all([eval(str(x)+y) if pd.notna(x) else False for x, y in zipped_list])
 
     @staticmethod
     def equivalent(value_list, eval_list):
@@ -120,24 +120,74 @@ class GetBehavioralSequences(object):
             mask = map(lambda x: self.equivalent(x, sequence), iterated_sequences)
         return pd.Series(mask)
 
-    def get_bout_time(self, df, column, position, sequence=None):
+    @staticmethod
+    def get_last_from_bout_type_run(df):
+        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
+        change_bout_type_mask[0] = True
+        grouper = change_bout_type_mask.astype(int).cumsum()
+        agg_fns = {col: 'last' for col in df.columns}
+        new_df = df.groupby(grouper).agg(agg_fns)
+        recast = pd.merge(grouper, df.groupby(grouper).agg(agg_fns), left_on='Bout type', right_index=True).drop('Bout type', axis=1)
+        recast['Bout type'] = df['Bout type']
+        return recast
+
+    def get_bout_time(self, df, column, position, sequence):
         if position == 'last':
             position = len(sequence)
-            df = self.get_last_timing_from_bout_type(df)
+            df = self.get_last_from_bout_type_run(df)
 
         position = int(position) - 1
         return df[column].shift(-1*position)
 
-    def get_last_timing_from_bout_type(df):
-        change_bout_type_mask = df['Bout type'].ne(df['Bout type'].shift().bfill())
-        change_bout_type_mask[0] = True
-        grouper = change_bout_type_mask.astype(int).cumsum()
-        agg_fns = {'Bout start': 'last', 'Bout end': 'last'}
-        new_df = df.groupby(grouper).agg(agg_fns)
-        recast = pd.merge(grouper, df.groupby(grouper).agg(agg_fns), left_on='Bout type', right_index=True).drop('Bout type', axis=1)
-        return recast
+    @staticmethod
+    def calculate_bout_duration(df, start_col='Bout start', end_col='Bout end'):
+        df['Bout duration'] = df[end_col] - df[start_col]
+        return df
 
-    def find_sequences(df):
+    @staticmethod
+    def calculate_interbout_latency(df, start_col='Bout start', end_col='Bout end', 
+        name='Latency from previous bout end', shift=1):
+        if shift > 0:
+            df[name] = df[start_col] - df[end_col].shift(shift)
+        else:
+            df[name] = df[end_col].shift(shift) - df[start_col]
+        # df['Latency to next bout'] = df['Latency from previous bout'].shift(-1)
+        return df
+
+    def calculate_bout_durations_and_latencies(self, df):
+        df = self.calculate_bout_duration(df)
+        df = self.calculate_interbout_latency(df)
+        df = self.calculate_interbout_latency(df, end_col='Bout start', 
+            name='Latency from previous bout start')
+        df = self.calculate_interbout_latency(df, end_col='Bout start', 
+            name='Latency to next bout start', shift=-1)
+        return df
+
+    def _find_sequences(self, df, sequence_dict):
+        sequence = sequence_dict['sequence']
+        duration = sequence_dict['Bout duration']
+        latency = sequence_dict['Latency to next bout start']
+        bout_start_pos, bout_start_col = sequence_dict['Bout start']
+        bout_end_pos, bout_end_col = sequence_dict['Bout end']
+        name = sequence_dict['name']
+        # Matching sequence, duration, and latencies
+        sequence_mask = self.match_sequence(df, 'Bout type', sequence, fnc='equivalent')
+        duration_mask = self.match_sequence(df, 'Bout duration', duration, fnc='map_and_eval')
+        latency_mask = self.match_sequence(df, 'Latency to next bout start', latency, fnc='map_and_eval')
+        full_mask = sequence_mask & duration_mask & latency_mask
+        # Extracting start and end times
+        start = self.get_bout_time(df, bout_start_col, bout_start_pos, sequence)
+        end = self.get_bout_time(df, bout_end_col, bout_end_pos, sequence)
+        # copy data
+        new_df = df.loc[full_mask, :].copy()
+        old_events = new_df.copy()
+        new_df['Bout type'] = name
+        # add updated start/end times
+        new_df['Bout start'] = start.loc[full_mask]
+        new_df['Bout end'] = end.loc[full_mask]
+        return new_df
+
+    def find_sequences(self):
         pass
 
     # def find_simple_sequences(self, df):
