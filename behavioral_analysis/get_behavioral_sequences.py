@@ -22,31 +22,15 @@ SEQUENCE_DICT = [
     },
     {
         'name': 'proper_first_social',
-        'sequence': ['social_chamber', 'social'],
-        'Bout duration': ['>=0', '>=5'],
-        'Latency to next bout start': ['<3', '>=0'],
+        'sequence': ['chamber_to_social', 'social'],
+        'Bout duration': ['>=0', '>=1.5'],
+        'Latency to next bout start': ['<4', '>=0'],
         'Bout start': ('1', 'Bout start'),
         'Bout end': ('2', 'Bout end')
-    },
-    {
-        'name': 'proper_first_object',
-        'sequence': ['object_chamber', 'object'],
-        'Bout duration': ['>=0', '>=3'],
-        'Latency to next bout start': ['<=4', '>=0'],
-        'Bout start': ('1', 'Bout start'),
-        'Bout end': ('2', 'Bout end')
-    },
-    {
-        'name': 'proper_entire_social',
-        'sequence': ['social_chamber', 'social'],
-        'Bout duration': ['>=0', '>=3'],
-        'Latency to next bout start': ['<3', '>=0'],
-        'Bout start': ('1', 'Bout start'),
-        'Bout end': ('last', 'Bout end')
     },
     {
         'name': 'proper_entire_object',
-        'sequence': ['object_chamber', 'object'],
+        'sequence': ['chamber_to_object', 'object'],
         'Bout duration': ['>=0', '>=3'],
         'Latency to next bout start': ['<=4', '>=0'],
         'Bout start': ('1', 'Bout start'),
@@ -87,9 +71,10 @@ class GetBehavioralSequences(object):
         return pd.read_csv(datapath)
 
     @staticmethod
-    def sort_by_bout_start(df):
+    def sort_by_bout_start(df, cols=['Bout start', 'Seq', 'Bout type'], 
+            ascending=[True, True, True]):
         # Combine all results and sort them
-        df = df.sort_values(['Bout start', 'Bout type'], ascending=[True, False])
+        df = df.sort_values(cols, ascending=ascending)
         df.reset_index(drop=True, inplace=True)
         return df
 
@@ -186,9 +171,17 @@ class GetBehavioralSequences(object):
         df = self.sort_by_bout_start(df)
         return df
 
+    @staticmethod
+    def add_seq_column(df, sequence_idx):
+        df['Seq'] = sequence_idx
+        return df
+
     def find_sequences(self, df):
-        for sequence in self.sequences:
+        df = self.add_seq_column(df, 0)
+        for idx, sequence in enumerate(self.sequences):
+            idx += 1
             new_events = self._find_sequences(df, sequence)
+            new_events = self.add_seq_column(new_events, idx)
             df = self.add_new_sequences(df, new_events)
         return df
 

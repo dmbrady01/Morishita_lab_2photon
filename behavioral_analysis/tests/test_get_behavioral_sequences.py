@@ -65,17 +65,19 @@ class TestGetBehavioralSequences(unittest.TestCase):
 
     def test_sort_by_bout_start(self):
         data = {
-                    'Bout start': [2, 1, 2],
-                    'Bout type': ['a', 'b', 'c'],
-                    'Bout end': [1, 4, 10]
+                    'Bout start': [2, 1, 1, 2],
+                    'Bout type': ['a', 'b', 'b', 'c'],
+                    'Bout end': [1, 4, 4, 10],
+                    'Seq': [0, 1, 2, 3]
         }
-        df = pd.DataFrame(data, index=[0,1,2])
+        df = pd.DataFrame(data, index=[0, 1, 2, 3])
         ordered_data = {
-                    'Bout start': [1, 2, 2],
-                    'Bout type': ['b', 'c', 'a'],
-                    'Bout end': [4, 10, 1]
+                    'Bout start': [1, 1, 2, 2],
+                    'Bout type': ['b', 'b', 'a','c'],
+                    'Bout end': [4, 4, 1, 10],
+                    'Seq': [1, 2, 0, 3]
         }
-        ordered_df = pd.DataFrame(ordered_data, index=[0, 1,2])
+        ordered_df = pd.DataFrame(ordered_data, index=[0, 1, 2, 3])
         pd.testing.assert_frame_equal(GetBehavioralSequences().sort_by_bout_start(df), ordered_df)
 
     def test_chain_columns_to_list(self):
@@ -228,15 +230,18 @@ class TestGetBehavioralSequences(unittest.TestCase):
     def test_add_new_sequences(self):
         data1 = { 
             'Bout start': [3, 5, 7, 9, 11],
-            'Bout type': ['a', 'c', 'd', 'e', 'g']
+            'Bout type': ['a', 'c', 'd', 'e', 'g'],
+            'Seq': [0, 0, 0, 0, 0]
         }
         data2 = {
             'Bout start': [4, 4],
-            'Bout type': ['aa', 'ab']
+            'Bout type': ['aa', 'ab'],
+            'Seq': [1, 1]
         }
         check_data = {
             'Bout start': [3, 4, 4, 5, 7, 9, 11],
-            'Bout type': ['a', 'ab', 'aa', 'c', 'd', 'e', 'g']
+            'Bout type': ['a', 'aa', 'ab', 'c', 'd', 'e', 'g'],
+            'Seq': [0, 1, 1, 0, 0, 0, 0]
         }
         df1 = pd.DataFrame(data1)
         df2 = pd.DataFrame(data2)
@@ -244,14 +249,26 @@ class TestGetBehavioralSequences(unittest.TestCase):
         results = GetBehavioralSequences().add_new_sequences(df1, df2)
         pd.testing.assert_frame_equal(check_df, results)
 
-    @patch.object(GetBehavioralSequences, '_find_sequences', return_value='a')
-    @patch.object(GetBehavioralSequences, 'add_new_sequences', return_value='b')
-    def test_find_simple_sequences(self, mock_add, mock_find):
+    def test_add_seq_column(self):
+        df = pd.DataFrame({'a': [1,2,3]})
+        check = df.copy()
+        results = GetBehavioralSequences.add_seq_column(df, 2)
+        check['Seq'] = 2
+        print(check)
+        print(results)
+        pd.testing.assert_frame_equal(results, check)
+
+    @patch.object(GetBehavioralSequences, 'add_seq_column', return_value = 'a')
+    @patch.object(GetBehavioralSequences, '_find_sequences', return_value='b')
+    @patch.object(GetBehavioralSequences, 'add_new_sequences', return_value='c')
+    def test_find_simple_sequences(self, mock_add, mock_find, mock_seq_col):
         sequence_dict = ['seq1', 'seq2']
         df = 'df'
         GetBehavioralSequences(sequences=sequence_dict).find_sequences(df)
-        mock_find.assert_any_call('df', 'seq1')
-        mock_add.assert_any_call('df', 'a')
+        mock_seq_col.assert_any_call('df', 0)
+        mock_find.assert_any_call('a', 'seq1')
+        mock_add.assert_any_call('a', 'a')
+        self.assertEqual(mock_seq_col.call_count, 3)
         self.assertEqual(mock_find.call_count, 2)
         self.assertEqual(mock_add.call_count, 2)
 
