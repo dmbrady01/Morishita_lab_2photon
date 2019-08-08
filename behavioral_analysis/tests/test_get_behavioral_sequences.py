@@ -244,41 +244,23 @@ class TestGetBehavioralSequences(unittest.TestCase):
         results = GetBehavioralSequences().add_new_sequences(df1, df2)
         pd.testing.assert_frame_equal(check_df, results)
 
-    # def test_find_simple_sequences(self):
-    #     sequence_dict = [
-    #         {
-    #             'sequence': ['a', 'a'],
-    #             'name': 'aa'
-    #         },
-    #         {
-    #             'sequence': ['a', 'b', 'c'],
-    #             'name': 'abc'
-    #         }
-    #     ]
-    #     data = {
-    #         'Bout type': ['a', 'a', 'b', 'c', 'd'],
-    #         'Bout start': [1, 2, 3, 4, 5],
-    #         'Bout end': [2, 3, 4, 5, 6]
-    #     }
-    #     check_data = {
-    #         'Bout type': ['aa', 'a', 'abc', 'a', 'b', 'c', 'd'],
-    #         'Bout start': [1, 1, 2, 2, 3, 4, 5],
-    #         'Bout end': [2, 2, 3, 3, 4, 5, 6]
-    #     }
-    #     df = pd.DataFrame(data)
-    #     check = pd.DataFrame(check_data)
-    #     e = GetBehavioralSequences(simple_sequences=sequence_dict)
-    #     results = e.find_simple_sequences(df)
-    #     pd.testing.assert_frame_equal(results, check)
+    @patch.object(GetBehavioralSequences, '_find_sequences', return_value='a')
+    @patch.object(GetBehavioralSequences, 'add_new_sequences', return_value='b')
+    def test_find_simple_sequences(self, mock_add, mock_find):
+        sequence_dict = ['seq1', 'seq2']
+        df = 'df'
+        GetBehavioralSequences(sequences=sequence_dict).find_sequences(df)
+        mock_find.assert_any_call('df', 'seq1')
+        mock_add.assert_any_call('df', 'a')
+        self.assertEqual(mock_find.call_count, 2)
+        self.assertEqual(mock_add.call_count, 2)
 
     @patch.object(GetBehavioralSequences, 'load_data', return_value='a')
-    @patch.object(GetBehavioralSequences, 'get_animal_name', return_value='b')
-    @patch.object(GetBehavioralSequences, 'find_sequences', return_value='c')
-    @patch.object(GetBehavioralSequences, 'save_files', return_value='c')
-    def test_run(self, mock_save, mock_seq, mock_name, mock_load):
+    @patch.object(GetBehavioralSequences, 'find_sequences', return_value='b')
+    @patch.object(GetBehavioralSequences, 'save_files')
+    def test_run(self, mock_save, mock_seq, mock_load):
         e = GetBehavioralSequences()
         e.run()
         mock_load.assert_called_with(e.datapath)
-        mock_name.assert_called_with(e.datapath)
         mock_seq.assert_called_with('a')
-        mock_save.assert_called_with([('b', 'c')])
+        mock_save.assert_called_with('b')

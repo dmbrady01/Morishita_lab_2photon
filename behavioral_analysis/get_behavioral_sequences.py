@@ -186,29 +186,16 @@ class GetBehavioralSequences(object):
         df = self.sort_by_bout_start(df)
         return df
 
-    def find_sequences(self):
-        pass
-
-    # def find_simple_sequences(self, df):
-    #     found_sequences = [df]
-    #     for sequence in self.simple_sequences:
-    #         name = sequence['name']
-    #         template = sequence['sequence']
-    #         num_events = len(template)
-    #         mask = pd.Series(map(lambda x: x == template, pd.concat([df['Bout type'].shift(-1*x) for x in range(num_events)], axis=1).values.tolist()))
-    #         new_df = df.loc[mask, :].copy()
-    #         new_df['Bout type'] = name
-    #         found_sequences.append(new_df)
-    #     df = pd.concat(found_sequences, axis=0)
-    #     df = self.sort_by_bout_start(df)
-    #     return df
+    def find_sequences(self, df):
+        for sequence in self.sequences:
+            new_events = self._find_sequences(df, sequence)
+            df = self.add_new_sequences(df, new_events)
+        return df
 
     def run(self):
         df = self.load_data(self.datapath)
-        animal_name = self.get_animal_name(self.datapath)
         df = self.find_sequences(df)
-        dataset = [(animal_name, df)]
-        self.save_files(dataset)
+        self.save_files(df)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -217,15 +204,15 @@ if __name__ == '__main__':
         help='Path to ethovision csv.'
     )
     parser.add_argument(
-        '--savefolder', type=str, default=None,
-        help='Folder to save data to'
+        '--savepath', type=str, default=None,
+        help='Filename to save output to'
     )
     args = parser.parse_args()
     datapath = args.datapath 
-    savefolder = args.savefolder 
+    savepath = args.savepath 
     
     event_parser = GetBehavioralSequences(
                                         datapath=datapath, 
-                                        savefolder=savefolder
+                                        savepath=savepath
                                     )
     event_parser.run()
