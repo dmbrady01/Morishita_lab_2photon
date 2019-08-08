@@ -25,11 +25,11 @@ class TestGetBehavioralSequences(unittest.TestCase):
     def test_initialize_properly(self):
         e = GetBehavioralSequences(
                                 datapath='a', 
-                                savefolder='b',
+                                savepath='b',
                                 sequences={'a'} 
                                 )
         self.assertEqual(e.datapath, 'a')
-        self.assertEqual(e.savefolder, 'b/')
+        self.assertEqual(e.savepath, 'b')
         self.assertEqual(e.sequences, {'a'})
 
     def test_set_datapath(self):
@@ -40,34 +40,21 @@ class TestGetBehavioralSequences(unittest.TestCase):
         datapath = './etho_123.csv'
         self.assertEqual(GetBehavioralSequences().get_animal_name(datapath), '123')
 
-    def test_set_save_folder_default(self):
+    def test_set_savepath_default(self):
         e = GetBehavioralSequences(datapath=None)
-        e.set_savefolder()
+        e.set_savepath()
         default_datapath = './data/ethovision.csv'
-        default_save_folder = './data/'
+        default_savepath = './data/ethovision_behavioral_sequences.csv'
         self.assertEqual(e.datapath, default_datapath)
-        self.assertEqual(e.savefolder, default_save_folder)
-
-    def test_set_save_folder_add_os_seop(self):
-        e = GetBehavioralSequences(savefolder='/abc')
-        e.set_savefolder()
-        default_save_folder = '/abc/'
-        self.assertEqual(e.savefolder, default_save_folder)
+        self.assertEqual(e.savepath, default_savepath)
 
     @patch('pandas.DataFrame.to_csv')
     def test_save_files(self, mock_to_csv):
-        e = GetBehavioralSequences(
-                                savefolder='/path'
-                                )
-        data = [
-                ('123', pd.DataFrame({'a': [1,2,3], 'b': [4,5,6]})), 
-                ('456', pd.DataFrame({'a': [1,2,3], 'b': [4,5,6]}))
-                ]
+        e = GetBehavioralSequences(datapath='/path/etho.csv')
+        data = pd.DataFrame({'a': [1,2,3], 'b': [4,5,6]})
         e.save_files(data)
-        check_file = '/path' + os.sep + 'behavioral_sequences_123.csv'
-        check_file2 = '/path' + os.sep + 'behavioral_sequences_456.csv'
+        check_file = '/path/etho_behavioral_sequences.csv'
         mock_to_csv.assert_any_call(check_file, index=False)
-        mock_to_csv.assert_any_call(check_file2, index=False)
 
     @patch('pandas.read_csv')
     def test_load_data(self, mock_read_csv):
@@ -229,7 +216,7 @@ class TestGetBehavioralSequences(unittest.TestCase):
         df = pd.DataFrame(data)
         check_data = {
             'Bout type': ['prop_object'],
-            'Bout duration': [1.],
+            'Bout duration': [9.],
             'Latency to next bout start': [4.],
             'Bout start': [5.],
             'Bout end': [14.],
@@ -237,6 +224,25 @@ class TestGetBehavioralSequences(unittest.TestCase):
         check = pd.DataFrame(check_data, index=[1])
         results = GetBehavioralSequences()._find_sequences(df, seq_dict)
         pd.testing.assert_frame_equal(results, check)
+
+    def test_add_new_sequences(self):
+        data1 = { 
+            'Bout start': [3, 5, 7, 9, 11],
+            'Bout type': ['a', 'c', 'd', 'e', 'g']
+        }
+        data2 = {
+            'Bout start': [4, 4],
+            'Bout type': ['aa', 'ab']
+        }
+        check_data = {
+            'Bout start': [3, 4, 4, 5, 7, 9, 11],
+            'Bout type': ['a', 'ab', 'aa', 'c', 'd', 'e', 'g']
+        }
+        df1 = pd.DataFrame(data1)
+        df2 = pd.DataFrame(data2)
+        check_df = pd.DataFrame(check_data)
+        results = GetBehavioralSequences().add_new_sequences(df1, df2)
+        pd.testing.assert_frame_equal(check_df, results)
 
     # def test_find_simple_sequences(self):
     #     sequence_dict = [

@@ -39,7 +39,7 @@ SEQUENCE_DICT = [
     {
         'name': 'proper_entire_social',
         'sequence': ['social_chamber', 'social'],
-        'Bout duration': ['>=0', '>=5'],
+        'Bout duration': ['>=0', '>=3'],
         'Latency to next bout start': ['<3', '>=0'],
         'Bout start': ('1', 'Bout start'),
         'Bout end': ('last', 'Bout end')
@@ -57,11 +57,11 @@ SEQUENCE_DICT = [
 
 class GetBehavioralSequences(object):
 
-    def __init__(self, datapath=None, savefolder=None, sequences=SEQUENCE_DICT):
+    def __init__(self, datapath=None, savepath=None, sequences=SEQUENCE_DICT):
         # Setting datapath and savefolder
         self.datapath = datapath
-        self.savefolder = savefolder
-        self.set_savefolder()
+        self.savepath = savepath
+        self.set_savepath()
         # simple sequence analysis
         self.sequences = sequences
 
@@ -73,20 +73,14 @@ class GetBehavioralSequences(object):
     def get_animal_name(datapath):
         return datapath.split('_')[-1].split('.')[0]
 
-    def set_savefolder(self):
+    def set_savepath(self):
         # Will save to the base folder of the datapath (example above saves to ~/Downloads/)
         self.set_datapath()
-        if self.savefolder is None:
-            self.savefolder = os.sep.join(self.datapath.split(os.sep)[:-1]) + os.sep
-        elif self.savefolder[-1] != os.sep:
-            self.savefolder = self.savefolder + os.sep
+        if self.savepath is None:
+            self.savepath = os.sep.join(self.datapath.split('.csv')[:-1]) + '_behavioral_sequences.csv'
 
-    def save_files(self, dataset):
-        for data in dataset:
-            animal_name = data[0]
-            df = data[1]
-            df.to_csv(self.savefolder + 'behavioral_sequences_' + animal_name + '.csv',
-                index=False)
+    def save_files(self, df):
+        df.to_csv(self.savepath, index=False)
 
     @staticmethod
     def load_data(datapath):
@@ -180,12 +174,17 @@ class GetBehavioralSequences(object):
         end = self.get_bout_time(df, bout_end_col, bout_end_pos, sequence)
         # copy data
         new_df = df.loc[full_mask, :].copy()
-        old_events = new_df.copy()
         new_df['Bout type'] = name
-        # add updated start/end times
+        # add updated start/end times and durations
         new_df['Bout start'] = start.loc[full_mask]
         new_df['Bout end'] = end.loc[full_mask]
+        new_df = self.calculate_bout_duration(new_df)
         return new_df
+
+    def add_new_sequences(self, df, new_df):
+        df = pd.concat([df, new_df], axis=0)
+        df = self.sort_by_bout_start(df)
+        return df
 
     def find_sequences(self):
         pass
