@@ -196,8 +196,11 @@ class GetBehavioralEvents(object):
 
     @staticmethod
     def calculate_interbout_latency(df, start_col='Bout start', end_col='Bout end', 
-        name='Latency from previous bout end'):
-        df[name] = df[start_col] - df[end_col].shift(1)
+        name='Latency from previous bout end', shift=1):
+        if shift > 0:
+            df[name] = df[start_col] - df[end_col].shift(shift)
+        else:
+            df[name] = df[end_col].shift(shift) - df[start_col]
         # df['Latency to next bout'] = df['Latency from previous bout'].shift(-1)
         return df
 
@@ -206,6 +209,8 @@ class GetBehavioralEvents(object):
         df = self.calculate_interbout_latency(df)
         df = self.calculate_interbout_latency(df, end_col='Bout start', 
             name='Latency from previous bout start')
+        df = self.calculate_interbout_latency(df, end_col='Bout start', 
+            name='Latency to next bout start', shift=-1)
         return df
 
     @staticmethod
