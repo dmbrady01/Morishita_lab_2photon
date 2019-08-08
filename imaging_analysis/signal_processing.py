@@ -367,6 +367,8 @@ def NormalizeSignal(signal=None, reference=None, **kwargs):
         filt_ref = FilterSignal(reference, lowcut=options['reference_lowcut'], 
             highcut=options['reference_highcut'], fs=options['fs'], order=options['reference_order'], 
             btype=options['reference_btype'], axis=options['axis'])
+    else:
+        filt_ref = None
         
 
     # # Scale the signals to have std of 1
