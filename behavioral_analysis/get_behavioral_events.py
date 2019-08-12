@@ -8,22 +8,22 @@ from imaging_analysis import utils
 BOUT_TYPE_DICT = [
     {
         'location': 'right',
-        'zone': ['left interaction', 'left sniffing'],
+        'zone': ['left interaction', 'left sniffing', 'left sniifing'],
         'name': 'object'
     },
     {
         'location': 'left',
-        'zone': ['left interaction', 'left sniffing'],
+        'zone': ['left interaction', 'left sniffing', 'left sniifing'],
         'name': 'social'
     },
     {
         'location': 'right',
-        'zone': ['right interaction', 'right sniffing'],
+        'zone': ['right interaction', 'right sniffing', 'right sniifing'],
         'name': 'social'
     },
     {
         'location': 'left',
-        'zone': ['right interaction', 'right sniffing'],
+        'zone': ['right interaction', 'right sniffing', 'right sniifing'],
         'name': 'object'
     },
     {
@@ -70,7 +70,7 @@ class GetBehavioralEvents(object):
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
-        latency_threshold=10):
+        latency_threshold=10, interaction_column='sniffing', chamber_column='chamber'):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -88,6 +88,8 @@ class GetBehavioralEvents(object):
         # Added to stimulus set
         self.stimulus_name_set = stimulus_name_set
         self.latency_threshold = latency_threshold
+        self.interaction_column = interaction_column
+        self.chamber_column = chamber_column
 
         #start processes
         self.set_savefolder()
@@ -247,10 +249,27 @@ class GetBehavioralEvents(object):
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
 
+    @staticmethod
+    def merge_interaction_and_chamber_zones(df, interaction_column=None, chamber_column=None):
+        if (interaction_column is None) or (chamber_column is None):
+            return df
+        else:
+            zone_columns = [x for x in df.columns if 'In zone' in x]
+            left_interaction = [x for x in df.columns if (interaction_column in x.lower()) and ('left' in x.lower())][0]
+            right_interaction = [x for x in df.columns if (interaction_column in x.lower()) and ('right' in x.lower())][0]
+            left_chamber = [x for x in df.columns if (chamber_column in x.lower()) and ('left' in x.lower())][0]
+            right_chamber = [x for x in df.columns if (chamber_column in x.lower()) and ('right' in x.lower())][0]
+
+            df[left_chamber] = df[left_chamber] | df[left_interaction]
+            df[right_chamber] = df[right_chamber] | df[right_interaction]
+            return df
+
+
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath, 
             stimulus_name_set=self.stimulus_name_set)
 
+        data = self.merge_interaction_and_chamber_zones(data, self.interaction_column, self.chamber_column)
         # Get the zone columns
         zone_columns = [x for x in data.columns if 'In zone' in x]
         # # relabel zone columns
@@ -419,6 +438,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--latency-threshold', type=float, default=None,
         help='Latency threshold between similar bouts to prevent annealing')
+    parser.add_argument(
+        '--interaction-column', type=str, default=None,
+        help='Name of interaction zone for merging into chamber zone')
+    parser.add_argument(
+        '--chamber-column', type=str, default=None,
+        help='Name of chamber zone for merging interaction zone into.')
+
     args = parser.parse_args()
     datapath = args.datapath 
     savefolder = args.savefolder 
@@ -430,6 +456,8 @@ if __name__ == '__main__':
     offset_datapath = args.offset_datapath
     fp_datapath = args.fp_datapath
     latency_threshold = args.latency_threshold
+    interaction_column = args.interaction_column
+    chamber_column = args.chamber_column
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -441,6 +469,8 @@ if __name__ == '__main__':
                                         max_session_time=max_session_time,
                                         offset_datapath=offset_datapath,
                                         fp_datapath=fp_datapath,
-                                        latency_threshold=latency_threshold
+                                        latency_threshold=latency_threshold,
+                                        interaction_column=interaction_column,
+                                        chamber_column=chamber_column
                                     )
     event_parser.run()

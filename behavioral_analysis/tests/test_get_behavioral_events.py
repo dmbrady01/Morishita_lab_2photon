@@ -293,6 +293,26 @@ class TestGetBehavioralEvents(unittest.TestCase):
         self.assertEqual(mock_anneal.call_count, 2)
         mock_prune.assert_any_call('f')
 
+    def test_merge_interaction_and_chamber_zones(self):
+        data = {
+            'right in': [0, 1, 0, 0],
+            'left in': [1, 0, 0, 0],
+            'right out': [0, 0, 1, 0],
+            'left out': [0, 0, 0, 1]
+        }
+        df = pd.DataFrame(data)
+        check_data = {
+            'right in': [0, 1, 0, 0],
+            'left in': [1, 0, 0, 0],
+            'right out': [0, 1, 1, 0],
+            'left out': [1, 0, 0, 1]        
+        }
+        check_df = pd.DataFrame(check_data)
+        e = GetBehavioralEvents()
+        self.assertEqual('b', e.merge_interaction_and_chamber_zones('b', None, 'a'))
+        self.assertEqual('b', e.merge_interaction_and_chamber_zones('b', 'a', None))
+        pd.testing.assert_frame_equal(check_df, e.merge_interaction_and_chamber_zones(df, 'in', 'out'))
+
 
 
 
