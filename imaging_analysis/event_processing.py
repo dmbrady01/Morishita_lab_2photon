@@ -23,7 +23,7 @@ import os
 import json
 import itertools
 import re
-import utils
+from imaging_analysis import utils
 
 def LoadEventParams(dpath=None, evtdict=None, mode='TTL'):
     """Checks that loaded event parameters (either through a directory path or

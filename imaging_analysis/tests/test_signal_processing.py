@@ -23,6 +23,7 @@ from imaging_analysis.signal_processing import FilterSignal
 from imaging_analysis.signal_processing import DeltaFOverF
 from imaging_analysis.signal_processing import NormalizeSignal
 from imaging_analysis.signal_processing import ProcessSignalData
+from imaging_analysis.signal_processing import GetImagingDataIndices
 
 class TestTruncateSignal(unittest.TestCase):
     "Tests for the TruncateSignal function."
@@ -493,6 +494,11 @@ class TestProcessSignalData(unittest.TestCase):
         test_signal = NormalizeSignal(self.analog1, self.analog2, fs=self.fs)
         equal = np.array_equal(output, test_signal)
         self.assertTrue(equal)
+
+class TestGetImagingDataIndices(unittest.TestCase):
+
+    def test_get_imaging_data_indices(self):
+        self.assertEqual(GetImagingDataIndices(10.5, 50.2, 12), (11*12, 50*12))
 
 
 
