@@ -33,6 +33,7 @@ sns.set_style('darkgrid')
 signal_channel = 'LMag 1' # Name of our signal channel
 reference_channel = 'LMag 2' # ame of our reference channel
 mode = 'TTL'
+baseline_window_unaligned = True
 
 before_alignment = [
     {'type': 'filter', 'options': {}},
@@ -574,15 +575,20 @@ for dpath_ind, dpath in enumerate(dpaths):
             curr_ax = ax3
             #curr_ax = plt.axes()
             # Plot baseline and response
-            baseline_start = zscores[baseline_window[0]:baseline_window[1]].index[0]
-            baseline_end = zscores[baseline_window[0]:baseline_window[1]].index[-1]
+
+            legend = []
+            if baseline_window_unaligned is False:
+                baseline_start = zscores[baseline_window[0]:baseline_window[1]].index[0]
+                baseline_end = zscores[baseline_window[0]:baseline_window[1]].index[-1]
+                baseline_height = zscores[baseline_window[0]:baseline_window[1]].mean(axis=1).min() - 0.5
+                curr_ax.plot([baseline_start, baseline_end], [baseline_height, baseline_height], color='.6', linewidth=3)
+                legend.append('baseline window')
+            
             response_start = zscores[response_window[0]:response_window[1]].index[0]
             response_end = zscores[response_window[0]:response_window[1]].index[-1]
-            baseline_height = zscores[baseline_window[0]:baseline_window[1]].mean(axis=1).min() - 0.5
             response_height = zscores[response_window[0]:response_window[1]].mean(axis=1).max() + .5
-
-            curr_ax.plot([baseline_start, baseline_end], [baseline_height, baseline_height], color='.6', linewidth=3)
             curr_ax.plot([response_start, response_end], [response_height, response_height], color='r', linewidth=3)
+            legend.append('response window')
 
             curr_ax.plot(zscores_mean.index, zscores_mean.values, color='b', linewidth=2)
             curr_ax.fill_between(zscores_mean.index, (zscores_mean - zscores_sem).values, 
@@ -593,22 +599,28 @@ for dpath_ind, dpath in enumerate(dpaths):
 
             curr_ax.set_ylabel('Z-Score')
             curr_ax.set_xlabel('Time (s)')
-            curr_ax.legend(['baseline window', 'response window'])
+            curr_ax.legend(legend)
             curr_ax.set_title('465 nm Average Z-Score Signal $\pm$ SEM')
             print('Done!')
         ##################### Quantification #################################
             PrintNoNewLine('Performing statistical testing on baseline vs response periods...')
+
+            if baseline_window_unaligned:
+                baseline_window = process['options']['period']
+                baseline_window_values = [x.magnitude for x in segment.analogsignals if x.name == 'measure_signal'][0]
+            else:
+                baseline_window_values = zscores
             # Generating summary statistics
             if quantification == 'AUC':
-                base = np.trapz(zscores[baseline_window[0]:baseline_window[1]], axis=0)
+                base = np.trapz(baseline_window_values[baseline_window[0]:baseline_window[1]], axis=0)
                 resp = np.trapz(zscores[response_window[0]:response_window[1]], axis=0)
                 ylabel = 'AUC'
             elif quantification == 'mean':
-                base = np.mean(zscores[baseline_window[0]:baseline_window[1]], axis=0)
+                base = np.mean(baseline_window_values[baseline_window[0]:baseline_window[1]], axis=0)
                 resp = np.mean(zscores[response_window[0]:response_window[1]], axis=0)
                 ylabel = 'Z-Score'
             elif quantification == 'median':
-                base = np.median(zscores[baseline_window[0]:baseline_window[1]], axis=0)
+                base = np.median(baseline_window_values[baseline_window[0]:baseline_window[1]], axis=0)
                 resp = np.median(zscores[response_window[0]:response_window[1]], axis=0)
                 ylabel = 'Z-Score'
 
@@ -630,7 +642,10 @@ for dpath_ind, dpath in enumerate(dpaths):
                 resp_normal = [1, 1]
 
             difference_alpha = 0.05
-            if (base_normal[1] >= normal_alpha) or (resp_normal[1] >= normal_alpha):
+            if baseline_window_unaligned is True:
+                test = 'One Sample T-Test'
+                stats_results = stats.ttest_1samp(resp, base[0])
+            elif (base_normal[1] >= normal_alpha) or (resp_normal[1] >= normal_alpha):
                 test = 'Wilcoxon Signed-Rank Test'
                 stats_results = stats.wilcoxon(base, resp)
             else:
