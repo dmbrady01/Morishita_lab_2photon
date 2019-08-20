@@ -755,3 +755,7 @@ def Downsample(signal, window, index_col='index'):
     signal = signal.groupby(sample).mean()
     signal = signal.set_index(index_col)
     return signal 
+
+def GetImagingDataIndices(start=None, end=None, sampling_rate=1):
+    return (int(start*sampling_rate), int(end*sampling_rate))
+

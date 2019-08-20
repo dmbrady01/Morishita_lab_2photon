@@ -11,7 +11,9 @@ __lastmodified__ = "11 Jun 2018"
 
 # Import unittest modules and event_processing
 import unittest
+from mock import patch
 from neo.core import Event, Segment
+import neo
 import quantities as pq
 import numpy as np
 import pandas as pd
@@ -26,7 +28,7 @@ from imaging_analysis.event_processing import ResultOfTrial
 from imaging_analysis.event_processing import ProcessTrials
 from imaging_analysis.event_processing import CalculateStartsAndDurations
 from imaging_analysis.event_processing import GroupTrialsByEpoch
-
+from imaging_analysis.event_processing import GetImagingDataTTL
 
 class TestLoadEventParams(unittest.TestCase):
     "Code tests for LoadEventParams function"
@@ -705,7 +707,22 @@ class TestGroupTrialsByEpoch(unittest.TestCase):
             self.trials.results.unique().shape[0] + \
             self.trials.with_previous_results.unique().shape[0] - 1)
 
+class TestGetImagingDataTTL(unittest.TestCase):
+    "Tests for GetImagingDataTTL function"
 
+    @patch('imaging_analysis.utils.ReadNeoTdt')
+    def test_GetImagingDataTTL(self, mock_tdt):
+        event1 = neo.Event(times=[1,2,3]*pq.s)
+        event2 = neo.Event(times=[4,5,6]*pq.s)
+        event3 = neo.Event(times=[7,8,9]*pq.s)
+        segment = neo.Segment()
+        segment.events.append(event1)
+        segment.events.append(event2)
+        segment.events.append(event3)
+        block = neo.Block()
+        block.segments.append(segment)
+        mock_tdt.return_value = block
+        self.assertEqual(3, GetImagingDataTTL('/dpath/', time_idx=-1, event_idx=0))
 
 if __name__ == '__main__':
     unittest.main()

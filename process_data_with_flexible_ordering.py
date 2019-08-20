@@ -14,10 +14,10 @@ __datewritten__ = "07 Mar 2018"
 __lastmodified__ = "06 Feb 2019"
 
 import sys
-from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson
+from imaging_analysis.event_processing import LoadEventParams, ProcessEvents, ProcessTrials, GroupTrialsByEpoch, GenerateManualEventParamsJson, GetImagingDataTTL
 from imaging_analysis.segment_processing import TruncateSegments, AppendDataframesToSegment, AlignEventsAndSignals
 from imaging_analysis.utils import ReadNeoPickledObj, ReadNeoTdt, WriteNeoPickledObj, PrintNoNewLine
-from imaging_analysis.signal_processing import SingleStepProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod, Downsample
+from imaging_analysis.signal_processing import SingleStepProcessSignalData, DeltaFOverF, PolyfitWindow, SmoothSignalWithPeriod, ZScoreCalculator, SmoothSignalWithPeriod, Downsample, GetImagingDataIndices
 import numpy as np
 from neo.core import Epoch, Event
 import quantities as pq
@@ -30,23 +30,28 @@ import json
 sns.set_style('darkgrid')
 ############## PART 1 Preprocess data ##########################
 ##################### Kazu/Mike Section ###############################
-signal_channel = '465A 1' # Name of our signal channel
-reference_channel = '405A 1' # ame of our reference channel
-mode = 'manual'
+signal_channel = 'LMag 1' # Name of our signal channel
+reference_channel = 'LMag 2' # ame of our reference channel
+mode = 'TTL'
 
 before_alignment = [
     {'type': 'filter', 'options': {}},
     {'type': 'detrend', 'options': {'detrend': 'savgol_from_reference'}},
-    {'type': 'detrend', 'options': {'detrend': 'linear'}}
+    {'type': 'detrend', 'options': {'detrend': 'linear'}},
+    {'type': 'measure', 'options': {'mode': 'z_score_period', 'start_from': 'dpath', 'end_from': 600}}
+]
+
+offsets_list = [
+    100
 ]
 
 ##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
-path_to_social_excel = [
-    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1/1292036-1.csv'
-]
-#### WHERE IS THE DATA
+# path_to_social_excel = [
+#     '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1/1292036-1.csv'
+# ]
+# #### WHERE IS THE DATA
 dpaths = [
-    '/Users/DB/Development/Monkey_frog/data/FirstFibPho-190516-122345_1292036-1'
+    '/Users/DB/Development/Monkey_frog/data/TDT-LockinRX8-22Oct2014_20-4-15_DT1_0125185/'
 ]
 #### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
 alignment_blocks = [
@@ -64,9 +69,7 @@ alignment_blocks = [
             'heatmap_range': [None, None],
             'smoothing_window': 200
         },
-        'after_alignment': [
-            {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-30, 0]}},
-        ]
+        'after_alignment': []
     },        
 ]
 ##################### Kevin Section ###############################
@@ -78,36 +81,34 @@ alignment_blocks = [
 #     {'type': 'filter', 'options': {}}
 # ]
 
-# ##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
-# path_to_ttl_event_params = [
-#     'imaging_analysis/ttl_event_params_new_rig.json'
-# ]
+##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
+path_to_ttl_event_params = [
+    'imaging_analysis/ttl_event_params.json'
+]
 # #### WHERE IS THE DATA
 # dpaths = [
 #     '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
 # ]
-# #### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
-# alignment_blocks = [
-#     {
-#         'epoch_name': 'correct',
-#         'event': 'correct',
-#         'prewindow': 10,
-#         'postwindow': 30,
-#         'downsample': 10,
-#         'quantification': 'mean', # options are AUC, median, and mean
-#         'baseline_window': [-5, -2],
-#         'response_window': [1, 4],
-#         'save_file_as': 'correct_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [None, None],
-#             'smoothing_window': 500
-#         },
-#         'after_alignment': [
-#             {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-#             {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-8, -3]}}
-#         ]
-#     }
-# ]
+#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
+alignment_blocks = [
+    {
+        'epoch_name': 'correct',
+        'event': 'correct',
+        'prewindow': 10,
+        'postwindow': 30,
+        'downsample': 10,
+        'quantification': 'mean', # options are AUC, median, and mean
+        'baseline_window': [-5, -2],
+        'response_window': [1, 4],
+        'save_file_as': 'correct_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        },
+        'after_alignment': [
+        ]
+    }
+]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
@@ -148,6 +149,17 @@ for dpath_ind, dpath in enumerate(dpaths):
                 if step_number == 0:
                     input_sig_ch = signal_channel
                     input_ref_ch = reference_channel
+
+                if 'start_from' in process['options'].keys():
+                    start_from = process['options']['start_from']
+                    if start_from == 'list':
+                        start = offsets_list[dpath_ind]
+                        end = start + process['options']['end_from']
+                    else:
+                        start = GetImagingDataTTL(dpath)
+                        end = start + process['options']['end_from']
+                    indices = GetImagingDataIndices(start, end, sampling_rate.magnitude)
+                    process['options']['period'] = indices
 
                 signal, reference = SingleStepProcessSignalData(data=segment, process_type=process['type'], 
                     input_sig_ch=input_sig_ch, input_ref_ch=input_ref_ch, datatype='segment', **process['options'])

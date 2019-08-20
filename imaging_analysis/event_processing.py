@@ -23,6 +23,7 @@ import os
 import json
 import itertools
 import re
+from imaging_analysis import utils
 
 def LoadEventParams(dpath=None, evtdict=None, mode='TTL'):
     """Checks that loaded event parameters (either through a directory path or
@@ -127,8 +128,6 @@ def FormatManualExcelFile(excel_file, event_col='Bout type', start_col='Bout sta
         df = df.set_index(start_col).reindex(np.arange(start, end, resample_window)).ffill()
 
     return df
-
-
 
 def GenerateManualEventParamsJson(dataframe, event_col='Bout type', 
         name='imaging_analysis/manual_event_params.json'):
@@ -516,3 +515,8 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
         seg.epochs.append(Epoch(times=np.array(epoch[0]) * pq.s,
             durations=np.array(epoch[1]) * pq.s, name=epoch[2]))
 
+def GetImagingDataTTL(fp_datapath, time_idx=0, event_idx=1):
+    block = utils.ReadNeoTdt(path=fp_datapath)
+    seglist = block.segments
+    seg = seglist[0]
+    return seg.events[event_idx].times[time_idx].magnitude
