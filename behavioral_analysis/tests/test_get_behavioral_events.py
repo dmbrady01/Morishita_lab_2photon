@@ -185,16 +185,21 @@ class TestGetBehavioralEvents(unittest.TestCase):
         ]
         mock_read_csv.return_value = pd.DataFrame(data)
         print(pd.DataFrame(data))
-        a, s, l = GetBehavioralEvents().get_ethovision_header_info('/path/', 
+        l, a, s = GetBehavioralEvents().get_ethovision_header_info('/path/', 
             stimulus_name_set={'stimulus location'}, animal_name_set={'animal animal'})
         self.assertEqual(l, 5)
         self.assertEqual(a, 'abc')
         self.assertEqual(s, 'right')
+        # test only_skip_lines
+        l, a, s = GetBehavioralEvents().get_ethovision_header_info('/path/', only_skip_lines=True)
+        self.assertEqual(l, 5)  
+        self.assertIsNone(a)
+        self.assertIsNone(s)      
 
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_ethovision_header_info')
     @patch('pandas.read_csv')
     def test_load_ethovision_data(self, mock_read_csv, mock_header_data):
-        mock_header_data.return_value = ('abc', 'right', 3)
+        mock_header_data.return_value = (3, 'abc', 'right')
         test_df = pd.DataFrame({'time': [1,2], 'value': [3,4]})
         mock_read_csv.return_value = test_df
         data, animal, location = GetBehavioralEvents().load_ethovision_data('/a/', {'stimulus location'})

@@ -153,21 +153,29 @@ class GetBehavioralEvents(object):
 
     @staticmethod
     def get_ethovision_header_info(datapath, stimulus_name_set=STIMULUS_NAME_SET, 
-        animal_name_set=ANIMAL_NAME_SET):
+        animal_name_set=ANIMAL_NAME_SET, only_skip_lines=False):
         # Reads the dataframe to figure out how many rows to skip
         header_df = pd.read_csv(datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
-        # Gets the animal name
-        animal_name = header_df.loc[header_df[0].str.lower().isin(animal_name_set), 1].values[0]
-        stimulus_location = header_df.loc[header_df[0].str.lower().isin(stimulus_name_set), 1].values[0]
+        if only_skip_lines:
+            return lines_to_skip, None, None
+        else:
+            # Gets the animal name
+            animal_name = header_df.loc[header_df[0].str.lower().isin(animal_name_set), 1].values[0]
+            stimulus_location = header_df.loc[header_df[0].str.lower().isin(stimulus_name_set), 1].values[0]
 
-        return animal_name, stimulus_location, lines_to_skip
+            return lines_to_skip, animal_name, stimulus_location
 
     def load_ethovision_data(self, datapath=None, 
-            stimulus_name_set=STIMULUS_NAME_SET):
+            stimulus_name_set=STIMULUS_NAME_SET, animal_name_set=ANIMAL_NAME_SET,
+            only_skip_lines=False):
         
-        animal_name, stimulus_location, lines_to_skip = self.get_ethovision_header_info(datapath=datapath, 
-                stimulus_name_set=stimulus_name_set)
+        lines_to_skip, animal_name, stimulus_location = self.get_ethovision_header_info(
+                                        datapath=datapath, 
+                                        stimulus_name_set=stimulus_name_set, 
+                                        animal_name_set=ANIMAL_NAME_SET, 
+                                        only_skip_lines=only_skip_lines
+                                    )
 
         # read the data again
         data = pd.read_csv(datapath, skiprows=[x for x in range(lines_to_skip) if x != lines_to_skip-2])
