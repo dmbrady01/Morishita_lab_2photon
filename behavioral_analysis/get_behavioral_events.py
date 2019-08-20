@@ -64,13 +64,18 @@ STIMULUS_NAME_SET = {
     'stimulus location'
 }
 
+ANIMAL_NAME_SET = {
+    'animal id',
+    'subject id'
+}
+
 class GetBehavioralEvents(object):
 
     def __init__(self, datapath=None, savefolder=None, time_offset=0, 
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
-        latency_threshold=10):
+        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -87,6 +92,7 @@ class GetBehavioralEvents(object):
         self.label_dict = label_dict
         # Added to stimulus set
         self.stimulus_name_set = stimulus_name_set
+        self.animal_name_set = animal_name_set
         self.latency_threshold = latency_threshold
 
         #start processes
@@ -146,12 +152,13 @@ class GetBehavioralEvents(object):
         return sep.join(string.split())
 
     @staticmethod
-    def get_ethovision_header_info(datapath, stimulus_name_set=STIMULUS_NAME_SET):
+    def get_ethovision_header_info(datapath, stimulus_name_set=STIMULUS_NAME_SET, 
+        animal_name_set=ANIMAL_NAME_SET):
         # Reads the dataframe to figure out how many rows to skip
         header_df = pd.read_csv(datapath, header=None)
         lines_to_skip = int(header_df.iloc[0, 1])
         # Gets the animal name
-        animal_name = header_df.loc[header_df[0] == 'Animal ID', 1].values[0]
+        animal_name = header_df.loc[header_df[0].str.lower().isin(animal_name_set), 1].values[0]
         stimulus_location = header_df.loc[header_df[0].str.lower().isin(stimulus_name_set), 1].values[0]
 
         return animal_name, stimulus_location, lines_to_skip

@@ -180,13 +180,13 @@ class TestGetBehavioralEvents(unittest.TestCase):
     def test_get_ethovision_header_info(self, mock_read_csv):
         data = [
             ['Header', 5],
-            ['Animal ID', 'abc'],
+            ['Animal Animal', 'abc'],
             ['Stimulus Location', 'right']
         ]
         mock_read_csv.return_value = pd.DataFrame(data)
         print(pd.DataFrame(data))
         a, s, l = GetBehavioralEvents().get_ethovision_header_info('/path/', 
-            stimulus_name_set={'stimulus location'})
+            stimulus_name_set={'stimulus location'}, animal_name_set={'animal animal'})
         self.assertEqual(l, 5)
         self.assertEqual(a, 'abc')
         self.assertEqual(s, 'right')
