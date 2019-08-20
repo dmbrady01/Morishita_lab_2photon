@@ -81,36 +81,34 @@ alignment_blocks = [
 #     {'type': 'filter', 'options': {}}
 # ]
 
-# ##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
-# path_to_ttl_event_params = [
-#     'imaging_analysis/ttl_event_params_new_rig.json'
-# ]
+##### WHAT ARE THE EVENTS/HOW TO INTERPRET EVENT TIMESTAMPS
+path_to_ttl_event_params = [
+    'imaging_analysis/ttl_event_params.json'
+]
 # #### WHERE IS THE DATA
 # dpaths = [
 #     '/Users/DB/Development/Monkey_frog/data/FirstFibPho-180817-160254'
 # ]
-# #### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
-# alignment_blocks = [
-#     {
-#         'epoch_name': 'correct',
-#         'event': 'correct',
-#         'prewindow': 10,
-#         'postwindow': 30,
-#         'downsample': 10,
-#         'quantification': 'mean', # options are AUC, median, and mean
-#         'baseline_window': [-5, -2],
-#         'response_window': [1, 4],
-#         'save_file_as': 'correct_processed',
-#         'plot_paramaters': {
-#             'heatmap_range': [None, None],
-#             'smoothing_window': 500
-#         },
-#         'after_alignment': [
-#             {'type': 'detrend', 'options': {'detrend': 'linear', 'signal_window_length': None}},
-#             {'type': 'measure', 'options': {'mode': 'z_score_period', 'period': [-8, -3]}}
-#         ]
-#     }
-# ]
+#### HOW SHOULD THE SIGNAL BE ALIGNED WITH EVENTS
+alignment_blocks = [
+    {
+        'epoch_name': 'correct',
+        'event': 'correct',
+        'prewindow': 10,
+        'postwindow': 30,
+        'downsample': 10,
+        'quantification': 'mean', # options are AUC, median, and mean
+        'baseline_window': [-5, -2],
+        'response_window': [1, 4],
+        'save_file_as': 'correct_processed',
+        'plot_paramaters': {
+            'heatmap_range': [None, None],
+            'smoothing_window': 500
+        },
+        'after_alignment': [
+        ]
+    }
+]
 
 ####################### PREPROCESSING DATA ###############################
 print('\n\n\n\nRUNNING IN MODE: %s \n\n\n' % mode)
