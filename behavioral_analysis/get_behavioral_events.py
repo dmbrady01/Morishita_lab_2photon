@@ -183,7 +183,7 @@ class GetBehavioralEvents(object):
         return data, animal_name, stimulus_location
 
     def get_ethovision_start_ttl(self, datapath=None, stimulus_name_set=STIMULUS_NAME_SET, time_column='Trial time'):
-        data, _, _ = self.load_ethovision_data(datapath, stimulus_name_set=stimulus_name_set)
+        data, _, _ = self.load_ethovision_data(datapath, stimulus_name_set=stimulus_name_set, only_skip_lines=True)
 
         # find first time value after initialization
         start_value = data.loc[data[time_column] > 1.034, time_column].values[0]
