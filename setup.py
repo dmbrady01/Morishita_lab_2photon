@@ -8,7 +8,7 @@ with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='monkeyfrog',
-    version='1.0.2',
+    version='1.0.3',
     description='Package for processing and analyzing fiber photometry and behavioral data',
     url='http://github.com/dmbrady01/Monkey_frog',
     author='DM Brady <dmbrady01@gmail.com> ',
