@@ -54,6 +54,9 @@ def ReadNeoTdt(path, return_block=True):
     reader = io.TdtIO(dirname=path)
     # Reads block
     block = reader.read_block()
+    # Throw error if there are no segments
+    if len(block.segments) == 0:
+        raise OSError('The data did not load. Please check the path again. Alternatively, make sure you have all the file types necessary.')
     # Returns segments or blocks
     if return_block:
         return block
