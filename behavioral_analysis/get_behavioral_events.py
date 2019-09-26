@@ -191,11 +191,12 @@ class GetBehavioralEvents(object):
         return start_value
 
     @staticmethod
-    def get_fp_start_ttl(fp_datapath):
+    def get_fp_start_ttl(fp_datapath, time_idx=0, event_name='PC0/'):
         block = utils.ReadNeoTdt(path=fp_datapath)
         seglist = block.segments
         seg = seglist[0]
-        return seg.events[1].times[0].magnitude
+        event = [x for x in seg.events if event_name in x.name][0]
+        return event.times[time_idx].magnitude
 
     def get_ethovision_offset(self):
         etho_start = self.get_ethovision_start_ttl(datapath=self.offset_datapath, 

@@ -712,9 +712,9 @@ class TestGetImagingDataTTL(unittest.TestCase):
 
     @patch('imaging_analysis.utils.ReadNeoTdt')
     def test_GetImagingDataTTL(self, mock_tdt):
-        event1 = neo.Event(times=[1,2,3]*pq.s)
-        event2 = neo.Event(times=[4,5,6]*pq.s)
-        event3 = neo.Event(times=[7,8,9]*pq.s)
+        event1 = neo.Event(times=[1,2,3]*pq.s, name='A')
+        event2 = neo.Event(times=[4,5,6]*pq.s, name='B')
+        event3 = neo.Event(times=[7,8,9]*pq.s, name='C')
         segment = neo.Segment()
         segment.events.append(event1)
         segment.events.append(event2)
@@ -722,7 +722,7 @@ class TestGetImagingDataTTL(unittest.TestCase):
         block = neo.Block()
         block.segments.append(segment)
         mock_tdt.return_value = block
-        self.assertEqual(3, GetImagingDataTTL('/dpath/', time_idx=-1, event_idx=0))
+        self.assertEqual(3, GetImagingDataTTL('/dpath/', time_idx=-1, event_name='A'))
 
 if __name__ == '__main__':
     unittest.main()
