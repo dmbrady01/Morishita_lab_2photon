@@ -696,7 +696,7 @@ for dpath_ind, dpath in enumerate(dpaths):
             zscores.to_csv(save_path + '_zscores_aligned.csv')
             # Trial point estimates
             point_estimates = pd.DataFrame({'baseline': base, 'response': resp}, 
-                index=np.arange(1, base.shape[0]+1)).ffill().bfill()
+                index=np.arange(1, resp.shape[0]+1)).ffill().bfill()
             point_estimates.index.name = 'trial'
             point_estimates.to_csv(save_path + '_point_estimates.csv')
             # Save meta data
