@@ -215,14 +215,14 @@ class TestGetBehavioralEvents(unittest.TestCase):
 
     @patch('imaging_analysis.utils.ReadNeoTdt')
     def test_get_fp_start_ttl(self, mock_tdt):
-        event = neo.Event(times=[1,2,3]*pq.s)
+        event = neo.Event(times=[1,2,3]*pq.s, name='A')
         segment = neo.Segment()
         segment.events.append(event)
         segment.events.append(event)
         block = neo.Block()
         block.segments.append(segment)
         mock_tdt.return_value = block
-        self.assertEqual(1, GetBehavioralEvents().get_fp_start_ttl('/path/to/data/'))
+        self.assertEqual(1, GetBehavioralEvents().get_fp_start_ttl('/path/to/data/', event_name='A'))
 
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_ethovision_start_ttl')
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_fp_start_ttl')
