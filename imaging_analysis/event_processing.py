@@ -515,9 +515,12 @@ def GroupTrialsByEpoch(seg=None, trials=None, startoftrial=None,
         seg.epochs.append(Epoch(times=np.array(epoch[0]) * pq.s,
             durations=np.array(epoch[1]) * pq.s, name=epoch[2]))
 
-def GetImagingDataTTL(fp_datapath, time_idx=0, event_name='PC0/'):
+def GetImagingDataTTL(fp_datapath, time_idx=0, event_name='PC0/', event_idx=1):
     block = utils.ReadNeoTdt(path=fp_datapath)
     seglist = block.segments
     seg = seglist[0]
-    event = [x for x in seg.events if event_name in x.name][0]
+    try:
+        event = [x for x in seg.events if event_name in x.name][0]
+    except:
+        event = seg.events[event_idx]
     return event.times[time_idx].magnitude

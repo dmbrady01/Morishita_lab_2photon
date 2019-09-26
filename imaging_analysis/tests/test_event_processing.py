@@ -723,6 +723,7 @@ class TestGetImagingDataTTL(unittest.TestCase):
         block.segments.append(segment)
         mock_tdt.return_value = block
         self.assertEqual(3, GetImagingDataTTL('/dpath/', time_idx=-1, event_name='A'))
+        self.assertEqual(6, GetImagingDataTTL('/dpath/', time_idx=-1, event_idx=1))
 
 if __name__ == '__main__':
     unittest.main()
