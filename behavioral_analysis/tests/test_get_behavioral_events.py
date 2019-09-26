@@ -223,6 +223,7 @@ class TestGetBehavioralEvents(unittest.TestCase):
         block.segments.append(segment)
         mock_tdt.return_value = block
         self.assertEqual(1, GetBehavioralEvents().get_fp_start_ttl('/path/to/data/', event_name='A'))
+        self.assertEqual(1, GetBehavioralEvents().get_fp_start_ttl('/path/to/data/', event_idx=0))
 
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_ethovision_start_ttl')
     @patch('behavioral_analysis.get_behavioral_events.GetBehavioralEvents.get_fp_start_ttl')
