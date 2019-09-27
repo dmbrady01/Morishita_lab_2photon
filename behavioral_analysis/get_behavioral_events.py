@@ -75,7 +75,7 @@ class GetBehavioralEvents(object):
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
-        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10):
+        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10, cast=True):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -94,6 +94,8 @@ class GetBehavioralEvents(object):
         self.stimulus_name_set = stimulus_name_set
         self.animal_name_set = animal_name_set
         self.latency_threshold = latency_threshold
+        # cast interaction zone to chamber zone
+        self.cast = cast
 
         #start processes
         self.set_savefolder()
@@ -290,16 +292,15 @@ class GetBehavioralEvents(object):
 
     @staticmethod
     def boolean_cast_data(data, to_column, from_column):
-        data.loc[:, to_column] = df.loc[:, to_column] | df.loc[:, from_column]
+        data.loc[:, to_column] = data.loc[:, to_column] | data.loc[:, from_column]
         return data
-
 
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath, 
             stimulus_name_set=self.stimulus_name_set)
 
         # Get the zone columns
-        zone_columns = [x for x in data.columns if 'In zone' in x]
+        zone_columns = [x for x in data.columns if ( ('In zone' in x) and ('nose-point' in x) )]
         # # relabel zone columns
         # zone_columns = [self.relabel_bout_type(x, stimulus_location) for x in zone_columns]
 
@@ -308,6 +309,17 @@ class GetBehavioralEvents(object):
         # Fix nulls and data types
         for column in zone_columns:
             data = self.convert_ethovision_data_to_proper_format(data, column)
+
+        if self.cast:
+            # cast data left
+            left_int = [x for x in zone_columns if ('left' in x.lower()) and ( ('interaction' in x.lower()) or ('sni' in x.lower()) )][0]
+            left_cham = [x for x in zone_columns if ('left' in x.lower()) and ( ('chamber' in x.lower()) or ('basin' in x.lower()) )][0]
+
+            right_int = [x for x in zone_columns if ('right' in x.lower()) and ( ('interaction' in x.lower()) or ('sni' in x.lower()) )][0]
+            right_cham = [x for x in zone_columns if ('right' in x.lower()) and ( ('chamber' in x.lower()) or ('basin' in x.lower()) )][0]
+            
+            data = self.boolean_cast_data(data, right_cham, right_int)
+            data = self.boolean_cast_data(data, left_cham, left_int)
 
         for column in zone_columns:
             zone_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
