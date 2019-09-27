@@ -266,6 +266,34 @@ class GetBehavioralEvents(object):
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
 
+    @staticmethod
+    def convert_ethovision_nulls(data, column):
+        mask = ~data.loc[:, column].astype(str).isin({'0', '1'})
+        data.loc[mask, column] = np.nan
+        return data
+
+    @staticmethod
+    def forward_fill_ethovision_data(data, column):
+        data.loc[:, column] = data.loc[:, column].ffill()
+        return data
+
+    @staticmethod
+    def convert_ethovision_to_int(data, column):
+        data.loc[:, column] = data.loc[:, column].astype(int)
+        return data
+
+    def convert_ethovision_data_to_proper_format(self, data, column):
+        data = self.convert_ethovision_nulls(data, column)
+        data = self.forward_fill_ethovision_data(data, column)
+        data = self.convert_ethovision_to_int(data, column)
+        return data
+
+    @staticmethod
+    def boolean_cast_data(data, to_column, from_column):
+        data.loc[:, to_column] = df.loc[:, to_column] | df.loc[:, from_column]
+        return data
+
+
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath, 
             stimulus_name_set=self.stimulus_name_set)
@@ -276,6 +304,10 @@ class GetBehavioralEvents(object):
         # zone_columns = [self.relabel_bout_type(x, stimulus_location) for x in zone_columns]
 
         results_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
+
+        # Fix nulls and data types
+        for column in zone_columns:
+            data = self.convert_ethovision_data_to_proper_format(data, column)
 
         for column in zone_columns:
             zone_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
