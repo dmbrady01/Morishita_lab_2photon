@@ -42,7 +42,8 @@ class TestGetBehavioralEvents(unittest.TestCase):
                                 offset_datapath='j', 
                                 fp_datapath='k', 
                                 stimulus_name_set='l', 
-                                latency_threshold='m'
+                                latency_threshold='m',
+                                cast='n'
                                 )
         self.assertEqual(e.datapath, 'a')
         self.assertEqual(e.savefolder, 'b/')
@@ -57,6 +58,7 @@ class TestGetBehavioralEvents(unittest.TestCase):
         self.assertEqual(e.fp_datapath, 'k')
         self.assertEqual(e.stimulus_name_set, 'l')
         self.assertEqual(e.latency_threshold, 'm')
+        self.assertFalse(e.cast)
 
     def test_set_datapath(self):
         default_datapath = './data/ethovision.csv'
@@ -92,6 +94,12 @@ class TestGetBehavioralEvents(unittest.TestCase):
         mock_to_csv.assert_any_call(check_file, index=False)
         mock_to_csv.assert_any_call(check_file2, index=False)
 
+    def test_cast_to_bool(self):
+        e = GetBehavioralEvents(cast='y')
+        self.assertTrue(e.cast)
+        e.cast = 'n'
+        e.cast_to_bool()
+        self.assertFalse(e.cast)
 
     def test_prune_minimum_bouts(self):
         data = {

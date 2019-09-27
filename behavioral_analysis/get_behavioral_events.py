@@ -75,7 +75,7 @@ class GetBehavioralEvents(object):
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
-        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10, cast=True):
+        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10, cast='Y'):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -96,6 +96,7 @@ class GetBehavioralEvents(object):
         self.latency_threshold = latency_threshold
         # cast interaction zone to chamber zone
         self.cast = cast
+        self.cast_to_bool()
 
         #start processes
         self.set_savefolder()
@@ -119,6 +120,12 @@ class GetBehavioralEvents(object):
 
             df.to_csv(self.savefolder + self.datatype + '_' + animal_name + '.csv', 
                 index=False)
+
+    def cast_to_bool(self):
+        if self.cast.lower() == 'y':
+            self.cast = True
+        else:
+            self.cast = False
 
     def prune_minimum_bouts(self, df):
         return df.loc[df['Bout end'] - df['Bout start'] >= self.minimum_bout_time]
@@ -482,6 +489,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--latency-threshold', type=float, default=None,
         help='Latency threshold between similar bouts to prevent annealing')
+    parser.add_argument(
+        '--cast', type=str, default='Y',
+        help='True/False that interaction zones are a subset of chamber zones')
     args = parser.parse_args()
     datapath = args.datapath 
     savefolder = args.savefolder 
@@ -493,6 +503,7 @@ if __name__ == '__main__':
     offset_datapath = args.offset_datapath
     fp_datapath = args.fp_datapath
     latency_threshold = args.latency_threshold
+    cast = args.cast
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -504,6 +515,7 @@ if __name__ == '__main__':
                                         max_session_time=max_session_time,
                                         offset_datapath=offset_datapath,
                                         fp_datapath=fp_datapath,
-                                        latency_threshold=latency_threshold
+                                        latency_threshold=latency_threshold,
+                                        cast=cast
                                     )
     event_parser.run()
