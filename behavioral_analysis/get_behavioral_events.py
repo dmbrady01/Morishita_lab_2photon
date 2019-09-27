@@ -75,7 +75,7 @@ class GetBehavioralEvents(object):
         time_column='Trial time', minimum_bout_time=0, datatype='ethovision',
         name_match=r'\d{5,}-\d*', max_session_time=600, label_dict=BOUT_TYPE_DICT, 
         offset_datapath=None, fp_datapath=None, stimulus_name_set=STIMULUS_NAME_SET,
-        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10):
+        animal_name_set=ANIMAL_NAME_SET, latency_threshold=10, cast='Y'):
         # Timing info
         self.time_offset = time_offset
         self.time_column = time_column
@@ -94,6 +94,9 @@ class GetBehavioralEvents(object):
         self.stimulus_name_set = stimulus_name_set
         self.animal_name_set = animal_name_set
         self.latency_threshold = latency_threshold
+        # cast interaction zone to chamber zone
+        self.cast = cast
+        self.cast_to_bool()
 
         #start processes
         self.set_savefolder()
@@ -117,6 +120,12 @@ class GetBehavioralEvents(object):
 
             df.to_csv(self.savefolder + self.datatype + '_' + animal_name + '.csv', 
                 index=False)
+
+    def cast_to_bool(self):
+        if self.cast.lower() == 'y':
+            self.cast = True
+        else:
+            self.cast = False
 
     def prune_minimum_bouts(self, df):
         return df.loc[df['Bout end'] - df['Bout start'] >= self.minimum_bout_time]
@@ -266,16 +275,58 @@ class GetBehavioralEvents(object):
         # dataset = [(x[0], self.anneal_bouts(self.relabel_bout_type_for_df(self.sort_by_bout_start(self.prune_minimum_bouts(self.add_time_offset(x[1])))))) for x in dataset]
         return cleaned_dataset
 
+    @staticmethod
+    def convert_ethovision_nulls(data, column):
+        mask = ~data.loc[:, column].astype(str).isin({'0', '1'})
+        data.loc[mask, column] = np.nan
+        return data
+
+    @staticmethod
+    def forward_fill_ethovision_data(data, column):
+        data.loc[:, column] = data.loc[:, column].ffill()
+        return data
+
+    @staticmethod
+    def convert_ethovision_to_int(data, column):
+        data.loc[:, column] = data.loc[:, column].astype(int)
+        return data
+
+    def convert_ethovision_data_to_proper_format(self, data, column):
+        data = self.convert_ethovision_nulls(data, column)
+        data = self.forward_fill_ethovision_data(data, column)
+        data = self.convert_ethovision_to_int(data, column)
+        return data
+
+    @staticmethod
+    def boolean_cast_data(data, to_column, from_column):
+        data.loc[:, to_column] = data.loc[:, to_column] | data.loc[:, from_column]
+        return data
+
     def process_ethovision(self):
         data, animal_name, stimulus_location = self.load_ethovision_data(self.datapath, 
             stimulus_name_set=self.stimulus_name_set)
 
         # Get the zone columns
-        zone_columns = [x for x in data.columns if 'In zone' in x]
+        zone_columns = [x for x in data.columns if ( ('In zone' in x) and ('nose-point' in x) )]
         # # relabel zone columns
         # zone_columns = [self.relabel_bout_type(x, stimulus_location) for x in zone_columns]
 
         results_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
+
+        # Fix nulls and data types
+        for column in zone_columns:
+            data = self.convert_ethovision_data_to_proper_format(data, column)
+
+        if self.cast:
+            # cast data left
+            left_int = [x for x in zone_columns if ('left' in x.lower()) and ( ('interaction' in x.lower()) or ('sni' in x.lower()) )][0]
+            left_cham = [x for x in zone_columns if ('left' in x.lower()) and ( ('chamber' in x.lower()) or ('basin' in x.lower()) )][0]
+
+            right_int = [x for x in zone_columns if ('right' in x.lower()) and ( ('interaction' in x.lower()) or ('sni' in x.lower()) )][0]
+            right_cham = [x for x in zone_columns if ('right' in x.lower()) and ( ('chamber' in x.lower()) or ('basin' in x.lower()) )][0]
+            
+            data = self.boolean_cast_data(data, right_cham, right_int)
+            data = self.boolean_cast_data(data, left_cham, left_int)
 
         for column in zone_columns:
             zone_df = pd.DataFrame(columns=['Bout type', 'Bout start', 'Bout end', 'Stimulus Location'])
@@ -438,6 +489,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--latency-threshold', type=float, default=None,
         help='Latency threshold between similar bouts to prevent annealing')
+    parser.add_argument(
+        '--cast', type=str, default='Y',
+        help='True/False that interaction zones are a subset of chamber zones')
     args = parser.parse_args()
     datapath = args.datapath 
     savefolder = args.savefolder 
@@ -449,6 +503,7 @@ if __name__ == '__main__':
     offset_datapath = args.offset_datapath
     fp_datapath = args.fp_datapath
     latency_threshold = args.latency_threshold
+    cast = args.cast
     
     event_parser = GetBehavioralEvents(
                                         datapath=datapath, 
@@ -460,6 +515,7 @@ if __name__ == '__main__':
                                         max_session_time=max_session_time,
                                         offset_datapath=offset_datapath,
                                         fp_datapath=fp_datapath,
-                                        latency_threshold=latency_threshold
+                                        latency_threshold=latency_threshold,
+                                        cast=cast
                                     )
     event_parser.run()

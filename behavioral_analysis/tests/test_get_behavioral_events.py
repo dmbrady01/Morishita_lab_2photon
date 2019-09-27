@@ -42,7 +42,8 @@ class TestGetBehavioralEvents(unittest.TestCase):
                                 offset_datapath='j', 
                                 fp_datapath='k', 
                                 stimulus_name_set='l', 
-                                latency_threshold='m'
+                                latency_threshold='m',
+                                cast='n'
                                 )
         self.assertEqual(e.datapath, 'a')
         self.assertEqual(e.savefolder, 'b/')
@@ -57,6 +58,7 @@ class TestGetBehavioralEvents(unittest.TestCase):
         self.assertEqual(e.fp_datapath, 'k')
         self.assertEqual(e.stimulus_name_set, 'l')
         self.assertEqual(e.latency_threshold, 'm')
+        self.assertFalse(e.cast)
 
     def test_set_datapath(self):
         default_datapath = './data/ethovision.csv'
@@ -92,6 +94,12 @@ class TestGetBehavioralEvents(unittest.TestCase):
         mock_to_csv.assert_any_call(check_file, index=False)
         mock_to_csv.assert_any_call(check_file2, index=False)
 
+    def test_cast_to_bool(self):
+        e = GetBehavioralEvents(cast='y')
+        self.assertTrue(e.cast)
+        e.cast = 'n'
+        e.cast_to_bool()
+        self.assertFalse(e.cast)
 
     def test_prune_minimum_bouts(self):
         data = {
@@ -299,9 +307,35 @@ class TestGetBehavioralEvents(unittest.TestCase):
         self.assertEqual(mock_anneal.call_count, 2)
         mock_prune.assert_any_call('f')
 
+    def test_convert_ethovision_nulls(self):
+        df = pd.DataFrame({'a': [1., '-']})
+        results = GetBehavioralEvents().convert_ethovision_nulls(df, 'a')
+        self.assertTrue(np.isnan(results.loc[1, 'a']))
 
+    def test_forward_fill_ethovision_data(self):
+        df = pd.DataFrame({'a': [1., np.nan]})
+        results = GetBehavioralEvents().forward_fill_ethovision_data(df, 'a')
+        self.assertEqual(1, results.loc[1, 'a'])
 
+    def test_convert_ethovision_to_int(self):
+        df = pd.DataFrame({'a': [1.0, 2.0]})
+        results = GetBehavioralEvents().convert_ethovision_to_int(df, 'a')
+        self.assertIsInstance(results.loc[1, 'a'], int)
 
+    @patch.object(GetBehavioralEvents, 'convert_ethovision_nulls', return_value='a')
+    @patch.object(GetBehavioralEvents, 'forward_fill_ethovision_data', return_value='b')
+    @patch.object(GetBehavioralEvents, 'convert_ethovision_to_int', return_value='c')
+    def test_convert_ethovision_data_to_proper_format(self, mock_int, mock_ff, mock_null):
+        df = pd.DataFrame({'a': [1.0, 2.0]})
+        results = GetBehavioralEvents().convert_ethovision_data_to_proper_format(df, 'A')
+        mock_null.assert_called_with(df, 'A')
+        mock_ff.assert_called_with('a', 'A')
+        mock_int.assert_called_with('b', 'A')
+        self.assertEqual(results, 'c')
 
-
+    def test_boolean_cast_data(self):
+        df = pd.DataFrame({'a': [1, 0, 0], 'b': [0, 1, 0]})
+        check_df = pd.DataFrame({'a': [1, 1, 0], 'b': [0, 1, 0]})
+        results = GetBehavioralEvents().boolean_cast_data(df, 'a', 'b')
+        pd.testing.assert_frame_equal(results, check_df)
 
