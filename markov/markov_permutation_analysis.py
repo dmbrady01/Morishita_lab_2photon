@@ -25,6 +25,7 @@ savepath = '/Users/DB/Development/Monkey_frog/'
 
 # can be 'stationary', 'joint', or 'transition'. last will correct for multiple comparisons
 analysis_type = 'transition'
+right_or_left = 'right'
 
 # Number of permutations to run
 num_permutations = 10000
@@ -43,9 +44,9 @@ true_distance = []
 # Real differences (finds the stationary distro for each)
 if analysis_type == 'stationary':
     group1_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_data, 
-        num_states=num_states, replace_nan=True, calc='right'))
+        num_states=num_states, replace_nan=True, calc=right_or_left))
     group2_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_data, 
-        num_states=num_states, replace_nan=True, calc='right'))
+        num_states=num_states, replace_nan=True, calc=right_or_left))
     true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
     null_distribution = [[] for i in range(1)]
 elif analysis_type == 'joint':
@@ -58,11 +59,18 @@ elif analysis_type == 'joint':
 elif analysis_type == 'transition':
     null_distribution = [[] for i in range(num_states)]
     for i in range(num_states):
-        group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
-            replace_nan=True, calc='right')[i,:]
-        group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
-            replace_nan=True, calc='right')[i,:]
-        true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
+        if right_or_left == 'right':
+            group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
+                replace_nan=True, calc=right_or_left)[i,:]
+            group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
+                replace_nan=True, calc=right_or_left)[i,:]
+            true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
+        else:
+            group1_sd = MarkovToTransitionMatrix(group1_data, num_states=num_states, 
+                replace_nan=True, calc=right_or_left)[:, i]
+            group2_sd = MarkovToTransitionMatrix(group2_data, num_states=num_states, 
+                replace_nan=True, calc=right_or_left)[:, i]
+            true_distance.append(DistanceBewtweenMatrices(group1_sd, group2_sd))
 
 # Preparing for permutation test
 group1_sample_size = len(group1_data)
@@ -83,9 +91,9 @@ while len(null_distribution[0]) < num_permutations:
     # Calcualte stationary distributions
     if analysis_type == 'stationary':
         group1_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group1_perm, 
-            num_states=num_states, replace_nan=True, calc='right'))
+            num_states=num_states, replace_nan=True, calc=right_or_left))
         group2_perm_sd = StationaryDistribution(MarkovToTransitionMatrix(group2_perm, 
-            num_states=num_states, replace_nan=True, calc='right'))
+            num_states=num_states, replace_nan=True, calc=right_or_left))
         perm_distance = DistanceBewtweenMatrices(group1_perm_sd, group2_perm_sd)
         null_distribution[0].append(perm_distance)
     elif analysis_type == 'joint':
@@ -97,12 +105,20 @@ while len(null_distribution[0]) < num_permutations:
         null_distribution[0].append(perm_distance)
     elif analysis_type == 'transition':
         for i in range(num_states):
-            group1_perm_sd = MarkovToTransitionMatrix(group1_perm, num_states=num_states, 
-                replace_nan=True, calc='right')[i,:]
-            group2_perm_sd = MarkovToTransitionMatrix(group2_perm, num_states=num_states, 
-                replace_nan=True, calc='right')[i,:]
-            perm_distance = DistanceBewtweenMatrices(group1_perm_sd, group2_perm_sd)
-            null_distribution[i].append(perm_distance)     
+            if right_or_left == 'right':
+                group1_perm_sd = MarkovToTransitionMatrix(group1_perm, num_states=num_states, 
+                    replace_nan=True, calc=right_or_left)[i,:]
+                group2_perm_sd = MarkovToTransitionMatrix(group2_perm, num_states=num_states, 
+                    replace_nan=True, calc=right_or_left)[i,:]
+                perm_distance = DistanceBewtweenMatrices(group1_perm_sd, group2_perm_sd)
+                null_distribution[i].append(perm_distance)   
+            else:
+                group1_perm_sd = MarkovToTransitionMatrix(group1_perm, num_states=num_states, 
+                    replace_nan=True, calc=right_or_left)[:, i]
+                group2_perm_sd = MarkovToTransitionMatrix(group2_perm, num_states=num_states, 
+                    replace_nan=True, calc=right_or_left)[:, i]
+                perm_distance = DistanceBewtweenMatrices(group1_perm_sd, group2_perm_sd)
+                null_distribution[i].append(perm_distance)       
  
 
 # For plotting

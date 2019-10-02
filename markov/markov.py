@@ -97,6 +97,9 @@ def StochasticMatrix(count_matrix, replace_nan=True, calc='right'):
     if calc == 'right':
         tm = np.array([np.divide(count_matrix[:,x], count_matrix.sum(axis=1)) 
             for x in range(count_matrix.shape[0])]).T
+    elif calc == 'left':
+         tm = np.array([np.divide(count_matrix[x, :], count_matrix.sum(axis=0)) 
+            for x in range(count_matrix.shape[1])])       
     elif calc == 'probability':
         tm = np.array(np.divide(count_matrix, count_matrix.sum()))
     if replace_nan:
