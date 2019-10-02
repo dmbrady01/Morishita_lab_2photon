@@ -109,15 +109,18 @@ for cohort in cohorts:
 
     # Add all count matrices and get transistion matric
     total_count_matrix = AddingCountMatrices(count_matrices)
-    transistion_matrix = StochasticMatrix(total_count_matrix)
+    right_transistion_matrix = StochasticMatrix(total_count_matrix, calc='right')
+    left_transistion_matrix = StochasticMatrix(total_count_matrix, calc='left')
     joint_distribution_matrix = StochasticMatrix(total_count_matrix, calc='probability')
     # TO SAVE csv
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_count_matrix.csv", 
         total_count_matrix, delimiter=",")
-    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_transistion_matrix.csv", 
-        transistion_matrix, delimiter=",")
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_right_transistion_matrix.csv", 
+        right_transistion_matrix, delimiter=",")
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_left_transistion_matrix.csv", 
+        left_transistion_matrix, delimiter=",")
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_joint_distribution_matrix.csv", 
-        transistion_matrix, delimiter=",")
+        joint_distribution_matrix, delimiter=",")
 
 
 
