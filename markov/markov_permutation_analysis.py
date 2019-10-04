@@ -18,9 +18,9 @@ import json
 import os
 
 # Paths to transition.txt files
-group1 = '/Users/DB/Development/Monkey_frog/data/social/csvs/group_housed_transistions.txt'
-group2 = '/Users/DB/Development/Monkey_frog/data/social/csvs/isolates_transistions.txt'
-state_csv = '/Users/DB/Development/Monkey_frog/markov/states.csv'
+group1 = ['/Users/DB/Downloads/group_housed_count_matrix.csv', '/Users/DB/Downloads/group_housed_count_matrix.csv']
+group2 = ['/Users/DB/Downloads/isolates_count_matrix.csv', '/Users/DB/Downloads/isolates_count_matrix.csv']
+state_csv = '/Users/DB/Downloads/states.csv'
 savepath = '/Users/DB/Development/Monkey_frog/'
 
 # can be 'stationary', 'joint', or 'transition'. last will correct for multiple comparisons
@@ -126,7 +126,7 @@ null_distribution = [np.array(x) for x in null_distribution]
 num_hypotheses = len(null_distribution)
 p_value = []
 for j in range(num_hypotheses):
-    p_value.append(np.sum(null_distribution[j] > true_distance[j])/float(null_distribution[j].shape[0]))
+    p_value.append(np.sum(null_distribution[j] >= true_distance[j])/float(null_distribution[j].shape[0]))
 
 # For doing a multiple comparisons correction (bonferroni-holm)
 p_value_order = np.argsort(p_value) # start with the lowest p-value
@@ -138,7 +138,7 @@ for j in range(num_hypotheses):
     null_dist = null_distribution[row_number] # get the null distro for that row
     null_p = (1 - .05/(num_hypotheses-j))*100 # calculate the corrected cutoff percentile
     cut_off = np.percentile(null_dist, null_p) # calculate the actual value associated with cutoff percentile
-    is_sig = dist >= cut_off # see if true distance is further from cut off  
+    is_sig = dist > cut_off # see if true distance is further from cut off  
     
     # Checks if any of the previous tests are failures, if so automatically sets the next
     # test as a failure
