@@ -152,7 +152,7 @@ def ReadTransitionsOrCountMatrixFromFile(text_file):
         contents = contents.split('\n')
         contents = [json.loads(x) for x in contents if len(x) > 0]
     else:
-        contents = pd.read_csv(text_file).values
+        contents = pd.read_csv(text_file, header=None).values
     return contents
 
 def MaxStates(*args):
