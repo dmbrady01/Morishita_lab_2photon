@@ -13,7 +13,7 @@ __lastmodified__ = "09Aug2018"
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from markov.markov import ReadTransitionsTextFile, MaxStates, MarkovToTransitionMatrix, StationaryDistribution, DistanceBewtweenMatrices, ReadStateCsv
+from markov.markov import ReadTransitionsOrCountMatrixFromFile, MaxStates, MarkovToTransitionMatrix, StationaryDistribution, DistanceBewtweenMatrices, ReadStateCsv
 import json
 import os
 
@@ -32,8 +32,8 @@ num_permutations = 10000
 np.random.seed(1234) # sets the random seed generator to get the same distro each time
 
 # Read data into list of lists
-group1_data = ReadTransitionsTextFile(group1)
-group2_data = ReadTransitionsTextFile(group2)
+group1_data = ReadTransitionsOrCountMatrixFromFile(group1)
+group2_data = ReadTransitionsOrCountMatrixFromFile(group2)
 
 # Get max number of states
 #num_states = MaxStates(group1_data, group2_data)

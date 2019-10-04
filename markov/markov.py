@@ -143,12 +143,16 @@ def MarkovToTransitionMatrix(list_of_data, mode='transitions', num_states=None, 
         return StochasticMatrix(AddingCountMatrices(list_of_data), 
             replace_nan=replace_nan, calc=calc)
 
-def ReadTransitionsTextFile(text_file):
-    "Reads transitions.txt file and returns list of transitions (list of lists)"
-    with open(text_file) as fp:
-        contents = fp.read()
-    contents = contents.split('\n')
-    contents = [json.loads(x) for x in contents if len(x) > 0]
+def ReadTransitionsOrCountMatrixFromFile(text_file):
+    """Reads transitions.txt file and returns list of transitions (list of lists)
+    Or reads count matrix.csv file and returns numpy array"""
+    if '.txt' in text_file:
+        with open(text_file) as fp:
+            contents = fp.read()
+        contents = contents.split('\n')
+        contents = [json.loads(x) for x in contents if len(x) > 0]
+    else:
+        contents = pd.read_csv(text_file).values
     return contents
 
 def MaxStates(*args):
