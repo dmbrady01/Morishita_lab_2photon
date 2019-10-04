@@ -70,18 +70,22 @@ def EncodeStates(df, code):
     return transitions.astype(int)
 
 def CountMatrix(transitions, num_states=None):
-    "Given a list of transitions and the code, creates a count matrix"
-    if not num_states:
-        num_states = int(1 + max(transitions))
+    """Given a list of transitions and the code, creates a count matrix. If numpy array
+    is already passed, it just passes through."""
+    if isinstance(transitions, np.ndarray):
+        return transitions
     else:
-        num_states = int(1 + num_states)
+        if not num_states:
+            num_states = int(1 + max(transitions))
+        else:
+            num_states = int(1 + num_states)
 
-    matrix = [[0]*num_states for _ in range(num_states)]
+        matrix = [[0]*num_states for _ in range(num_states)]
 
-    for (i,j) in zip(transitions,transitions[1:]):
-        matrix[i][j] += 1.0
+        for (i,j) in zip(transitions,transitions[1:]):
+            matrix[i][j] += 1.0
 
-    return np.array(matrix)
+        return np.array(matrix)
 
 def ProcessExcelToCountMatrix(excel_file, column='Bout type', state_csv='markov/states.csv', 
         fixed_states_csv=False, resample=False, resample_window=1):
@@ -143,12 +147,16 @@ def MarkovToTransitionMatrix(list_of_data, mode='transitions', num_states=None, 
         return StochasticMatrix(AddingCountMatrices(list_of_data), 
             replace_nan=replace_nan, calc=calc)
 
-def ReadTransitionsTextFile(text_file):
-    "Reads transitions.txt file and returns list of transitions (list of lists)"
-    with open(text_file) as fp:
-        contents = fp.read()
-    contents = contents.split('\n')
-    contents = [json.loads(x) for x in contents if len(x) > 0]
+def ReadTransitionsOrCountMatrixFromFile(text_file):
+    """Reads transitions.txt file and returns list of transitions (list of lists)
+    Or reads count matrix.csv file and returns numpy array"""
+    if isinstance(text_file, str):
+        with open(text_file) as fp:
+            contents = fp.read()
+        contents = contents.split('\n')
+        contents = [json.loads(x) for x in contents if len(x) > 0]
+    else:
+        contents = [pd.read_csv(x, header=None).values for x in text_file]
     return contents
 
 def MaxStates(*args):

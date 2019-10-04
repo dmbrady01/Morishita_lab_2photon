@@ -103,7 +103,7 @@ for cohort in cohorts:
         transitions_list.append(list(transitions))
 
 
-    with open(cohort['savepath'] + os.sep + cohort['name'] + "_transistions.txt", 'w') as fp:
+    with open(cohort['savepath'] + os.sep + cohort['name'] + "_transitions.txt", 'w') as fp:
         for transition in transitions_list:
             fp.write(str(transition) + "\n")
 
@@ -115,9 +115,9 @@ for cohort in cohorts:
     # TO SAVE csv
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_count_matrix.csv", 
         total_count_matrix, delimiter=",")
-    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_right_transistion_matrix.csv", 
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_right_transition_matrix.csv", 
         right_transistion_matrix, delimiter=",")
-    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_left_transistion_matrix.csv", 
+    np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_left_transition_matrix.csv", 
         left_transistion_matrix, delimiter=",")
     np.savetxt(cohort['savepath'] + os.sep + cohort['name'] + "_joint_distribution_matrix.csv", 
         joint_distribution_matrix, delimiter=",")
